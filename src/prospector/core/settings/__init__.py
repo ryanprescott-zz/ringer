@@ -3,7 +3,8 @@ from .settings import (
     ProspectorSettings,
     ScraperSettings,
     HandlerSettings,
-    ScoreAnalyzerSettings
+    ScoreAnalyzerSettings,
+    ServiceSettings
 )
 
 __version__ = "1.0.0"
@@ -12,5 +13,6 @@ __all__ = [
     "ScraperSettings",
     "HandlerSettings",
     "ScoreAnalyzerSettings",
+    "ServiceSettings",
     "HandlerType",
 ]
