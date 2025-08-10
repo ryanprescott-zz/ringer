@@ -9,7 +9,10 @@ from prospector.api.v1.models import (
     CrawlDeleteRequest, DeleteCrawlResponse
 )
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/crawl",
+    tags=["crawl"],
+)
 
 
 @router.post("/submit", response_model=SubmitCrawlResponse)

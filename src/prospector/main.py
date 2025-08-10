@@ -59,7 +59,7 @@ app = FastAPI(
 app.include_router(api_router, prefix=uri_prefix)
 
 # Mount /static to serve self-hosted swagger UI assets
-app.mount(settings.openapi_prefix, StaticFiles(directory="prospector/static"), name="static")
+app.mount(settings.openapi_prefix, StaticFiles(directory="static"), name="static")
 
 @app.get("/")
 def read_root():
@@ -99,13 +99,13 @@ async def self_hosted_swagger_ui_html():
         openapi_url=app.openapi_url,
         title=app.title,
         swagger_favicon_url="/icons/favicon.ico",
-        oauth2_redirect_url=app.swagger_oauth2_redirect_url,
+        oauth2_redirect_url=app.swagger_ui_oauth2_redirect_url,
         swagger_js_url=f"{settings.openapi_prefix}/swagger-ui-bundle.js",
         swagger_css_url=f"{settings.openapi_prefix}/swagger-ui.css",
     )
 
 
-@app.get(app.swagger_oauth2_redirect_url, include_in_schema=False)
+@app.get(app.swagger_ui_oauth2_redirect_url, include_in_schema=False)
 async def swagger_ui_redirect():
     """
     Serve the Swagger UI OAuth2 redirect HTML.

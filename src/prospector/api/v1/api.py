@@ -13,6 +13,4 @@ api_router = APIRouter()
 # Include the crawl router with the configured base path
 api_router.include_router(
     crawl.router,
-    prefix=f"{settings.base_router_path}/crawl",
-    tags=["crawl"]
 )
