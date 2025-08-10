@@ -493,7 +493,7 @@ class TestErrorHandling:
         """Test handling of malformed JSON requests."""
         response = client.post(
             "/api/v1/crawl/submit",
-            data="invalid json",
+            content="invalid json",
             headers={"Content-Type": "application/json"}
         )
         assert response.status_code == 422
@@ -507,7 +507,7 @@ class TestErrorHandling:
         """Test handling of invalid content type."""
         response = client.post(
             "/api/v1/crawl/submit",
-            data=str(sample_crawl_spec_dict),
+            content=str(sample_crawl_spec_dict),
             headers={"Content-Type": "text/plain"}
         )
         assert response.status_code == 422
