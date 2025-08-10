@@ -97,11 +97,13 @@ class TestCrawlSubmitEndpoint:
         mock_prospector.submit.return_value = test_crawl_id
         mock_prospector.crawls = {test_crawl_id: sample_crawl_state}
         
-        with patch.object(app.state, 'prospector', mock_prospector):
-            response = client.post(
-                "/api/v1/crawl/submit",
-                json={"crawl_spec": sample_crawl_spec_dict}
-            )
+        # Set the prospector in app state
+        app.state.prospector = mock_prospector
+        
+        response = client.post(
+            "/api/v1/crawl/submit",
+            json={"crawl_spec": sample_crawl_spec_dict}
+        )
         
         assert response.status_code == 200
         data = response.json()
@@ -113,11 +115,13 @@ class TestCrawlSubmitEndpoint:
         """Test submitting a crawl with duplicate ID returns 400."""
         mock_prospector.submit.side_effect = ValueError("Crawl with ID test_crawl already exists")
         
-        with patch.object(app.state, 'prospector', mock_prospector):
-            response = client.post(
-                "/api/v1/crawl/submit",
-                json={"crawl_spec": sample_crawl_spec_dict}
-            )
+        # Set the prospector in app state
+        app.state.prospector = mock_prospector
+        
+        response = client.post(
+            "/api/v1/crawl/submit",
+            json={"crawl_spec": sample_crawl_spec_dict}
+        )
         
         assert response.status_code == 400
         assert "Crawl with ID test_crawl already exists" in response.json()["detail"]
@@ -129,11 +133,13 @@ class TestCrawlSubmitEndpoint:
             # Missing required fields
         }
         
-        with patch.object(app.state, 'prospector', mock_prospector):
-            response = client.post(
-                "/api/v1/crawl/submit",
-                json={"crawl_spec": invalid_spec}
-            )
+        # Set the prospector in app state
+        app.state.prospector = mock_prospector
+        
+        response = client.post(
+            "/api/v1/crawl/submit",
+            json={"crawl_spec": invalid_spec}
+        )
         
         assert response.status_code == 422
     
@@ -141,11 +147,13 @@ class TestCrawlSubmitEndpoint:
         """Test internal server error during crawl submission."""
         mock_prospector.submit.side_effect = Exception("Database connection failed")
         
-        with patch.object(app.state, 'prospector', mock_prospector):
-            response = client.post(
-                "/api/v1/crawl/submit",
-                json={"crawl_spec": sample_crawl_spec_dict}
-            )
+        # Set the prospector in app state
+        app.state.prospector = mock_prospector
+        
+        response = client.post(
+            "/api/v1/crawl/submit",
+            json={"crawl_spec": sample_crawl_spec_dict}
+        )
         
         assert response.status_code == 500
         assert "Internal server error" in response.json()["detail"]
@@ -159,11 +167,13 @@ class TestCrawlStartEndpoint:
         test_crawl_id = "test_crawl_123"
         mock_prospector.crawls = {test_crawl_id: sample_crawl_state}
         
-        with patch.object(app.state, 'prospector', mock_prospector):
-            response = client.post(
-                "/api/v1/crawl/start",
-                json={"crawl_id": test_crawl_id}
-            )
+        # Set the prospector in app state
+        app.state.prospector = mock_prospector
+        
+        response = client.post(
+            "/api/v1/crawl/start",
+            json={"crawl_id": test_crawl_id}
+        )
         
         assert response.status_code == 200
         data = response.json()
@@ -175,11 +185,13 @@ class TestCrawlStartEndpoint:
         """Test starting non-existent crawl returns 404."""
         mock_prospector.start.side_effect = ValueError("Crawl nonexistent_id not found")
         
-        with patch.object(app.state, 'prospector', mock_prospector):
-            response = client.post(
-                "/api/v1/crawl/start",
-                json={"crawl_id": "nonexistent_id"}
-            )
+        # Set the prospector in app state
+        app.state.prospector = mock_prospector
+        
+        response = client.post(
+            "/api/v1/crawl/start",
+            json={"crawl_id": "nonexistent_id"}
+        )
         
         assert response.status_code == 404
         assert "Crawl nonexistent_id not found" in response.json()["detail"]
@@ -188,11 +200,13 @@ class TestCrawlStartEndpoint:
         """Test starting already running crawl returns 400."""
         mock_prospector.start.side_effect = RuntimeError("Crawl test_crawl is already running")
         
-        with patch.object(app.state, 'prospector', mock_prospector):
-            response = client.post(
-                "/api/v1/crawl/start",
-                json={"crawl_id": "test_crawl"}
-            )
+        # Set the prospector in app state
+        app.state.prospector = mock_prospector
+        
+        response = client.post(
+            "/api/v1/crawl/start",
+            json={"crawl_id": "test_crawl"}
+        )
         
         assert response.status_code == 400
         assert "Crawl test_crawl is already running" in response.json()["detail"]
@@ -201,11 +215,13 @@ class TestCrawlStartEndpoint:
         """Test internal server error during crawl start."""
         mock_prospector.start.side_effect = Exception("Thread pool exhausted")
         
-        with patch.object(app.state, 'prospector', mock_prospector):
-            response = client.post(
-                "/api/v1/crawl/start",
-                json={"crawl_id": "test_crawl"}
-            )
+        # Set the prospector in app state
+        app.state.prospector = mock_prospector
+        
+        response = client.post(
+            "/api/v1/crawl/start",
+            json={"crawl_id": "test_crawl"}
+        )
         
         assert response.status_code == 500
         assert "Internal server error" in response.json()["detail"]
@@ -219,11 +235,13 @@ class TestCrawlStopEndpoint:
         test_crawl_id = "test_crawl_123"
         mock_prospector.crawls = {test_crawl_id: sample_crawl_state}
         
-        with patch.object(app.state, 'prospector', mock_prospector):
-            response = client.post(
-                "/api/v1/crawl/stop",
-                json={"crawl_id": test_crawl_id}
-            )
+        # Set the prospector in app state
+        app.state.prospector = mock_prospector
+        
+        response = client.post(
+            "/api/v1/crawl/stop",
+            json={"crawl_id": test_crawl_id}
+        )
         
         assert response.status_code == 200
         data = response.json()
@@ -235,11 +253,13 @@ class TestCrawlStopEndpoint:
         """Test stopping non-existent crawl returns 404."""
         mock_prospector.stop.side_effect = ValueError("Crawl nonexistent_id not found")
         
-        with patch.object(app.state, 'prospector', mock_prospector):
-            response = client.post(
-                "/api/v1/crawl/stop",
-                json={"crawl_id": "nonexistent_id"}
-            )
+        # Set the prospector in app state
+        app.state.prospector = mock_prospector
+        
+        response = client.post(
+            "/api/v1/crawl/stop",
+            json={"crawl_id": "nonexistent_id"}
+        )
         
         assert response.status_code == 404
         assert "Crawl nonexistent_id not found" in response.json()["detail"]
@@ -248,11 +268,13 @@ class TestCrawlStopEndpoint:
         """Test internal server error during crawl stop."""
         mock_prospector.stop.side_effect = Exception("Failed to stop workers")
         
-        with patch.object(app.state, 'prospector', mock_prospector):
-            response = client.post(
-                "/api/v1/crawl/stop",
-                json={"crawl_id": "test_crawl"}
-            )
+        # Set the prospector in app state
+        app.state.prospector = mock_prospector
+        
+        response = client.post(
+            "/api/v1/crawl/stop",
+            json={"crawl_id": "test_crawl"}
+        )
         
         assert response.status_code == 500
         assert "Internal server error" in response.json()["detail"]
@@ -268,11 +290,13 @@ class TestCrawlDeleteEndpoint:
         test_deletion_time = "2023-12-01T10:33:00Z"
         mock_datetime.utcnow.return_value.strftime.return_value = test_deletion_time
         
-        with patch.object(app.state, 'prospector', mock_prospector):
-            response = client.post(
-                "/api/v1/crawl/delete",
-                json={"crawl_id": test_crawl_id}
-            )
+        # Set the prospector in app state
+        app.state.prospector = mock_prospector
+        
+        response = client.post(
+            "/api/v1/crawl/delete",
+            json={"crawl_id": test_crawl_id}
+        )
         
         assert response.status_code == 200
         data = response.json()
@@ -284,11 +308,13 @@ class TestCrawlDeleteEndpoint:
         """Test deleting non-existent crawl returns 404."""
         mock_prospector.delete.side_effect = ValueError("Crawl nonexistent_id not found")
         
-        with patch.object(app.state, 'prospector', mock_prospector):
-            response = client.post(
-                "/api/v1/crawl/delete",
-                json={"crawl_id": "nonexistent_id"}
-            )
+        # Set the prospector in app state
+        app.state.prospector = mock_prospector
+        
+        response = client.post(
+            "/api/v1/crawl/delete",
+            json={"crawl_id": "nonexistent_id"}
+        )
         
         assert response.status_code == 404
         assert "Crawl nonexistent_id not found" in response.json()["detail"]
@@ -297,11 +323,13 @@ class TestCrawlDeleteEndpoint:
         """Test deleting running crawl returns 400."""
         mock_prospector.delete.side_effect = RuntimeError("Cannot delete running crawl test_crawl")
         
-        with patch.object(app.state, 'prospector', mock_prospector):
-            response = client.post(
-                "/api/v1/crawl/delete",
-                json={"crawl_id": "test_crawl"}
-            )
+        # Set the prospector in app state
+        app.state.prospector = mock_prospector
+        
+        response = client.post(
+            "/api/v1/crawl/delete",
+            json={"crawl_id": "test_crawl"}
+        )
         
         assert response.status_code == 400
         assert "Cannot delete running crawl test_crawl" in response.json()["detail"]
@@ -310,11 +338,13 @@ class TestCrawlDeleteEndpoint:
         """Test internal server error during crawl deletion."""
         mock_prospector.delete.side_effect = Exception("Failed to cleanup resources")
         
-        with patch.object(app.state, 'prospector', mock_prospector):
-            response = client.post(
-                "/api/v1/crawl/delete",
-                json={"crawl_id": "test_crawl"}
-            )
+        # Set the prospector in app state
+        app.state.prospector = mock_prospector
+        
+        response = client.post(
+            "/api/v1/crawl/delete",
+            json={"crawl_id": "test_crawl"}
+        )
         
         assert response.status_code == 500
         assert "Internal server error" in response.json()["detail"]
@@ -394,40 +424,42 @@ class TestEndToEndWorkflow:
         mock_prospector.submit.return_value = test_crawl_id
         mock_prospector.crawls = {test_crawl_id: sample_crawl_state}
         
-        with patch.object(app.state, 'prospector', mock_prospector):
-            # 1. Submit crawl
-            submit_response = client.post(
-                "/api/v1/crawl/submit",
-                json={"crawl_spec": sample_crawl_spec_dict}
-            )
-            assert submit_response.status_code == 200
-            assert submit_response.json()["crawl_id"] == test_crawl_id
-            
-            # 2. Start crawl
-            start_response = client.post(
-                "/api/v1/crawl/start",
+        # Set the prospector in app state
+        app.state.prospector = mock_prospector
+        
+        # 1. Submit crawl
+        submit_response = client.post(
+            "/api/v1/crawl/submit",
+            json={"crawl_spec": sample_crawl_spec_dict}
+        )
+        assert submit_response.status_code == 200
+        assert submit_response.json()["crawl_id"] == test_crawl_id
+        
+        # 2. Start crawl
+        start_response = client.post(
+            "/api/v1/crawl/start",
+            json={"crawl_id": test_crawl_id}
+        )
+        assert start_response.status_code == 200
+        assert start_response.json()["crawl_id"] == test_crawl_id
+        
+        # 3. Stop crawl
+        stop_response = client.post(
+            "/api/v1/crawl/stop",
+            json={"crawl_id": test_crawl_id}
+        )
+        assert stop_response.status_code == 200
+        assert stop_response.json()["crawl_id"] == test_crawl_id
+        
+        # 4. Delete crawl
+        with patch('prospector.api.v1.routers.crawl.datetime') as mock_datetime:
+            mock_datetime.utcnow.return_value.strftime.return_value = "2023-12-01T10:35:00Z"
+            delete_response = client.post(
+                "/api/v1/crawl/delete",
                 json={"crawl_id": test_crawl_id}
             )
-            assert start_response.status_code == 200
-            assert start_response.json()["crawl_id"] == test_crawl_id
-            
-            # 3. Stop crawl
-            stop_response = client.post(
-                "/api/v1/crawl/stop",
-                json={"crawl_id": test_crawl_id}
-            )
-            assert stop_response.status_code == 200
-            assert stop_response.json()["crawl_id"] == test_crawl_id
-            
-            # 4. Delete crawl
-            with patch('prospector.api.v1.routers.crawl.datetime') as mock_datetime:
-                mock_datetime.utcnow.return_value.strftime.return_value = "2023-12-01T10:35:00Z"
-                delete_response = client.post(
-                    "/api/v1/crawl/delete",
-                    json={"crawl_id": test_crawl_id}
-                )
-                assert delete_response.status_code == 200
-                assert delete_response.json()["crawl_id"] == test_crawl_id
+            assert delete_response.status_code == 200
+            assert delete_response.json()["crawl_id"] == test_crawl_id
         
         # Verify all methods were called
         mock_prospector.submit.assert_called_once()
@@ -442,14 +474,16 @@ class TestEndToEndWorkflow:
         # Setup mock to raise ValueError for nonexistent crawl
         mock_prospector.start.side_effect = ValueError(f"Crawl {nonexistent_crawl_id} not found")
         
-        with patch.object(app.state, 'prospector', mock_prospector):
-            # Try to start non-existent crawl
-            response = client.post(
-                "/api/v1/crawl/start",
-                json={"crawl_id": nonexistent_crawl_id}
-            )
-            assert response.status_code == 404
-            assert "not found" in response.json()["detail"]
+        # Set the prospector in app state
+        app.state.prospector = mock_prospector
+        
+        # Try to start non-existent crawl
+        response = client.post(
+            "/api/v1/crawl/start",
+            json={"crawl_id": nonexistent_crawl_id}
+        )
+        assert response.status_code == 404
+        assert "not found" in response.json()["detail"]
 
 
 class TestErrorHandling:
