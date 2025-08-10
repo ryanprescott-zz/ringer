@@ -64,3 +64,13 @@ class HandlerSettings(BaseSettings):
     model_config = {
         "env_prefix": "HANDLER_"
     }
+
+
+class ServiceSettings(BaseSettings):
+    """Settings for the FastAPI web service."""
+    
+    base_router_path: str = "/api/v1"
+    
+    model_config = {
+        "env_prefix": "SERVICE_"
+    }

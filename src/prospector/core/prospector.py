@@ -5,9 +5,10 @@ import os
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime
 from queue import Queue, Empty
 from threading import Lock
-from typing import Dict, List, Set
+from typing import Dict, List, Set, Optional
 from urllib.parse import urlparse
 from sortedcontainers import SortedList
 
@@ -37,6 +38,11 @@ class CrawlState:
         self.analyzer_weights: Dict[str, float] = {}
         self.running = False
         self.lock = Lock()
+        
+        # Datetime tracking
+        self.crawl_submitted_time: Optional[str] = None
+        self.crawl_started_time: Optional[str] = None
+        self.crawl_stopped_time: Optional[str] = None
         
         # Initialize frontier with seed URLs (score 0.0 initially)
         for url in crawl_spec.seed_urls:
@@ -138,6 +144,9 @@ class Prospector:
             # Initialize analyzers
             self._initialize_analyzers(crawl_state, crawl_spec.analyzer_specs)
             
+            # Set submitted time
+            crawl_state.crawl_submitted_time = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+            
             # Store crawl state
             self.crawls[crawl_id] = crawl_state
             
@@ -164,6 +173,7 @@ class Prospector:
                 raise RuntimeError(f"Crawl {crawl_id} is already running")
             
             crawl_state.running = True
+            crawl_state.crawl_started_time = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
         
         # Submit crawl workers to thread pool
         futures = []
@@ -189,6 +199,7 @@ class Prospector:
             
             crawl_state = self.crawls[crawl_id]
             crawl_state.running = False
+            crawl_state.crawl_stopped_time = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
         
         logger.info(f"Stopped crawl {crawl_id}")
     
