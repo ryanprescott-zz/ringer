@@ -5,7 +5,7 @@ import os
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime
+from datetime import datetime, timezone
 from queue import Queue, Empty
 from threading import Lock
 from typing import Dict, List, Set, Optional
@@ -145,7 +145,7 @@ class Prospector:
             self._initialize_analyzers(crawl_state, crawl_spec.analyzer_specs)
             
             # Set submitted time
-            crawl_state.crawl_submitted_time = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+            crawl_state.crawl_submitted_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
             
             # Store crawl state
             self.crawls[crawl_id] = crawl_state
@@ -173,7 +173,7 @@ class Prospector:
                 raise RuntimeError(f"Crawl {crawl_id} is already running")
             
             crawl_state.running = True
-            crawl_state.crawl_started_time = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+            crawl_state.crawl_started_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         
         # Submit crawl workers to thread pool
         futures = []
@@ -199,7 +199,7 @@ class Prospector:
             
             crawl_state = self.crawls[crawl_id]
             crawl_state.running = False
-            crawl_state.crawl_stopped_time = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+            crawl_state.crawl_stopped_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         
         logger.info(f"Stopped crawl {crawl_id}")
     
