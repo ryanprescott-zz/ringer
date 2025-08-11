@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 
 from prospector.core.models import CrawlRecord
-from prospector.core.settings import HandlerSettings
+from prospector.core.settings import FsStoreHandlerSettings
 from .crawl_record_handler import CrawlRecordHandler
 
 
@@ -12,7 +12,7 @@ class FsStoreCrawlRecordHandler(CrawlRecordHandler):
     
     def __init__(self):
         """Initialize the filesystem handler with settings."""
-        self.settings = HandlerSettings()
+        self.settings = FsStoreHandlerSettings()
     
     def handle(self, crawl_record: CrawlRecord, crawl_name: str, crawl_datetime: str) -> None:
         """

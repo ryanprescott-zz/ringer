@@ -5,7 +5,7 @@ import logging
 import requests
 
 from prospector.core.models import LLMScoreServiceInput, LLMScoreRequest
-from prospector.core.settings import ScoreAnalyzerSettings
+from prospector.core.settings import LLMServiceScoreAnalyzerSettings
 from .score_analyzer import ScoreAnalyzer
 
 logger = logging.getLogger(__name__)
@@ -16,7 +16,7 @@ class LLMServiceScoreAnalyzer(ScoreAnalyzer):
     
     def __init__(self):
         """Initialize the LLM service analyzer with settings and session."""
-        self.settings = ScoreAnalyzerSettings()
+        self.settings = LLMServiceScoreAnalyzerSettings()
         # Create a requests session for connection pooling
         self.session = requests.Session()
         self.session.headers.update({

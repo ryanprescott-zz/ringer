@@ -2,10 +2,10 @@
 
 from fastapi import APIRouter
 from prospector.api.v1.routers import crawl
-from prospector.core.settings import ServiceSettings
+from prospector.core.settings import ProspectorServiceSettings
 
 # Load service settings
-settings = ServiceSettings()
+settings = ProspectorServiceSettings()
 
 # Create the main API router
 api_router = APIRouter()

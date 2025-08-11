@@ -12,7 +12,7 @@ from fastapi.staticfiles import StaticFiles
 
 from prospector.core.prospector import Prospector
 from prospector.api.v1.api import api_router
-from prospector.core.settings.settings import ServiceSettings
+from prospector.core.settings.settings import ProspectorServiceSettings
 
 
 logger = logging.getLogger(__name__)
@@ -41,7 +41,7 @@ async def lifespan(app: FastAPI):
     logger.info(f"Shutting down Prospector web crawler service {app.title}")
     prospector.shutdown()
 
-settings = ServiceSettings()
+settings = ProspectorServiceSettings()
 uri_prefix = settings.base_router_path
 
 # Create FastAPI application with lifespan management

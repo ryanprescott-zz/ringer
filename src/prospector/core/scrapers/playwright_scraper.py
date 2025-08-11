@@ -5,7 +5,7 @@ from urllib.parse import urljoin, urlparse
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 
 from prospector.core.models import CrawlRecord
-from prospector.core.settings import ScraperSettings
+from prospector.core.settings import PlaywrightScraperSettings
 from .scraper import Scraper
 
 
@@ -16,7 +16,7 @@ class PlaywrightScraper(Scraper):
     
     def __init__(self):
         """Initialize the Playwright scraper with settings."""
-        self.settings = ScraperSettings()
+        self.settings = PlaywrightScraperSettings()
     
     def scrape(self, url: str) -> CrawlRecord:
         """

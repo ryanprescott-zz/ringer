@@ -5,7 +5,7 @@ import requests
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 from prospector.core.models import CrawlRecord, HandleCrawlRecordRequest
-from prospector.core.settings import HandlerSettings
+from prospector.core.settings import ServiceCallHandlerSettings
 from .crawl_record_handler import CrawlRecordHandler
 
 
@@ -16,7 +16,7 @@ class ServiceCrawlRecordHandler(CrawlRecordHandler):
     
     def __init__(self):
         """Initialize the service handler with settings and session."""
-        self.settings = HandlerSettings()
+        self.settings = ServiceCallHandlerSettings()
         # Create a requests session for connection pooling
         self.session = requests.Session()
         self.session.headers.update({
@@ -75,7 +75,7 @@ class ServiceCrawlRecordHandler(CrawlRecordHandler):
                 response = self.session.post(
                     self.settings.service_url,
                     json=request_data.model_dump(mode='json'),
-                    timeout=self.settings.service_timeout
+                    timeout=self.settings.service_timeout_sec
                 )
                 
                 # Check for HTTP errors
