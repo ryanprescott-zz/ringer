@@ -66,7 +66,7 @@ class DhStoreHandler(CrawlStorageHandler):
             crawl_name: the name of the crawl to delete.
         """
 
-        logger.warning(f"Delete operation for crawl ID {crawl_id} is not supported by the DH service. No action taken.")
+        logger.warning(f"Delete operation for crawl name {crawl_name} is not supported by the DH service. No action taken.")
         # No action needed as per current service capabilities
 
     

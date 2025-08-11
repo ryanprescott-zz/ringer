@@ -48,7 +48,8 @@ class FsStoreHandler(CrawlStorageHandler):
             try:
                 crawl_directory.mkdir(parents=True, exist_ok=True)
             except OSError as e:
-                raise logger.error(f"Failed to create crawl directory {crawl_directory}: {str(e)}")
+                logger.error(f"Failed to create crawl directory {crawl_directory}: {str(e)}")
+                raise OSError(f"Failed to create crawl directory {crawl_directory}: {str(e)}")
         else:
             logger.warning(f"Crawl directory already exists: {crawl_directory}")
         
@@ -87,7 +88,8 @@ class FsStoreHandler(CrawlStorageHandler):
                 json.dump(record_data, f, indent=2, ensure_ascii=False)
                 
         except Exception as e:
-            raise logger.error(f"Failed to store crawl record for {crawl_record.url}: {str(e)}")
+            logger.error(f"Failed to store crawl record for {crawl_record.url}: {str(e)}")
+            raise OSError(f"Failed to store crawl record for {crawl_record.url}: {str(e)}")
 
 
     def delete_crawl(self, crawl_name: str) -> None:
@@ -104,9 +106,11 @@ class FsStoreHandler(CrawlStorageHandler):
         if crawl_directory.exists():
             logger.info(f"Deleting crawl directory: {crawl_directory}")
             try:
-                os.rmdir(crawl_directory)
+                import shutil
+                shutil.rmtree(crawl_directory)
                 logger.info(f"Deleted crawl directory: {crawl_directory}")
             except OSError as e:
-                raise logger.error(f"Failed to delete crawl directory {crawl_directory}: {str(e)}")
+                logger.error(f"Failed to delete crawl directory {crawl_directory}: {str(e)}")
+                raise OSError(f"Failed to delete crawl directory {crawl_directory}: {str(e)}")
         else:
             logger.warning(f"Unable to delete crawl directory - directory does not exist: {crawl_directory}")

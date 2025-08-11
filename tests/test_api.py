@@ -61,7 +61,7 @@ def sample_crawl_state():
         ]
     )
     crawl_state = CrawlState(crawl_spec)
-    crawl_state.crawl_creation_time = "2023-12-01T10:30:00Z"
+    crawl_state.crawl_created_time = "2023-12-01T10:30:00Z"
     crawl_state.crawl_started_time = "2023-12-01T10:31:00Z"
     crawl_state.crawl_stopped_time = "2023-12-01T10:32:00Z"
     return crawl_state
@@ -108,7 +108,7 @@ class TestCreateCrawEndpoint:
         assert response.status_code == 200
         data = response.json()
         assert data["crawl_id"] == test_crawl_id
-        assert data["crawl_creation_time"] == sample_crawl_state.crawl_creation_time
+        assert data["crawl_creation_time"] == sample_crawl_state.crawl_created_time
         mock_prospector.create.assert_called_once()
     
     def test_create_crawl_duplicate_id(self, client, mock_prospector, sample_crawl_spec_dict):

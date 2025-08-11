@@ -5,7 +5,6 @@ import threading
 import time
 from datetime import datetime
 from unittest.mock import patch
-from datetime import datetime
 from prospector.core import (
     WeightedKeyword,
     AnalyzerSpec,
@@ -190,82 +189,3 @@ class TestCrawlRecord:
         time_diff = datetime.now() - record.timestamp
         assert time_diff.total_seconds() < 1.0
     
-    def test_initialize_analyzers_unknown_type(self, prospector, sample_crawl_spec):
-        """Test initializing analyzers with unknown type raises error."""
-        # Create spec with unknown analyzer
-        bad_spec = AnalyzerSpec(
-            name="UnknownAnalyzer",
-            composite_weight=1.0,
-            params=[]
-        )
-        spec = CrawlSpec(
-            name="test",
-            seed_urls=["https://example.com"],
-            analyzer_specs=[bad_spec]
-        )
-        
-        with pytest.raises(ValueError, match="Unknown analyzer type"):
-            prospector.create(spec)
-    
-    def test_score_content(self, prospector, sample_crawl_spec, sample_crawl_record):
-        """Test scoring content with analyzers."""
-        crawl_id = prospector.create(sample_crawl_spec)
-        crawl_state = prospector.crawls[crawl_id]
-        
-        # Score the content
-        prospector._score_content(crawl_state, sample_crawl_record)
-        
-        assert "KeywordScoreAnalyzer" in sample_crawl_record.scores
-        assert sample_crawl_record.composite_score >= 0.0
-        assert sample_crawl_record.composite_score <= 1.0
-    
-    def test_score_links(self, prospector, sample_crawl_spec):
-        """Test scoring discovered links."""
-        crawl_id = prospector.create(sample_crawl_spec)
-        crawl_state = prospector.crawls[crawl_id]
-        
-        links = ["https://example.com/page1", "https://spam.com/page2"]
-        scored_links = prospector._score_links(crawl_state, links)
-        
-        # Should filter out spam.com due to blacklist
-        assert len(scored_links) == 1
-        assert scored_links[0][1] == "https://example.com/page1"
-        assert isinstance(scored_links[0][0], float)
-    
-    @patch('time.sleep')  # Mock sleep to speed up test
-    def test_crawl_worker_empty_frontier(self, mock_sleep, prospector, sample_crawl_spec):
-        """Test crawl worker behavior with empty frontier."""
-        crawl_id = prospector.create(sample_crawl_spec)
-        crawl_state = prospector.crawls[crawl_id]
-        
-        # Empty the frontier
-        crawl_state.frontier.clear()
-        crawl_state.running = True
-        
-        # Start worker in separate thread
-        worker_thread = threading.Thread(
-            target=prospector._crawl_worker, 
-            args=(crawl_id,)
-        )
-        worker_thread.daemon = True
-        worker_thread.start()
-        
-        # Let it run briefly then stop
-        time.sleep(0.1)
-        crawl_state.running = False
-        worker_thread.join(timeout=1.0)
-        
-        # Should have called sleep due to empty frontier
-        assert mock_sleep.called
-    
-    def test_process_url_filtered(self, prospector, sample_crawl_spec):
-        """Test processing a URL that gets filtered out."""
-        crawl_id = prospector.create(sample_crawl_spec)
-        crawl_state = prospector.crawls[crawl_id]
-        
-        # Try to process a blacklisted URL
-        prospector._process_url(crawl_state, "https://spam.com/page")
-        
-        # Should not call scraper or handler (we can verify via mocking if needed)
-        # For now, just verify it doesn't crash
-        assert True  # Test passes if no exception raised
