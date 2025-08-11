@@ -15,7 +15,7 @@ from sortedcontainers import SortedList
 from .models import CrawlSpec, CrawlRecord, AnalyzerSpec
 from .score_analyzers import ScoreAnalyzer, KeywordScoreAnalyzer, LLMServiceScoreAnalyzer
 from .scrapers import Scraper, PlaywrightScraper  
-from .handlers import CrawlRecordHandler, FsStoreCrawlRecordHandler, ServiceCrawlRecordHandler
+from .storage_handlers import CrawlStorageHandler, FsStoreHandler, DhStoreHandler
 from .settings import ProspectorSettings, HandlerType
 
 
@@ -40,7 +40,7 @@ class CrawlState:
         self.lock = Lock()
         
         # Datetime tracking
-        self.crawl_submitted_time: Optional[str] = None
+        self.crawl_creatd_time: Optional[str] = None
         self.crawl_started_time: Optional[str] = None
         self.crawl_stopped_time: Optional[str] = None
         
@@ -108,9 +108,9 @@ class Prospector:
         
         # Initialize handler based on settings
         if self.settings.handler_type == HandlerType.FILE_SYSTEM:
-            self.handler: CrawlRecordHandler = FsStoreCrawlRecordHandler()
-        elif self.settings.handler_type == HandlerType.SERVICE_CALL:
-            self.handler: CrawlRecordHandler = ServiceCrawlRecordHandler()
+            self.handler: CrawlStorageHandler = FsStoreHandler()
+        elif self.settings.handler_type == HandlerType.DH:
+            self.handler: CrawlStorageHandler = DhStoreHandler()
         else:
             raise ValueError(f"Unknown handler type: {self.settings.handler_type}")
         
@@ -119,9 +119,9 @@ class Prospector:
         )
         self.crawls_lock = Lock()
     
-    def submit(self, crawl_spec: CrawlSpec) -> str:
+    def create(self, crawl_spec: CrawlSpec) -> str:
         """
-        Register a new crawl.
+        Create a new crawl.
         
         Args:
             crawl_spec: Specification for the crawl including seed URLs and analyzers
@@ -132,7 +132,7 @@ class Prospector:
         Raises:
             ValueError: If crawl with same ID already exists or invalid analyzer specs
         """
-        crawl_id = crawl_spec.crawl_id
+        crawl_id = crawl_spec.id
         
         with self.crawls_lock:
             if crawl_id in self.crawls:
@@ -144,15 +144,19 @@ class Prospector:
             # Initialize analyzers
             self._initialize_analyzers(crawl_state, crawl_spec.analyzer_specs)
             
-            # Set submitted time
-            crawl_state.crawl_submitted_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            # Set created time
+            crawl_state.crawl_created_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
             
             # Store crawl state
             self.crawls[crawl_id] = crawl_state
+
+            # Create crawl in storage handler
+            self.handler.create_crawl(crawl_spec)
             
-        logger.info(f"Submitted crawl {crawl_spec.name} with ID {crawl_id}")
+        logger.info(f"Created crawl {crawl_spec.name} with ID {crawl_id}")
         return crawl_id
     
+
     def start(self, crawl_id: str) -> None:
         """
         Start a crawl.
@@ -175,7 +179,7 @@ class Prospector:
             crawl_state.running = True
             crawl_state.crawl_started_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         
-        # Submit crawl workers to thread pool
+        # create crawl workers to thread pool
         futures = []
         for _ in range(crawl_state.crawl_spec.worker_count):
             future = self.executor.submit(self._crawl_worker, crawl_id)
@@ -183,6 +187,7 @@ class Prospector:
         
         logger.info(f"Started crawl {crawl_id} with {len(futures)} workers")
     
+
     def stop(self, crawl_id: str) -> None:
         """
         Stop a running crawl.
@@ -203,6 +208,7 @@ class Prospector:
         
         logger.info(f"Stopped crawl {crawl_id}")
     
+
     def delete(self, crawl_id: str) -> None:
         """
         Remove a crawl from Prospector state.
@@ -223,9 +229,13 @@ class Prospector:
                 raise RuntimeError(f"Cannot delete running crawl {crawl_id}")
             
             del self.crawls[crawl_id]
+
+            # Delete from storage handler
+            self.handler.delete_crawl(crawl_state.crawl_spec.name)
         
         logger.info(f"Deleted crawl {crawl_id}")
     
+
     def _initialize_analyzers(self, crawl_state: CrawlState, analyzer_specs: List[AnalyzerSpec]) -> None:
         """
         Initialize analyzers for a crawl based on specifications.
@@ -300,10 +310,9 @@ class Prospector:
                 crawl_state.add_urls_with_scores(scored_links)
             
             # Handle the crawl record
-            self.handler.handle(
+            self.handler.store_record(
                 crawl_record,
                 crawl_state.crawl_spec.name,
-                crawl_state.crawl_spec.start_datetime
             )
             
             logger.debug(f"Processed URL {url} with score {crawl_record.composite_score}")

@@ -9,7 +9,7 @@ from pydantic_settings import BaseSettings
 class HandlerType(str, Enum):
     """Enum for crawl record handler types."""
     FILE_SYSTEM = "file_system"
-    SERVICE_CALL = "service_call"
+    DH = "dh"
 
 
 class ProspectorSettings(BaseSettings):
@@ -54,13 +54,16 @@ class FsStoreHandlerSettings(BaseSettings):
     
     # Crawl result storage directory
     output_directory: str = "./crawl_data"
-    
+
+    # Record storage directory
+    record_directory: str = "records"
+
     model_config = {
         "env_prefix": "fs_store_handler_"
     }
 
-class ServiceCallHandlerSettings(BaseSettings):
-    """Settings for service call handling of crawl records."""
+class DhStoreHandlerSettings(BaseSettings):
+    """Settings for DH service storage of crawl records."""
 
     # Service handler settings
     service_url: str = "http://localhost:8000/handle_record"
