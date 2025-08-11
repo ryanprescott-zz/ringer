@@ -36,7 +36,7 @@ class TestDhStoreHandler:
         handler = DhStoreHandler()
         
         # Should not raise any exception
-        handler.store_record(sample_crawl_record, "test_crawl")
+        handler.store_record(sample_crawl_record, "test_crawl_id")
         
         # Verify request was made
         mock_post.assert_called_once()
@@ -50,7 +50,7 @@ class TestDhStoreHandler:
         request_data = call_args[1]['json']
         assert 'record' in request_data
         assert 'crawl_name' in request_data
-        assert request_data['crawl_name'] == "test_crawl"
+        assert request_data['crawl_name'] == "test_crawl_id"
     
     @patch('prospector.core.storage_handlers.dh_store_handler.requests.Session.post')
     def test_store_record_http_error_after_retries(self, mock_post, sample_crawl_record):
@@ -64,7 +64,7 @@ class TestDhStoreHandler:
         handler = DhStoreHandler()
         
         # Should not raise exception, just log and discard
-        handler.store_record(sample_crawl_record, "test_crawl")
+        handler.store_record(sample_crawl_record, "test_crawl_id")
         
         # Should have made multiple attempts (3 retries + 1 initial = 4 total)
         assert mock_post.call_count >= 3
@@ -80,7 +80,7 @@ class TestDhStoreHandler:
         handler = DhStoreHandler()
         
         # Should not raise exception, just log and discard
-        handler.store_record(sample_crawl_record, "test_crawl")
+        handler.store_record(sample_crawl_record, "test_crawl_id")
         
         # Should have made multiple attempts
         assert mock_post.call_count >= 3
@@ -96,7 +96,7 @@ class TestDhStoreHandler:
         handler = DhStoreHandler()
         
         # Should not raise exception, just log and discard
-        handler.store_record(sample_crawl_record, "test_crawl")
+        handler.store_record(sample_crawl_record, "test_crawl_id")
         
         # Should have made multiple attempts
         assert mock_post.call_count >= 3
@@ -118,7 +118,7 @@ class TestDhStoreHandler:
         handler.session.post = Mock(side_effect=[mock_response_fail, mock_response_success])
         
         # Should succeed after retry
-        handler.store_record(sample_crawl_record, "test_crawl")
+        handler.store_record(sample_crawl_record, "test_crawl_id")
         
         # Should have made 2 calls
         assert handler.session.post.call_count == 2
@@ -203,4 +203,4 @@ class TestFsStoreHandler:
             })()
             
             with pytest.raises(OSError, match="Failed to store crawl record"):
-                handler.store_record(sample_crawl_record, "test_crawl")
+                handler.store_record(sample_crawl_record, "test_crawl_id")
