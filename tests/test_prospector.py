@@ -37,9 +37,10 @@ class TestCrawlState:
         
         # Should be sorted by score descending
         assert len(state.frontier) == len(sample_crawl_spec.seed_urls) + 2
-        # Check that higher score comes first (negative key for descending sort)
-        scores = [-item[0] for item in state.frontier]
-        assert scores == sorted(scores)
+        # Check that higher score comes first
+        frontier_list = list(state.frontier)
+        scores = [item.score for item in frontier_list]
+        assert scores == sorted(scores, reverse=True)
     
     def test_get_next_url(self, sample_crawl_spec):
         """Test getting next URL from frontier."""
@@ -64,6 +65,22 @@ class TestCrawlState:
         
         next_url = state.get_next_url()
         assert next_url is None
+    
+    def test_frontier_duplicate_urls(self, sample_crawl_spec):
+        """Test that frontier prevents duplicate URLs."""
+        state = CrawlState(sample_crawl_spec)
+        
+        # Add same URL with different scores
+        url_scores = [(0.8, "https://test.com"), (0.6, "https://test.com")]
+        state.add_urls_with_scores(url_scores)
+        
+        # Should only contain one instance of the URL
+        urls_in_frontier = [item.url for item in state.frontier]
+        assert urls_in_frontier.count("https://test.com") == 1
+        
+        # Should keep the first one added (0.8 score)
+        test_url_tuple = next(item for item in state.frontier if item.url == "https://test.com")
+        assert test_url_tuple.score == 0.8
     
     def test_is_url_allowed_domain_blacklist(self, sample_crawl_spec):
         """Test URL filtering with domain blacklist."""

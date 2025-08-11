@@ -10,7 +10,7 @@ from queue import Queue, Empty
 from threading import Lock
 from typing import Dict, List, Set, Optional
 from urllib.parse import urlparse
-from sortedcontainers import SortedList
+from sortedcontainers import SortedSet
 
 from .models import CrawlSpec, CrawlRecord, AnalyzerSpec, RunStateEnum, RunState
 from .score_analyzers import ScoreAnalyzer, KeywordScoreAnalyzer, LLMServiceScoreAnalyzer
@@ -20,6 +20,35 @@ from .settings import ProspectorSettings, HandlerType
 
 
 logger = logging.getLogger(__name__)
+
+
+class ScoreUrlTuple:
+    """A tuple-like class that sorts by score but compares equality by URL."""
+    
+    def __init__(self, score: float, url: str):
+        self.score = score
+        self.url = url
+    
+    def __lt__(self, other):
+        # Sort by score descending (higher scores first)
+        return self.score > other.score
+    
+    def __eq__(self, other):
+        # Equality based on URL for uniqueness
+        return self.url == other.url
+    
+    def __hash__(self):
+        # Hash based on URL for set operations
+        return hash(self.url)
+    
+    def __repr__(self):
+        return f"ScoreUrlTuple({self.score}, '{self.url}')"
+    
+    def __iter__(self):
+        # Allow tuple unpacking: score, url = tuple_obj
+        yield self.score
+        yield self.url
+
 
 class CrawlState:
     """Thread-safe state management for a single crawl."""
@@ -32,7 +61,7 @@ class CrawlState:
             crawl_spec: Specification for the crawl
         """
         self.crawl_spec = crawl_spec
-        self.frontier = SortedList(key=lambda x: -x[0])  # Sort by score descending
+        self.frontier = SortedSet()  # Will contain ScoreUrlTuple objects
         self.visited_urls: Set[str] = set()
         self.analyzers: List[ScoreAnalyzer] = []
         self.analyzer_weights: Dict[str, float] = {}
@@ -41,7 +70,7 @@ class CrawlState:
         
         # Initialize frontier with seed URLs (score 0.0 initially)
         for url in crawl_spec.seed_urls:
-            self.frontier.add((0.0, url))
+            self.frontier.add(ScoreUrlTuple(0.0, url))
     
     @property
     def current_state(self) -> RunStateEnum:
@@ -75,7 +104,7 @@ class CrawlState:
         with self.lock:
             for score, url in url_scores:
                 if url not in self.visited_urls:
-                    self.frontier.add((score, url))
+                    self.frontier.add(ScoreUrlTuple(score, url))
     
     def get_next_url(self) -> str:
         """
@@ -86,7 +115,8 @@ class CrawlState:
         """
         with self.lock:
             while self.frontier:
-                score, url = self.frontier.pop(0)  # Get highest scoring URL
+                score_url_tuple = self.frontier.pop(0)  # Get highest scoring URL
+                url = score_url_tuple.url
                 if url not in self.visited_urls:
                     self.visited_urls.add(url)
                     return url
