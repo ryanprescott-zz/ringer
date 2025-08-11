@@ -20,23 +20,23 @@ class ProspectorSettings(BaseSettings):
     handler_type: HandlerType = HandlerType.FILE_SYSTEM
     
     model_config = {
-        "env_prefix": "PROSPECTOR_"
+        "env_prefix": "prospector_"
     }
 
 
-class ScraperSettings(BaseSettings):
-    """Settings for web scrapers."""
+class PlaywrightScraperSettings(BaseSettings):
+    """Settings for the Playwright web scraper."""
     
     timeout: int = 30
     user_agent: str = "Prospector/1.0"
     javascript_enabled: bool = True
     
     model_config = {
-        "env_prefix": "SCRAPER_"
+        "env_prefix": "playwright_scraper_"
     }
 
 
-class ScoreAnalyzerSettings(BaseSettings):
+class LLMServiceScoreAnalyzerSettings(BaseSettings):
     """Settings for score analyzers."""
     
     llm_service_url: str = "http://localhost:8000/score"
@@ -45,32 +45,39 @@ class ScoreAnalyzerSettings(BaseSettings):
     llm_model_output_format: Dict[str, str] = {"score": "string"}
     
     model_config = {
-        "env_prefix": "ANALYZER_"
+        "env_prefix": "llm_service_score_analyzer_"
     }
 
 
-class HandlerSettings(BaseSettings):
-    """Settings for crawl record handlers."""
+class FsStoreHandlerSettings(BaseSettings):
+    """Settings for Filesystem data storage handlng of crawl records."""
     
-    # File system handler settings
+    # Crawl result storage directory
     output_directory: str = "./crawl_data"
     
+    model_config = {
+        "env_prefix": "fs_store_handler_"
+    }
+
+class ServiceCallHandlerSettings(BaseSettings):
+    """Settings for service call handling of crawl records."""
+
     # Service handler settings
     service_url: str = "http://localhost:8000/handle_record"
-    service_timeout: int = 30
+    service_timeout_sec: int = 30
     service_max_retries: int = 3
     service_retry_exponential_base: int = 2
-    
+
     model_config = {
-        "env_prefix": "HANDLER_"
+        "env_prefix": "service_call_handler_"
     }
 
 
-class ServiceSettings(BaseSettings):
+class ProspectorServiceSettings(BaseSettings):
     """Settings for the FastAPI web service."""
     
     base_router_path: str = "/api/v1"
     openapi_prefix: str = "/api/static"
     model_config = {
-        "env_prefix": "SERVICE_"
+        "env_prefix": "prospector_service_"
     }

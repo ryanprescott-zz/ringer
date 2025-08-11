@@ -415,4 +415,11 @@ For questions, issues, or contributions:
 
 ---
 
+## Feature Roadmap
+
+- Revisit Delta Check
+- Dynamic content extraction
+- Anti-Bot Avoidance
+- Search engine seeding
+
 **Prospector** - Intelligent web crawling with best-first search prioritization 🎯
