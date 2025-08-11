@@ -49,6 +49,7 @@ def sample_crawl_spec_dict():
 @pytest.fixture
 def sample_crawl_state():
     """Create a sample CrawlState for testing."""
+    from prospector.core.models import RunState, RunStateEnum
     crawl_spec = CrawlSpec(
         name="test_crawl",
         seed_urls=["https://example.com"],
@@ -61,9 +62,6 @@ def sample_crawl_state():
         ]
     )
     crawl_state = CrawlState(crawl_spec)
-    crawl_state.crawl_created_time = "2023-12-01T10:30:00Z"
-    crawl_state.crawl_started_time = "2023-12-01T10:31:00Z"
-    crawl_state.crawl_stopped_time = "2023-12-01T10:32:00Z"
     return crawl_state
 
 
@@ -92,9 +90,12 @@ class TestCreateCrawlEndpoint:
     
     def test_create_crawl_success(self, client, mock_prospector, sample_crawl_spec_dict, sample_crawl_state):
         """Test successful crawl submission."""
+        from prospector.core.models import RunState, RunStateEnum
+        
         # Setup mock
         test_crawl_id = "test_crawl_123"
-        mock_prospector.create.return_value = test_crawl_id
+        test_run_state = RunState(state=RunStateEnum.CREATED)
+        mock_prospector.create.return_value = (test_crawl_id, test_run_state)
         mock_prospector.crawls = {test_crawl_id: sample_crawl_state}
         
         # Set the prospector in app state
@@ -108,7 +109,8 @@ class TestCreateCrawlEndpoint:
         assert response.status_code == 200
         data = response.json()
         assert data["crawl_id"] == test_crawl_id
-        assert data["crawl_created_time"] == sample_crawl_state.crawl_created_time
+        assert data["run_state"]["state"] == "CREATED"
+        assert "timestamp" in data["run_state"]
         mock_prospector.create.assert_called_once()
     
     def test_create_crawl_duplicate_id(self, client, mock_prospector, sample_crawl_spec_dict):
@@ -164,7 +166,11 @@ class TestStartCrawlEndpoint:
     
     def test_start_crawl_success(self, client, mock_prospector, sample_crawl_state):
         """Test successful crawl start."""
+        from prospector.core.models import RunState, RunStateEnum
+        
         test_crawl_id = "test_crawl_123"
+        test_run_state = RunState(state=RunStateEnum.RUNNING)
+        mock_prospector.start.return_value = (test_crawl_id, test_run_state)
         mock_prospector.crawls = {test_crawl_id: sample_crawl_state}
         
         # Set the prospector in app state
@@ -178,7 +184,8 @@ class TestStartCrawlEndpoint:
         assert response.status_code == 200
         data = response.json()
         assert data["crawl_id"] == test_crawl_id
-        assert data["crawl_started_time"] == sample_crawl_state.crawl_started_time
+        assert data["run_state"]["state"] == "RUNNING"
+        assert "timestamp" in data["run_state"]
         mock_prospector.start.assert_called_once_with(test_crawl_id)
     
     def test_start_crawl_not_found(self, client, mock_prospector):
@@ -232,7 +239,11 @@ class TestStopCrawlEndpoint:
     
     def test_stop_crawl_success(self, client, mock_prospector, sample_crawl_state):
         """Test successful crawl stop."""
+        from prospector.core.models import RunState, RunStateEnum
+        
         test_crawl_id = "test_crawl_123"
+        test_run_state = RunState(state=RunStateEnum.STOPPED)
+        mock_prospector.stop.return_value = (test_crawl_id, test_run_state)
         mock_prospector.crawls = {test_crawl_id: sample_crawl_state}
         
         # Set the prospector in app state
@@ -246,7 +257,8 @@ class TestStopCrawlEndpoint:
         assert response.status_code == 200
         data = response.json()
         assert data["crawl_id"] == test_crawl_id
-        assert data["crawl_stopped_time"] == sample_crawl_state.crawl_stopped_time
+        assert data["run_state"]["state"] == "STOPPED"
+        assert "timestamp" in data["run_state"]
         mock_prospector.stop.assert_called_once_with(test_crawl_id)
     
     def test_stop_crawl_not_found(self, client, mock_prospector):
@@ -418,10 +430,18 @@ class TestEndToEndWorkflow:
     
     def test_complete_crawl_workflow(self, client, mock_prospector, sample_crawl_spec_dict, sample_crawl_state):
         """Test complete workflow: create -> start -> stop -> delete."""
+        from prospector.core.models import RunState, RunStateEnum
+        
         test_crawl_id = "workflow_test_123"
         
         # Setup mock responses
-        mock_prospector.create.return_value = test_crawl_id
+        create_state = RunState(state=RunStateEnum.CREATED)
+        start_state = RunState(state=RunStateEnum.RUNNING)
+        stop_state = RunState(state=RunStateEnum.STOPPED)
+        
+        mock_prospector.create.return_value = (test_crawl_id, create_state)
+        mock_prospector.start.return_value = (test_crawl_id, start_state)
+        mock_prospector.stop.return_value = (test_crawl_id, stop_state)
         mock_prospector.crawls = {test_crawl_id: sample_crawl_state}
         
         # Set the prospector in app state
@@ -434,6 +454,7 @@ class TestEndToEndWorkflow:
         )
         assert create_response.status_code == 200
         assert create_response.json()["crawl_id"] == test_crawl_id
+        assert create_response.json()["run_state"]["state"] == "CREATED"
         
         # 2. Start crawl
         start_response = client.post(
@@ -442,6 +463,7 @@ class TestEndToEndWorkflow:
         )
         assert start_response.status_code == 200
         assert start_response.json()["crawl_id"] == test_crawl_id
+        assert start_response.json()["run_state"]["state"] == "RUNNING"
         
         # 3. Stop crawl
         stop_response = client.post(
@@ -450,6 +472,7 @@ class TestEndToEndWorkflow:
         )
         assert stop_response.status_code == 200
         assert stop_response.json()["crawl_id"] == test_crawl_id
+        assert stop_response.json()["run_state"]["state"] == "STOPPED"
         
         # 4. Delete crawl
         with patch('prospector.api.v1.routers.crawl.datetime') as mock_datetime:
