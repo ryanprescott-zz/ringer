@@ -38,9 +38,9 @@ class TestDhStoreHandler:
         # Should not raise any exception
         handler.store_record(sample_crawl_record, "test_crawl")
         
-    #     # Verify request was made
-    #     mock_post.assert_called_once()
-    #     call_args = mock_post.call_args
+        # Verify request was made
+        mock_post.assert_called_once()
+        call_args = mock_post.call_args
         
         # Verify URL and timeout
         assert call_args[0][0] == handler.settings.service_url
