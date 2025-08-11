@@ -133,7 +133,7 @@ class TestFsStoreHandler:
         handler = FsStoreHandler()
         assert handler.settings is not None
     
-    def test_store_record_success(self, sample_crawl_record):
+    def test_store_record_success(self, sample_crawl_record, sample_crawl_spec):
         """Test successful record handling."""
         with tempfile.TemporaryDirectory() as temp_dir:
             # Patch the settings to use temp directory
@@ -145,11 +145,11 @@ class TestFsStoreHandler:
                 })()
                 
                 # First create the crawl
-                handler.create_crawl("test_crawl")
-                handler.store_record(sample_crawl_record, "test_crawl")
+                handler.create_crawl(sample_crawl_spec)
+                handler.store_record(sample_crawl_record, sample_crawl_spec.name)
                 
                 # Check that directory was created
-                expected_dir = Path(temp_dir) / "test_crawl" / "records"
+                expected_dir = Path(temp_dir) / sample_crawl_spec.name / "records"
                 assert expected_dir.exists()
                 
                 # Check that file was created
@@ -162,7 +162,7 @@ class TestFsStoreHandler:
                     assert data['url'] == sample_crawl_record.url
                     assert data['extracted_content'] == sample_crawl_record.extracted_content
     
-    def test_store_record_directory_creation(self, sample_crawl_record):
+    def test_store_record_directory_creation(self, sample_crawl_record, sample_crawl_spec):
         """Test that directories are created properly."""
         with tempfile.TemporaryDirectory() as temp_dir:
             with patch.object(FsStoreHandler, '__init__', lambda x: None):
@@ -173,8 +173,8 @@ class TestFsStoreHandler:
                 })()
                 
                 # Create crawl and handle multiple records for same crawl
-                handler.create_crawl("test_crawl")
-                handler.store_record(sample_crawl_record, "test_crawl")
+                handler.create_crawl(sample_crawl_spec)
+                handler.store_record(sample_crawl_record, sample_crawl_spec.name)
                 
                 record2 = CrawlRecord(
                     url="https://example2.com",
@@ -184,14 +184,14 @@ class TestFsStoreHandler:
                     scores={},
                     composite_score=0.0
                 )
-                handler.store_record(record2, "test_crawl")
+                handler.store_record(record2, sample_crawl_spec.name)
                 
                 # Should create same directory structure
-                expected_dir = Path(temp_dir) / "test_crawl" / "records"
+                expected_dir = Path(temp_dir) / sample_crawl_spec.name / "records"
                 files = list(expected_dir.glob("*.json"))
                 assert len(files) == 2
     
-    def test_store_record_filename_generation(self, sample_crawl_record):
+    def test_store_record_filename_generation(self, sample_crawl_record, sample_crawl_spec):
         """Test that filenames are generated from URL hash."""
         with tempfile.TemporaryDirectory() as temp_dir:
             with patch.object(FsStoreHandler, '__init__', lambda x: None):
@@ -201,11 +201,11 @@ class TestFsStoreHandler:
                     'record_directory': 'records'
                 })()
                 
-                handler.create_crawl("test_crawl")
-                handler.store_record(sample_crawl_record, "test_crawl")
+                handler.create_crawl(sample_crawl_spec)
+                handler.store_record(sample_crawl_record, sample_crawl_spec.name)
                 
                 # Check filename is MD5 hash
-                expected_dir = Path(temp_dir) / "test_crawl" / "records"
+                expected_dir = Path(temp_dir) / sample_crawl_spec.name / "records"
                 files = list(expected_dir.glob("*.json"))
                 
                 import hashlib
