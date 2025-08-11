@@ -4,6 +4,7 @@ import pytest
 import threading
 import time
 import atexit
+import tempfile
 from unittest.mock import Mock, patch
 from prospector.core import (
     CrawlSpec,
@@ -120,14 +121,18 @@ def keyword_analyzer(sample_weighted_keywords):
 
 @pytest.fixture
 def prospector():
-    """Prospector instance for testing."""
-    prospector_instance = Prospector()
-    yield prospector_instance
-    # Cleanup prospector after test
-    try:
-        prospector_instance.shutdown()
-    except Exception:
-        pass  # Ignore shutdown errors in tests
+    """Prospector instance for testing with temporary directory."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        # Patch the FsStoreHandler settings to use temp directory
+        with patch('prospector.core.storage_handlers.fs_store_handler.FsStoreHandlerSettings') as mock_settings:
+            mock_settings.return_value.crawl_data_dir = temp_dir
+            prospector_instance = Prospector()
+            yield prospector_instance
+            # Cleanup prospector after test
+            try:
+                prospector_instance.shutdown()
+            except Exception:
+                pass  # Ignore shutdown errors in tests
 
 
 @pytest.fixture
