@@ -126,7 +126,7 @@ class TestCrawlSpec:
             analyzer_specs=[sample_analyzer_spec]
         )
         
-        crawl_id = spec.crawl_id
+        crawl_id = spec.id
         assert isinstance(crawl_id, str)
         assert len(crawl_id) == 32  # MD5 hex digest length
         
@@ -136,21 +136,8 @@ class TestCrawlSpec:
             seed_urls=["https://different.com"],
             analyzer_specs=[sample_analyzer_spec]
         )
-        assert spec2.crawl_id == crawl_id
+        assert spec2.id == crawl_id
     
-    def test_start_datetime_format(self, sample_analyzer_spec):
-        """Test start datetime formatting."""
-        spec = CrawlSpec(
-            name="test_crawl",
-            seed_urls=["https://example.com"],
-            analyzer_specs=[sample_analyzer_spec]
-        )
-        
-        start_datetime = spec.start_datetime
-        assert isinstance(start_datetime, str)
-        # Should match YYYYMMDD_HHMMSS format
-        assert len(start_datetime) == 15
-        assert "_" in start_datetime
     
     def test_default_values(self, sample_analyzer_spec):
         """Test default values for optional fields."""
@@ -218,11 +205,11 @@ class TestCrawlRecord:
         )
         
         with pytest.raises(ValueError, match="Unknown analyzer type"):
-            prospector.submit(spec)
+            prospector.create(spec)
     
     def test_score_content(self, prospector, sample_crawl_spec, sample_crawl_record):
         """Test scoring content with analyzers."""
-        crawl_id = prospector.submit(sample_crawl_spec)
+        crawl_id = prospector.create(sample_crawl_spec)
         crawl_state = prospector.crawls[crawl_id]
         
         # Score the content
@@ -234,7 +221,7 @@ class TestCrawlRecord:
     
     def test_score_links(self, prospector, sample_crawl_spec):
         """Test scoring discovered links."""
-        crawl_id = prospector.submit(sample_crawl_spec)
+        crawl_id = prospector.create(sample_crawl_spec)
         crawl_state = prospector.crawls[crawl_id]
         
         links = ["https://example.com/page1", "https://spam.com/page2"]
@@ -248,7 +235,7 @@ class TestCrawlRecord:
     @patch('time.sleep')  # Mock sleep to speed up test
     def test_crawl_worker_empty_frontier(self, mock_sleep, prospector, sample_crawl_spec):
         """Test crawl worker behavior with empty frontier."""
-        crawl_id = prospector.submit(sample_crawl_spec)
+        crawl_id = prospector.create(sample_crawl_spec)
         crawl_state = prospector.crawls[crawl_id]
         
         # Empty the frontier
@@ -273,7 +260,7 @@ class TestCrawlRecord:
     
     def test_process_url_filtered(self, prospector, sample_crawl_spec):
         """Test processing a URL that gets filtered out."""
-        crawl_id = prospector.submit(sample_crawl_spec)
+        crawl_id = prospector.create(sample_crawl_spec)
         crawl_state = prospector.crawls[crawl_id]
         
         # Try to process a blacklisted URL

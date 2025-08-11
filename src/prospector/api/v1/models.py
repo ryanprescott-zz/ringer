@@ -4,20 +4,20 @@ from pydantic import BaseModel
 from prospector.core.models import CrawlSpec
 
 
-class SubmitCrawlRequest(BaseModel):
-    """Request model for submitting a new crawl."""
+class CreateCrawlRequest(BaseModel):
+    """Request model for creating a new crawl."""
     
     crawl_spec: CrawlSpec
 
 
-class SubmitCrawlResponse(BaseModel):
+class CreateCrawlResponse(BaseModel):
     """Response model for crawl submission."""
     
     crawl_id: str
-    crawl_submitted_time: str
+    crawl_created_time: str
 
 
-class CrawlStartRequest(BaseModel):
+class StartCrawlRequest(BaseModel):
     """Request model for starting a crawl."""
     
     crawl_id: str
@@ -30,7 +30,7 @@ class StartCrawlResponse(BaseModel):
     crawl_started_time: str
 
 
-class CrawlStopRequest(BaseModel):
+class StopCrawlRequest(BaseModel):
     """Request model for stopping a crawl."""
     
     crawl_id: str
@@ -43,7 +43,7 @@ class StopCrawlResponse(BaseModel):
     crawl_stopped_time: str
 
 
-class CrawlDeleteRequest(BaseModel):
+class DeleteCrawlRequest(BaseModel):
     """Request model for deleting a crawl."""
     
     crawl_id: str

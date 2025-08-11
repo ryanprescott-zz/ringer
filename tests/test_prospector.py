@@ -14,7 +14,6 @@ from prospector.core import (
 )
 
 
-
 class TestCrawlState:
     """Tests for CrawlState class."""
     
@@ -101,11 +100,11 @@ class TestProspector:
         assert prospector.handler is not None
         assert prospector.executor is not None
     
-    def test_submit_crawl(self, prospector, sample_crawl_spec):
-        """Test submitting a new crawl."""
-        crawl_id = prospector.submit(sample_crawl_spec)
+    def test_create_crawl(self, prospector, sample_crawl_spec):
+        """Test creating a new crawl."""
+        crawl_id = prospector.create(sample_crawl_spec)
         
-        assert crawl_id == sample_crawl_spec.crawl_id
+        assert crawl_id == sample_crawl_spec.id
         assert crawl_id in prospector.crawls
         
         crawl_state = prospector.crawls[crawl_id]
@@ -113,15 +112,15 @@ class TestProspector:
         assert len(crawl_state.analyzers) == 1
         assert not crawl_state.running
     
-    def test_submit_duplicate_crawl(self, prospector, sample_crawl_spec):
-        """Test submitting a crawl with duplicate ID raises error."""
-        prospector.submit(sample_crawl_spec)
+    def test_create_duplicate_crawl(self, prospector, sample_crawl_spec):
+        """Test creating a crawl with duplicate ID raises error."""
+        prospector.create(sample_crawl_spec)
         
         with pytest.raises(ValueError, match="already exists"):
-            prospector.submit(sample_crawl_spec)
+            prospector.create(sample_crawl_spec)
     
-    def test_submit_crawl_with_llm_analyzer(self, prospector, sample_analyzer_spec):
-        """Test submitting a crawl with LLM analyzer."""
+    def test_create_crawl_with_llm_analyzer(self, prospector, sample_analyzer_spec):
+        """Test creating a crawl with LLM analyzer."""
         llm_spec = AnalyzerSpec(
             name="LLMServiceScoreAnalyzer",
             composite_weight=0.5,
@@ -135,7 +134,7 @@ class TestProspector:
             worker_count=1
         )
         
-        crawl_id = prospector.submit(crawl_spec)
+        crawl_id = prospector.create(crawl_spec)
         
         assert crawl_id in prospector.crawls
         crawl_state = prospector.crawls[crawl_id]
@@ -148,7 +147,7 @@ class TestProspector:
         prospector.scraper = mock_scraper
         prospector.handler = mock_handler
         
-        crawl_id = prospector.submit(sample_crawl_spec)
+        crawl_id = prospector.create(sample_crawl_spec)
         prospector.start(crawl_id)
         
         crawl_state = prospector.crawls[crawl_id]
@@ -161,7 +160,7 @@ class TestProspector:
     
     def test_start_already_running_crawl(self, prospector, sample_crawl_spec):
         """Test starting an already running crawl raises error."""
-        crawl_id = prospector.submit(sample_crawl_spec)
+        crawl_id = prospector.create(sample_crawl_spec)
         
         # Manually set to running
         prospector.crawls[crawl_id].running = True
@@ -171,7 +170,7 @@ class TestProspector:
     
     def test_stop_crawl(self, prospector, sample_crawl_spec):
         """Test stopping a crawl."""
-        crawl_id = prospector.submit(sample_crawl_spec)
+        crawl_id = prospector.create(sample_crawl_spec)
         prospector.crawls[crawl_id].running = True  # Set to running
         
         prospector.stop(crawl_id)
@@ -186,7 +185,7 @@ class TestProspector:
     
     def test_delete_crawl(self, prospector, sample_crawl_spec):
         """Test deleting a crawl."""
-        crawl_id = prospector.submit(sample_crawl_spec)
+        crawl_id = prospector.create(sample_crawl_spec)
         
         prospector.delete(crawl_id)
         
@@ -199,7 +198,7 @@ class TestProspector:
     
     def test_delete_running_crawl(self, prospector, sample_crawl_spec):
         """Test deleting a running crawl raises error."""
-        crawl_id = prospector.submit(sample_crawl_spec)
+        crawl_id = prospector.create(sample_crawl_spec)
         prospector.crawls[crawl_id].running = True  # Set to running
         
         with pytest.raises(RuntimeError, match="Cannot delete running crawl"):
@@ -220,11 +219,11 @@ class TestProspector:
         )
         
         with pytest.raises(ValueError, match="Unknown analyzer type"):
-            prospector.submit(spec)
+            prospector.create(spec)
     
     def test_score_content(self, prospector, sample_crawl_spec, sample_crawl_record):
         """Test scoring content with analyzers."""
-        crawl_id = prospector.submit(sample_crawl_spec)
+        crawl_id = prospector.create(sample_crawl_spec)
         crawl_state = prospector.crawls[crawl_id]
         
         # Score the content
@@ -236,7 +235,7 @@ class TestProspector:
     
     def test_score_links(self, prospector, sample_crawl_spec):
         """Test scoring discovered links."""
-        crawl_id = prospector.submit(sample_crawl_spec)
+        crawl_id = prospector.create(sample_crawl_spec)
         crawl_state = prospector.crawls[crawl_id]
         
         links = ["https://example.com/page1", "https://spam.com/page2"]
@@ -250,7 +249,7 @@ class TestProspector:
     @patch('time.sleep')  # Mock sleep to speed up test
     def test_crawl_worker_empty_frontier(self, mock_sleep, prospector, sample_crawl_spec):
         """Test crawl worker behavior with empty frontier."""
-        crawl_id = prospector.submit(sample_crawl_spec)
+        crawl_id = prospector.create(sample_crawl_spec)
         crawl_state = prospector.crawls[crawl_id]
         
         # Empty the frontier
@@ -275,7 +274,7 @@ class TestProspector:
     
     def test_process_url_filtered(self, prospector, sample_crawl_spec):
         """Test processing a URL that gets filtered out."""
-        crawl_id = prospector.submit(sample_crawl_spec)
+        crawl_id = prospector.create(sample_crawl_spec)
         crawl_state = prospector.crawls[crawl_id]
         
         # Try to process a blacklisted URL

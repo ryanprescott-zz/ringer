@@ -8,7 +8,7 @@ from .models import (
     CrawlRecord,
     LLMScoreServiceInput,
     LLMScoreRequest,
-    HandleCrawlRecordRequest,
+    StoreCrawlRecordRequest,
 )
 
 from .score_analyzers import (
@@ -17,10 +17,10 @@ from .score_analyzers import (
     LLMServiceScoreAnalyzer
 )
 from .scrapers import Scraper, PlaywrightScraper
-from .handlers import (
-    CrawlRecordHandler,
-    FsStoreCrawlRecordHandler,
-    ServiceCrawlRecordHandler,
+from .storage_handlers import (
+    CrawlStorageHandler,
+    FsStoreHandler,
+    DhStoreHandler,
 )
 
 __version__ = "1.0.0"
@@ -35,11 +35,11 @@ __all__ = [
     "KeywordScoreAnalyzer",
     "Scraper",
     "PlaywrightScraper",
-    "CrawlRecordHandler",
-    "FsStoreCrawlRecordHandler",
-    "HandleCrawlRecordRequest",
+    "CrawlStorageHandler",
+    "FsStoreHandler",
+    "DhStoreHandler",
+    "StoreCrawlRecordRequest",
     "LLMScoreServiceInput",
     "LLMScoreRequest",
     "LLMServiceScoreAnalyzer",
-    "HandleCrawlRecordRequest",
 ]

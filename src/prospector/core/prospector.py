@@ -15,7 +15,7 @@ from sortedcontainers import SortedList
 from .models import CrawlSpec, CrawlRecord, AnalyzerSpec
 from .score_analyzers import ScoreAnalyzer, KeywordScoreAnalyzer, LLMServiceScoreAnalyzer
 from .scrapers import Scraper, PlaywrightScraper  
-from .handlers import CrawlRecordHandler, FsStoreHandler, ServiceCallHandler
+from .storage_handlers import CrawlRecordHandler, FsStoreHandler, ServiceCallHandler
 from .settings import ProspectorSettings, HandlerType
 
 

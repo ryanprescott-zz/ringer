@@ -62,7 +62,7 @@ class FsStoreHandlerSettings(BaseSettings):
         "env_prefix": "fs_store_handler_"
     }
 
-class ServiceCallHandlerSettings(BaseSettings):
+class DhStoreHandlerSettings(BaseSettings):
     """Settings for service call storage of crawl records."""
 
     # Service handler settings
@@ -72,7 +72,7 @@ class ServiceCallHandlerSettings(BaseSettings):
     service_retry_exponential_base: int = 2
 
     model_config = {
-        "env_prefix": "service_call_handler_"
+        "env_prefix": "dh_store_handler_"
     }
 
 

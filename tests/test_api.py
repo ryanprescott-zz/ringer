@@ -8,7 +8,7 @@ from prospector.main import app
 from prospector.core.prospector import Prospector, CrawlState
 from prospector.core.models import CrawlSpec, AnalyzerSpec, WeightedKeyword
 from prospector.api.v1.models import (
-    SubmitCrawlRequest, CrawlStartRequest, CrawlStopRequest, CrawlDeleteRequest
+    CreateCrawlRequest, StartCrawlRequest, StopCrawlRequest, DeleteCrawlRequest
 )
 
 
@@ -61,7 +61,7 @@ def sample_crawl_state():
         ]
     )
     crawl_state = CrawlState(crawl_spec)
-    crawl_state.crawl_submitted_time = "2023-12-01T10:30:00Z"
+    crawl_state.crawl_creation_time = "2023-12-01T10:30:00Z"
     crawl_state.crawl_started_time = "2023-12-01T10:31:00Z"
     crawl_state.crawl_stopped_time = "2023-12-01T10:32:00Z"
     return crawl_state
@@ -87,47 +87,47 @@ class TestMainEndpoints:
         assert data["status"] == "healthy"
 
 
-class TestCrawlSubmitEndpoint:
-    """Tests for the crawl submit endpoint."""
+class TestCreateCrawEndpoint:
+    """Tests for the crawl create endpoint."""
     
-    def test_submit_crawl_success(self, client, mock_prospector, sample_crawl_spec_dict, sample_crawl_state):
+    def test_create_crawl_success(self, client, mock_prospector, sample_crawl_spec_dict, sample_crawl_state):
         """Test successful crawl submission."""
         # Setup mock
         test_crawl_id = "test_crawl_123"
-        mock_prospector.submit.return_value = test_crawl_id
+        mock_prospector.create.return_value = test_crawl_id
         mock_prospector.crawls = {test_crawl_id: sample_crawl_state}
         
         # Set the prospector in app state
         app.state.prospector = mock_prospector
         
         response = client.post(
-            "/api/v1/crawl/submit",
+            "/api/v1/crawl/create",
             json={"crawl_spec": sample_crawl_spec_dict}
         )
         
         assert response.status_code == 200
         data = response.json()
         assert data["crawl_id"] == test_crawl_id
-        assert data["crawl_submitted_time"] == sample_crawl_state.crawl_submitted_time
-        mock_prospector.submit.assert_called_once()
+        assert data["crawl_creation_time"] == sample_crawl_state.crawl_creation_time
+        mock_prospector.create.assert_called_once()
     
-    def test_submit_crawl_duplicate_id(self, client, mock_prospector, sample_crawl_spec_dict):
-        """Test submitting a crawl with duplicate ID returns 400."""
-        mock_prospector.submit.side_effect = ValueError("Crawl with ID test_crawl already exists")
+    def test_create_crawl_duplicate_id(self, client, mock_prospector, sample_crawl_spec_dict):
+        """Test creating a crawl with duplicate ID returns 400."""
+        mock_prospector.create.side_effect = ValueError("Crawl with ID test_crawl already exists")
         
         # Set the prospector in app state
         app.state.prospector = mock_prospector
         
         response = client.post(
-            "/api/v1/crawl/submit",
+            "/api/v1/crawl/create",
             json={"crawl_spec": sample_crawl_spec_dict}
         )
         
         assert response.status_code == 400
         assert "Crawl with ID test_crawl already exists" in response.json()["detail"]
     
-    def test_submit_crawl_invalid_spec(self, client, mock_prospector):
-        """Test submitting invalid crawl spec returns 422."""
+    def test_create_crawl_invalid_spec(self, client, mock_prospector):
+        """Test creating invalid crawl spec returns 422."""
         invalid_spec = {
             "name": "test_crawl",
             # Missing required fields
@@ -137,21 +137,21 @@ class TestCrawlSubmitEndpoint:
         app.state.prospector = mock_prospector
         
         response = client.post(
-            "/api/v1/crawl/submit",
+            "/api/v1/crawl/create",
             json={"crawl_spec": invalid_spec}
         )
         
         assert response.status_code == 422
     
-    def test_submit_crawl_internal_error(self, client, mock_prospector, sample_crawl_spec_dict):
+    def test_create_crawl_internal_error(self, client, mock_prospector, sample_crawl_spec_dict):
         """Test internal server error during crawl submission."""
-        mock_prospector.submit.side_effect = Exception("Database connection failed")
+        mock_prospector.create.side_effect = Exception("Database connection failed")
         
         # Set the prospector in app state
         app.state.prospector = mock_prospector
         
         response = client.post(
-            "/api/v1/crawl/submit",
+            "/api/v1/crawl/create",
             json={"crawl_spec": sample_crawl_spec_dict}
         )
         
@@ -159,7 +159,7 @@ class TestCrawlSubmitEndpoint:
         assert "Internal server error" in response.json()["detail"]
 
 
-class TestCrawlStartEndpoint:
+class TestStartCrawlEndpoint:
     """Tests for the crawl start endpoint."""
     
     def test_start_crawl_success(self, client, mock_prospector, sample_crawl_state):
@@ -227,7 +227,7 @@ class TestCrawlStartEndpoint:
         assert "Internal server error" in response.json()["detail"]
 
 
-class TestCrawlStopEndpoint:
+class TestStopCrawlEndpoint:
     """Tests for the crawl stop endpoint."""
     
     def test_stop_crawl_success(self, client, mock_prospector, sample_crawl_state):
@@ -280,7 +280,7 @@ class TestCrawlStopEndpoint:
         assert "Internal server error" in response.json()["detail"]
 
 
-class TestCrawlDeleteEndpoint:
+class TestDeleteCrawlEndpoint:
     """Tests for the crawl delete endpoint."""
     
     @patch('prospector.api.v1.routers.crawl.datetime')
@@ -353,45 +353,45 @@ class TestCrawlDeleteEndpoint:
 class TestAPIModels:
     """Tests for API request/response models."""
     
-    def test_submit_crawl_request_validation(self, sample_crawl_spec_dict):
-        """Test SubmitCrawlRequest model validation."""
+    def test_create_crawl_request_validation(self, sample_crawl_spec_dict):
+        """Test CreateCrawlRequest model validation."""
         # Valid request
-        request = SubmitCrawlRequest(crawl_spec=sample_crawl_spec_dict)
+        request = CreateCrawlRequest(crawl_spec=sample_crawl_spec_dict)
         assert request.crawl_spec.name == "test_crawl"
         
         # Invalid request - missing crawl_spec
         with pytest.raises(ValueError):
-            SubmitCrawlRequest()
+            CreateCrawlRequest()
     
     def test_crawl_start_request_validation(self):
-        """Test CrawlStartRequest model validation."""
+        """Test StartCrawlRequest model validation."""
         # Valid request
-        request = CrawlStartRequest(crawl_id="test_crawl_123")
+        request = StartCrawlRequest(crawl_id="test_crawl_123")
         assert request.crawl_id == "test_crawl_123"
         
         # Invalid request - missing crawl_id
         with pytest.raises(ValueError):
-            CrawlStartRequest()
+            StartCrawlRequest()
     
     def test_crawl_stop_request_validation(self):
-        """Test CrawlStopRequest model validation."""
+        """Test StopCrawlRequest model validation."""
         # Valid request
-        request = CrawlStopRequest(crawl_id="test_crawl_123")
+        request = StopCrawlRequest(crawl_id="test_crawl_123")
         assert request.crawl_id == "test_crawl_123"
         
         # Invalid request - missing crawl_id
         with pytest.raises(ValueError):
-            CrawlStopRequest()
+            StopCrawlRequest()
     
     def test_crawl_delete_request_validation(self):
-        """Test CrawlDeleteRequest model validation."""
+        """Test DeleteCrawlRequest model validation."""
         # Valid request
-        request = CrawlDeleteRequest(crawl_id="test_crawl_123")
+        request = DeleteCrawlRequest(crawl_id="test_crawl_123")
         assert request.crawl_id == "test_crawl_123"
         
         # Invalid request - missing crawl_id
         with pytest.raises(ValueError):
-            CrawlDeleteRequest()
+            DeleteCrawlRequest()
 
 
 class TestApplicationLifespan:
@@ -417,23 +417,23 @@ class TestEndToEndWorkflow:
     """End-to-end tests for complete crawl workflow."""
     
     def test_complete_crawl_workflow(self, client, mock_prospector, sample_crawl_spec_dict, sample_crawl_state):
-        """Test complete workflow: submit -> start -> stop -> delete."""
+        """Test complete workflow: create -> start -> stop -> delete."""
         test_crawl_id = "workflow_test_123"
         
         # Setup mock responses
-        mock_prospector.submit.return_value = test_crawl_id
+        mock_prospector.create.return_value = test_crawl_id
         mock_prospector.crawls = {test_crawl_id: sample_crawl_state}
         
         # Set the prospector in app state
         app.state.prospector = mock_prospector
         
-        # 1. Submit crawl
-        submit_response = client.post(
-            "/api/v1/crawl/submit",
+        # 1. create crawl
+        create_response = client.post(
+            "/api/v1/crawl/create",
             json={"crawl_spec": sample_crawl_spec_dict}
         )
-        assert submit_response.status_code == 200
-        assert submit_response.json()["crawl_id"] == test_crawl_id
+        assert create_response.status_code == 200
+        assert create_response.json()["crawl_id"] == test_crawl_id
         
         # 2. Start crawl
         start_response = client.post(
@@ -462,7 +462,7 @@ class TestEndToEndWorkflow:
             assert delete_response.json()["crawl_id"] == test_crawl_id
         
         # Verify all methods were called
-        mock_prospector.submit.assert_called_once()
+        mock_prospector.create.assert_called_once()
         mock_prospector.start.assert_called_once_with(test_crawl_id)
         mock_prospector.stop.assert_called_once_with(test_crawl_id)
         mock_prospector.delete.assert_called_once_with(test_crawl_id)
@@ -492,7 +492,7 @@ class TestErrorHandling:
     def test_malformed_json_request(self, client):
         """Test handling of malformed JSON requests."""
         response = client.post(
-            "/api/v1/crawl/submit",
+            "/api/v1/crawl/create",
             content="invalid json",
             headers={"Content-Type": "application/json"}
         )
@@ -500,13 +500,13 @@ class TestErrorHandling:
     
     def test_missing_request_body(self, client):
         """Test handling of missing request body."""
-        response = client.post("/api/v1/crawl/submit")
+        response = client.post("/api/v1/crawl/create")
         assert response.status_code == 422
     
     def test_invalid_content_type(self, client, sample_crawl_spec_dict):
         """Test handling of invalid content type."""
         response = client.post(
-            "/api/v1/crawl/submit",
+            "/api/v1/crawl/create",
             content=str(sample_crawl_spec_dict),
             headers={"Content-Type": "text/plain"}
         )
@@ -519,7 +519,7 @@ class TestErrorHandling:
             delattr(app.state, 'prospector')
         
         response = client.post(
-            "/api/v1/crawl/submit",
+            "/api/v1/crawl/create",
             json={"crawl_spec": sample_crawl_spec_dict}
         )
         assert response.status_code == 500

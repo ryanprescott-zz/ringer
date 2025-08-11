@@ -27,12 +27,11 @@ class LLMScoreRequest(BaseModel):
     model_output_format: Dict[str, str] = Field(..., description="Output format specification")
 
 
-class HandleCrawlRecordRequest(BaseModel):
-    """Request object for crawl record handling service."""
+class StoreCrawlRecordRequest(BaseModel):
+    """Request object for crawl record storage service."""
     
     record: 'CrawlRecord' = Field(..., description="The crawl record to handle")
     crawl_name: str = Field(..., description="Name of the crawl")
-    crawl_datetime: str = Field(..., description="Datetime string of the crawl")
 
 
 class AnalyzerSpec(BaseModel):
@@ -55,19 +54,13 @@ class CrawlSpec(BaseModel):
     )
     
     @property
-    def crawl_id(self) -> str:
+    def id(self) -> str:
         """Generate a hash ID for this crawl based on the name."""
         return hashlib.md5(self.name.encode()).hexdigest()
-    
-    @property
-    def start_datetime(self) -> str:
-        """Get formatted start datetime string."""
-        return datetime.now().strftime("%Y%m%d_%H%M%S")
 
 
 class CrawlRecord(BaseModel):
     """Record of a crawled web page."""
-    
     url: str = Field(..., description="The crawled URL")
     page_source: str = Field(..., description="Raw page source content")
     extracted_content: Any = Field(..., description="Extracted content from the page")
@@ -76,5 +69,10 @@ class CrawlRecord(BaseModel):
     composite_score: float = Field(..., description="Weighted composite score")
     timestamp: datetime = Field(default_factory=datetime.now, description="Crawl timestamp")
 
-# Forward reference resolution for HandleCrawlRecordRequest
-HandleCrawlRecordRequest.model_rebuild()
+    @property
+    def id(self) -> str:
+        """Generate a hash ID for this record based on the url."""
+        return hashlib.md5(self.url.encode()).hexdigest()
+
+# Forward reference resolution for StoreCrawlRecordRequest
+StoreCrawlRecordRequest.model_rebuild()

@@ -3,10 +3,10 @@
 from datetime import datetime
 from fastapi import APIRouter, HTTPException, Request
 from prospector.api.v1.models import (
-    SubmitCrawlRequest, SubmitCrawlResponse,
-    CrawlStartRequest, StartCrawlResponse,
-    CrawlStopRequest, StopCrawlResponse,
-    CrawlDeleteRequest, DeleteCrawlResponse
+    CreateCrawlRequest, CreateCrawlResponse,
+    StartCrawlRequest, StartCrawlResponse,
+    StopCrawlRequest, StopCrawlResponse,
+    DeleteCrawlRequest, DeleteCrawlResponse
 )
 
 router = APIRouter(
@@ -15,31 +15,31 @@ router = APIRouter(
 )
 
 
-@router.post("/submit", response_model=SubmitCrawlResponse)
-def submit_crawl(request: SubmitCrawlRequest, app_request: Request) -> SubmitCrawlResponse:
+@router.post("/create", response_model=CreateCrawlResponse)
+def create_crawl(request: CreateCrawlRequest, app_request: Request) -> CreateCrawlResponse:
     """
-    Submit a new crawl for processing.
+    Create a new crawl.
     
     Args:
-        request: The crawl submission request containing crawl specification
+        request: The crawl creation request containing crawl specification
         app_request: FastAPI request object to access application state
         
     Returns:
-        SubmitCrawlResponse: Response containing crawl ID and submission time
+        CreateCrawlResponse: Response containing crawl ID and creation time
         
     Raises:
-        HTTPException: If crawl submission fails
+        HTTPException: If crawl creation fails
     """
     try:
         prospector = app_request.app.state.prospector
-        crawl_id = prospector.submit(request.crawl_spec)
+        crawl_id = prospector.create(request.crawl_spec)
         
-        # Get the submitted time from the crawl state
+        # Get the createted time from the crawl state
         crawl_state = prospector.crawls[crawl_id]
         
-        return SubmitCrawlResponse(
+        return CreateCrawlResponse(
             crawl_id=crawl_id,
-            crawl_submitted_time=crawl_state.crawl_submitted_time
+            crawl_createted_time=crawl_state.crawl_createted_time
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -48,9 +48,9 @@ def submit_crawl(request: SubmitCrawlRequest, app_request: Request) -> SubmitCra
 
 
 @router.post("/start", response_model=StartCrawlResponse)
-def start_crawl(request: CrawlStartRequest, app_request: Request) -> StartCrawlResponse:
+def start_crawl(request: StartCrawlRequest, app_request: Request) -> StartCrawlResponse:
     """
-    Start a previously submitted crawl.
+    Start a previously createted crawl.
     
     Args:
         request: The crawl start request containing crawl ID
@@ -82,7 +82,7 @@ def start_crawl(request: CrawlStartRequest, app_request: Request) -> StartCrawlR
 
 
 @router.post("/stop", response_model=StopCrawlResponse)
-def stop_crawl(request: CrawlStopRequest, app_request: Request) -> StopCrawlResponse:
+def stop_crawl(request: StopCrawlRequest, app_request: Request) -> StopCrawlResponse:
     """
     Stop a running crawl.
     
@@ -114,7 +114,7 @@ def stop_crawl(request: CrawlStopRequest, app_request: Request) -> StopCrawlResp
 
 
 @router.post("/delete", response_model=DeleteCrawlResponse)
-def delete_crawl(request: CrawlDeleteRequest, app_request: Request) -> DeleteCrawlResponse:
+def delete_crawl(request: DeleteCrawlRequest, app_request: Request) -> DeleteCrawlResponse:
     """
     Delete a crawl from the system.
     
