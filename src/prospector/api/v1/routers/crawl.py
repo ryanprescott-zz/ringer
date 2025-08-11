@@ -34,12 +34,12 @@ def create_crawl(request: CreateCrawlRequest, app_request: Request) -> CreateCra
         prospector = app_request.app.state.prospector
         crawl_id = prospector.create(request.crawl_spec)
         
-        # Get the createted time from the crawl state
+        # Get the created time from the crawl state
         crawl_state = prospector.crawls[crawl_id]
         
         return CreateCrawlResponse(
             crawl_id=crawl_id,
-            crawl_createted_time=crawl_state.crawl_createted_time
+            crawl_created_time=crawl_state.crawl_created_time
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

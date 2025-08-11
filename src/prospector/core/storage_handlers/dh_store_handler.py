@@ -36,20 +36,23 @@ class DhStoreHandler(CrawlStorageHandler):
             crawl_spec: Specification of the crawl to create.
         """
 
+        raise NotImplementedError(
+            "Create functionality is not implemented for DhStoreHandler. "
+        )
         # TODO send HTTP post to dh create endpoint.
 
     
-    def store_record(self, crawl_record: CrawlRecord, crawl_name: str)-> None:
+    def store_record(self, crawl_record: CrawlRecord, crawl_id: str)-> None:
         """
         Store a crawl record to the DH service.
         
         Args:
             crawl_record: The crawl record to process.
-            crawl_name: Name of the crawl
+            crawl_id: ID of the crawl
         """
 
         try:
-            self._send_record_with_retry(crawl_record, crawl_name)
+            self._send_record_with_retry(crawl_record, crawl_id)
         except Exception as e:
             logger.error(
                 f"Failed to send crawl record after all retries for {crawl_record.url}: {e}. "
@@ -57,26 +60,26 @@ class DhStoreHandler(CrawlStorageHandler):
             )
         
     
-    def delete_crawl(self, crawl_name: str) -> None:
+    def delete_crawl(self, crawl_id: str) -> None:
         """
-        Delete a crawl by crawl name. This method does not perform any action as the 
-        DH service does not support deletion from this application.
+        Delete a crawl by crawl ID.
         
         Args:
-            crawl_name: the name of the crawl to delete.
+            crawl_id: the ID of the crawl to delete.
         """
-
-        logger.warning(f"Delete operation for crawl name {crawl_name} is not supported by the DH service. No action taken.")
-        # No action needed as per current service capabilities
-
+        
+        raise NotImplementedError(
+            "Delete functionality is not implemented for DhStoreHandler. "
+        )
+        # TODO implement deletion logic by calling the DH service.
     
-    def _send_record_with_retry(self, crawl_record: CrawlRecord, crawl_name: str) -> None:
+    def _send_record_with_retry(self, crawl_record: CrawlRecord, crawl_id: str) -> None:
         """
         Send a crawl record with retry logic.
         
         Args:
             crawl_record: The crawl record to send
-            crawl_name: Name of the crawl
+            crawl_id: ID of the crawl
             crawl_datetime: Datetime string of the crawl
             
         Raises:
@@ -93,7 +96,7 @@ class DhStoreHandler(CrawlStorageHandler):
             # Create the request payload
             request_data = StoreCrawlRecordRequest(
                 record=crawl_record,
-                crawl_name=crawl_name
+                crawl_id=crawl_id
             )
             
             try:

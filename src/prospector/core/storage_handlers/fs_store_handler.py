@@ -21,6 +21,7 @@ class FsStoreHandler(CrawlStorageHandler):
 
         self.output_directory = Path(self.settings.output_directory)
         if not self.output_directory.exists():
+            logger.info(f"Creating file system storage directory: {self.output_directory}")
             self.output_directory.mkdir(parents=True, exist_ok=True)
 
     
@@ -41,7 +42,7 @@ class FsStoreHandler(CrawlStorageHandler):
         if not crawl_spec:
             raise ValueError("Crawl specification must be provided.")
 
-        crawl_directory = Path(self.settings.output_directory) / crawl_spec.name
+        crawl_directory = Path(self.settings.output_directory) / crawl_spec.id
         if not crawl_directory.exists():
             logger.info(f"Creating crawl directory: {crawl_directory}")
 
@@ -51,15 +52,17 @@ class FsStoreHandler(CrawlStorageHandler):
                 logger.error(f"Failed to create crawl directory {crawl_directory}: {str(e)}")
                 raise OSError(f"Failed to create crawl directory {crawl_directory}: {str(e)}")
         else:
-            logger.warning(f"Crawl directory already exists: {crawl_directory}")
+            logger.error(f"Crawl directory already exists: {crawl_directory}")
+            raise ValueError(f"Crawl directory already exists: {crawl_directory}")
         
     
-    def store_record(self, crawl_record: CrawlRecord, crawl_name: str) -> None:
+    def store_record(self, crawl_record: CrawlRecord, crawl_id: str) -> None:
         """
         Store a crawl record.
         
         Args:
             crawl_record: The crawl record to process
+            crawl_id: ID of the crawl
             
         Raises:
             OSError: If file system operations fail
@@ -67,9 +70,9 @@ class FsStoreHandler(CrawlStorageHandler):
         """
         try:
 
-            crawl_directory = Path(self.settings.output_directory) / crawl_name
+            crawl_directory = Path(self.settings.output_directory) / crawl_id
             if not crawl_directory.exists():
-                raise ValueError(f"Unable to store record to crawl directory that does not exist: {crawl_directory}")
+                raise ValueError(f"Unable to store record. Crawl directory does not exist: {crawl_directory}")
 
             record_directory = crawl_directory / self.settings.record_directory
             if not record_directory.exists():
@@ -92,17 +95,17 @@ class FsStoreHandler(CrawlStorageHandler):
             raise OSError(f"Failed to store crawl record for {crawl_record.url}: {str(e)}")
 
 
-    def delete_crawl(self, crawl_name: str) -> None:
+    def delete_crawl(self, crawl_id: str) -> None:
         """
-        Delete a crawl by crawl name.
+        Delete a crawl by crawl ID.
         
         Args:
-            crawl_name: the name of the crawl to delete.
+            crawl_id: the ID of the crawl to delete.
         Raises:
             OSError: If file system operations fail
         """
 
-        crawl_directory = Path(self.settings.output_directory) / crawl_name
+        crawl_directory = Path(self.settings.output_directory) / crawl_id
         if crawl_directory.exists():
             logger.info(f"Deleting crawl directory: {crawl_directory}")
             try:
@@ -113,4 +116,4 @@ class FsStoreHandler(CrawlStorageHandler):
                 logger.error(f"Failed to delete crawl directory {crawl_directory}: {str(e)}")
                 raise OSError(f"Failed to delete crawl directory {crawl_directory}: {str(e)}")
         else:
-            logger.warning(f"Unable to delete crawl directory - directory does not exist: {crawl_directory}")
+            logger.warning(f"Unable to delete crawl directory. Directory does not exist: {crawl_directory}")

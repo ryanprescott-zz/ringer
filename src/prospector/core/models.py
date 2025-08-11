@@ -31,7 +31,7 @@ class StoreCrawlRecordRequest(BaseModel):
     """Request object for crawl record storage service."""
     
     record: 'CrawlRecord' = Field(..., description="The crawl record to handle")
-    crawl_name: str = Field(..., description="Name of the crawl")
+    crawl_id: str = Field(..., description="ID of the crawl")
 
 
 class AnalyzerSpec(BaseModel):

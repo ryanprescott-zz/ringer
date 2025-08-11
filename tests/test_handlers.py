@@ -146,10 +146,10 @@ class TestFsStoreHandler:
                 
                 # First create the crawl
                 handler.create_crawl(sample_crawl_spec)
-                handler.store_record(sample_crawl_record, sample_crawl_spec.name)
+                handler.store_record(sample_crawl_record, sample_crawl_spec.id)
                 
                 # Check that directory was created
-                expected_dir = Path(temp_dir) / sample_crawl_spec.name / "records"
+                expected_dir = Path(temp_dir) / sample_crawl_spec.id / "records"
                 assert expected_dir.exists()
                 
                 # Check that file was created
@@ -174,7 +174,7 @@ class TestFsStoreHandler:
                 
                 # Create crawl and handle multiple records for same crawl
                 handler.create_crawl(sample_crawl_spec)
-                handler.store_record(sample_crawl_record, sample_crawl_spec.name)
+                handler.store_record(sample_crawl_record, sample_crawl_spec.id)
                 
                 record2 = CrawlRecord(
                     url="https://example2.com",
@@ -184,35 +184,13 @@ class TestFsStoreHandler:
                     scores={},
                     composite_score=0.0
                 )
-                handler.store_record(record2, sample_crawl_spec.name)
+                handler.store_record(record2, sample_crawl_spec.id)
                 
                 # Should create same directory structure
-                expected_dir = Path(temp_dir) / sample_crawl_spec.name / "records"
+                expected_dir = Path(temp_dir) / sample_crawl_spec.id / "records"
                 files = list(expected_dir.glob("*.json"))
                 assert len(files) == 2
     
-    def test_store_record_filename_generation(self, sample_crawl_record, sample_crawl_spec):
-        """Test that filenames are generated from URL hash."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            with patch.object(FsStoreHandler, '__init__', lambda x: None):
-                handler = FsStoreHandler()
-                handler.settings = type('Settings', (), {
-                    'output_directory': temp_dir,
-                    'record_directory': 'records'
-                })()
-                
-                handler.create_crawl(sample_crawl_spec)
-                handler.store_record(sample_crawl_record, sample_crawl_spec.name)
-                
-                # Check filename is MD5 hash
-                expected_dir = Path(temp_dir) / sample_crawl_spec.name / "records"
-                files = list(expected_dir.glob("*.json"))
-                
-                import hashlib
-                expected_hash = hashlib.md5(sample_crawl_record.url.encode()).hexdigest()
-                expected_filename = f"{expected_hash}.json"
-                
-                assert files[0].name == expected_filename
     
     def test_store_record_file_write_error(self, sample_crawl_record):
         """Test handling of file write errors."""

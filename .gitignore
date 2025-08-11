@@ -1,4 +1,6 @@
 .aider*
 __pycache__/
 *.egg-info/
+crawl_data/
+prospector-debug.log
 .DS_Store

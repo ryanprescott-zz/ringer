@@ -231,7 +231,7 @@ class Prospector:
             del self.crawls[crawl_id]
 
             # Delete from storage handler
-            self.handler.delete_crawl(crawl_state.crawl_spec.name)
+            self.handler.delete_crawl(crawl_state.crawl_spec.id)
         
         logger.info(f"Deleted crawl {crawl_id}")
     
@@ -312,7 +312,7 @@ class Prospector:
             # Handle the crawl record
             self.handler.store_record(
                 crawl_record,
-                crawl_state.crawl_spec.name,
+                crawl_state.crawl_spec.id,
             )
             
             logger.debug(f"Processed URL {url} with score {crawl_record.composite_score}")

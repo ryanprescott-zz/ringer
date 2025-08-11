@@ -1,4 +1,4 @@
-"""CrawlRecordHandler - Abstract base class for handling crawl records."""
+"""CrawlStorageHandler - Abstract base class for handling crawl records."""
 
 from abc import ABC, abstractmethod
 
@@ -26,13 +26,13 @@ class CrawlStorageHandler(ABC):
 
 
     @abstractmethod
-    def store_record(self, crawl_record: CrawlRecord, crawl_name: str) -> None:
+    def store_record(self, crawl_record: CrawlRecord, crawl_id: str) -> None:
         """
         Store a crawl record.
         
         Args:
             crawl_record: The crawl record to process
-            crawl_name: Name of the crawl
+            crawl_id: ID of the crawl
         Raises:
             NotImplementedError: If not implemented by subclass
         """
@@ -41,12 +41,12 @@ class CrawlStorageHandler(ABC):
 
 
     @abstractmethod
-    def delete_crawl(self, crawl_name: str) -> None:
+    def delete_crawl(self, crawl_id: str) -> None:
         """
-        Delete a crawl by crawl name.
+        Delete a crawl by crawl ID.
         
         Args:
-            crawl_name: the name of the crawl to delete.
+            crawl_id: the ID of the crawl to delete.
 
         Raises:
             NotImplementedError: If not implemented by subclass
