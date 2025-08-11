@@ -36,7 +36,7 @@ class CrawlState:
         self.visited_urls: Set[str] = set()
         self.analyzers: List[ScoreAnalyzer] = []
         self.analyzer_weights: Dict[str, float] = {}
-        self.state_history: List[RunState] = []
+        self.run_state_history: List[RunState] = []
         self.lock = Lock()
         
         # Datetime tracking
@@ -56,9 +56,9 @@ class CrawlState:
         Returns:
             RunStateEnum: The most recent state from the history
         """
-        if not self.state_history:
+        if not self.run_state_history:
             return RunStateEnum.CREATED
-        return self.state_history[-1].state
+        return self.run_state_history[-1].state
     
     def add_state(self, state: RunStateEnum) -> None:
         """
@@ -68,7 +68,7 @@ class CrawlState:
             state: The new state to add
         """
         with self.lock:
-            self.state_history.append(RunState(state=state))
+            self.run_state_history.append(RunState(state=state))
     
     def add_urls_with_scores(self, url_scores: List[tuple]) -> None:
         """
