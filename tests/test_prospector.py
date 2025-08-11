@@ -120,10 +120,11 @@ class TestProspector:
     
     def test_create_crawl(self, prospector, sample_crawl_spec):
         """Test creating a new crawl."""
-        crawl_id = prospector.create(sample_crawl_spec)
+        crawl_id, run_state = prospector.create(sample_crawl_spec)
         
         assert crawl_id == sample_crawl_spec.id
         assert crawl_id in prospector.crawls
+        assert run_state.state == RunStateEnum.CREATED
         
         crawl_state = prospector.crawls[crawl_id]
         assert crawl_state.crawl_spec == sample_crawl_spec
@@ -132,7 +133,7 @@ class TestProspector:
     
     def test_create_duplicate_crawl(self, prospector, sample_crawl_spec):
         """Test creating a crawl with duplicate ID raises error."""
-        prospector.create(sample_crawl_spec)
+        crawl_id, run_state = prospector.create(sample_crawl_spec)
         
         with pytest.raises(ValueError, match="already exists"):
             prospector.create(sample_crawl_spec)
@@ -152,9 +153,10 @@ class TestProspector:
             worker_count=1
         )
         
-        crawl_id = prospector.create(crawl_spec)
+        crawl_id, run_state = prospector.create(crawl_spec)
         
         assert crawl_id in prospector.crawls
+        assert run_state.state == RunStateEnum.CREATED
         crawl_state = prospector.crawls[crawl_id]
         assert len(crawl_state.analyzers) == 2
         assert "LLMServiceScoreAnalyzer" in crawl_state.analyzer_weights
@@ -165,9 +167,11 @@ class TestProspector:
         prospector.scraper = mock_scraper
         prospector.handler = mock_handler
         
-        crawl_id = prospector.create(sample_crawl_spec)
-        prospector.start(crawl_id)
+        crawl_id, create_state = prospector.create(sample_crawl_spec)
+        start_crawl_id, start_state = prospector.start(crawl_id)
         
+        assert start_crawl_id == crawl_id
+        assert start_state.state == RunStateEnum.RUNNING
         crawl_state = prospector.crawls[crawl_id]
         assert crawl_state.current_state == RunStateEnum.RUNNING
     
@@ -178,21 +182,25 @@ class TestProspector:
     
     def test_start_already_running_crawl(self, prospector, sample_crawl_spec):
         """Test starting an already running crawl raises error."""
-        crawl_id = prospector.create(sample_crawl_spec)
+        crawl_id, create_state = prospector.create(sample_crawl_spec)
         
         # Manually set to running
-        prospector.crawls[crawl_id].add_state(RunStateEnum.RUNNING)
+        from prospector.core.models import RunState
+        prospector.crawls[crawl_id].add_state(RunState(state=RunStateEnum.RUNNING))
         
         with pytest.raises(RuntimeError, match="already running"):
             prospector.start(crawl_id)
     
     def test_stop_crawl(self, prospector, sample_crawl_spec):
         """Test stopping a crawl."""
-        crawl_id = prospector.create(sample_crawl_spec)
-        prospector.crawls[crawl_id].add_state(RunStateEnum.RUNNING)  # Set to running
+        crawl_id, create_state = prospector.create(sample_crawl_spec)
+        from prospector.core.models import RunState
+        prospector.crawls[crawl_id].add_state(RunState(state=RunStateEnum.RUNNING))  # Set to running
         
-        prospector.stop(crawl_id)
+        stop_crawl_id, stop_state = prospector.stop(crawl_id)
         
+        assert stop_crawl_id == crawl_id
+        assert stop_state.state == RunStateEnum.STOPPED
         crawl_state = prospector.crawls[crawl_id]
         assert crawl_state.current_state == RunStateEnum.STOPPED
     
@@ -203,7 +211,7 @@ class TestProspector:
     
     def test_delete_crawl(self, prospector, sample_crawl_spec):
         """Test deleting a crawl."""
-        crawl_id = prospector.create(sample_crawl_spec)
+        crawl_id, create_state = prospector.create(sample_crawl_spec)
         
         prospector.delete(crawl_id)
         
@@ -216,8 +224,9 @@ class TestProspector:
     
     def test_delete_running_crawl(self, prospector, sample_crawl_spec):
         """Test deleting a running crawl raises error."""
-        crawl_id = prospector.create(sample_crawl_spec)
-        prospector.crawls[crawl_id].add_state(RunStateEnum.RUNNING)  # Set to running
+        crawl_id, create_state = prospector.create(sample_crawl_spec)
+        from prospector.core.models import RunState
+        prospector.crawls[crawl_id].add_state(RunState(state=RunStateEnum.RUNNING))  # Set to running
         
         with pytest.raises(RuntimeError, match="Cannot delete running crawl"):
             prospector.delete(crawl_id)

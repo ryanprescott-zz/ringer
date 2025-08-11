@@ -84,15 +84,15 @@ class CrawlState:
             return RunStateEnum.CREATED
         return self.run_state_history[-1].state
     
-    def add_state(self, state: RunStateEnum) -> None:
+    def add_state(self, run_state: RunState) -> None:
         """
         Add a new state to the crawl's history.
         
         Args:
-            state: The new state to add
+            run_state: The RunState object to add
         """
         with self.lock:
-            self.run_state_history.append(RunState(state=state))
+            self.run_state_history.append(run_state)
     
     def add_urls_with_scores(self, url_scores: List[tuple]) -> None:
         """
@@ -166,7 +166,7 @@ class Prospector:
         )
         self.crawls_lock = Lock()
     
-    def create(self, crawl_spec: CrawlSpec) -> str:
+    def create(self, crawl_spec: CrawlSpec) -> tuple:
         """
         Create a new crawl.
         
@@ -174,7 +174,7 @@ class Prospector:
             crawl_spec: Specification for the crawl including seed URLs and analyzers
             
         Returns:
-            str: Unique crawl ID
+            tuple: (crawl_id, RunState) containing the crawl ID and creation state
             
         Raises:
             ValueError: If crawl with same ID already exists or invalid analyzer specs
@@ -192,7 +192,8 @@ class Prospector:
             self._initialize_analyzers(crawl_state, crawl_spec.analyzer_specs)
             
             # Add CREATED state
-            crawl_state.add_state(RunStateEnum.CREATED)
+            created_state = RunState(state=RunStateEnum.CREATED)
+            crawl_state.add_state(created_state)
             
             # Store crawl state
             self.crawls[crawl_id] = crawl_state
@@ -201,20 +202,24 @@ class Prospector:
             self.handler.create_crawl(crawl_spec)
             
         logger.info(f"Created crawl {crawl_spec.name} with ID {crawl_id}")
-        return crawl_id
+        return (crawl_id, created_state)
     
 
-    def start(self, crawl_id: str) -> None:
+    def start(self, crawl_id: str) -> tuple:
         """
         Start a crawl.
         
         Args:
             crawl_id: ID of the crawl to start
             
+        Returns:
+            tuple: (crawl_id, RunState) containing the crawl ID and start state
+            
         Raises:
             ValueError: If crawl ID not found
             RuntimeError: If crawl is already running
         """
+        started_state = None
         with self.crawls_lock:
             if crawl_id not in self.crawls:
                 raise ValueError(f"Crawl {crawl_id} not found")
@@ -223,7 +228,8 @@ class Prospector:
             if crawl_state.current_state == RunStateEnum.RUNNING:
                 raise RuntimeError(f"Crawl {crawl_id} is already running")
             
-            crawl_state.add_state(RunStateEnum.RUNNING)
+            started_state = RunState(state=RunStateEnum.RUNNING)
+            crawl_state.add_state(started_state)
         
         # create crawl workers to thread pool
         futures = []
@@ -232,26 +238,33 @@ class Prospector:
             futures.append(future)
         
         logger.info(f"Started crawl {crawl_id} with {len(futures)} workers")
+        return (crawl_id, started_state)
     
 
-    def stop(self, crawl_id: str) -> None:
+    def stop(self, crawl_id: str) -> tuple:
         """
         Stop a running crawl.
         
         Args:
             crawl_id: ID of the crawl to stop
             
+        Returns:
+            tuple: (crawl_id, RunState) containing the crawl ID and stop state
+            
         Raises:
             ValueError: If crawl ID not found
         """
+        stopped_state = None
         with self.crawls_lock:
             if crawl_id not in self.crawls:
                 raise ValueError(f"Crawl {crawl_id} not found")
             
             crawl_state = self.crawls[crawl_id]
-            crawl_state.add_state(RunStateEnum.STOPPED)
+            stopped_state = RunState(state=RunStateEnum.STOPPED)
+            crawl_state.add_state(stopped_state)
         
         logger.info(f"Stopped crawl {crawl_id}")
+        return (crawl_id, stopped_state)
     
 
     def delete(self, crawl_id: str) -> None:
@@ -430,7 +443,7 @@ class Prospector:
         with self.crawls_lock:
             for crawl_id, crawl_state in self.crawls.items():
                 if crawl_state.current_state == RunStateEnum.RUNNING:
-                    crawl_state.add_state(RunStateEnum.STOPPED)
+                    crawl_state.add_state(RunState(state=RunStateEnum.STOPPED))
         
         # Shutdown thread pool
         self.executor.shutdown(wait=True)

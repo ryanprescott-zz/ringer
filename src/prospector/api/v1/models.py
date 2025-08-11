@@ -1,7 +1,7 @@
 """Pydantic models for the Prospector FastAPI web service."""
 
 from pydantic import BaseModel
-from prospector.core.models import CrawlSpec
+from prospector.core.models import CrawlSpec, RunState
 
 
 class CreateCrawlRequest(BaseModel):
@@ -14,7 +14,7 @@ class CreateCrawlResponse(BaseModel):
     """Response model for crawl submission."""
     
     crawl_id: str
-    crawl_created_time: str
+    run_state: RunState
 
 
 class StartCrawlRequest(BaseModel):
@@ -27,7 +27,7 @@ class StartCrawlResponse(BaseModel):
     """Response model for crawl start."""
     
     crawl_id: str
-    crawl_started_time: str
+    run_state: RunState
 
 
 class StopCrawlRequest(BaseModel):
@@ -40,7 +40,7 @@ class StopCrawlResponse(BaseModel):
     """Response model for crawl stop."""
     
     crawl_id: str
-    crawl_stopped_time: str
+    run_state: RunState
 
 
 class DeleteCrawlRequest(BaseModel):

@@ -32,14 +32,11 @@ def create_crawl(request: CreateCrawlRequest, app_request: Request) -> CreateCra
     """
     try:
         prospector = app_request.app.state.prospector
-        crawl_id = prospector.create(request.crawl_spec)
-        
-        # Get the created time from the crawl state
-        crawl_state = prospector.crawls[crawl_id]
+        crawl_id, run_state = prospector.create(request.crawl_spec)
         
         return CreateCrawlResponse(
             crawl_id=crawl_id,
-            crawl_created_time=crawl_state.crawl_created_time
+            run_state=run_state
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -64,14 +61,11 @@ def start_crawl(request: StartCrawlRequest, app_request: Request) -> StartCrawlR
     """
     try:
         prospector = app_request.app.state.prospector
-        prospector.start(request.crawl_id)
-        
-        # Get the started time from the crawl state
-        crawl_state = prospector.crawls[request.crawl_id]
+        crawl_id, run_state = prospector.start(request.crawl_id)
         
         return StartCrawlResponse(
-            crawl_id=request.crawl_id,
-            crawl_started_time=crawl_state.crawl_started_time
+            crawl_id=crawl_id,
+            run_state=run_state
         )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -98,14 +92,11 @@ def stop_crawl(request: StopCrawlRequest, app_request: Request) -> StopCrawlResp
     """
     try:
         prospector = app_request.app.state.prospector
-        prospector.stop(request.crawl_id)
-        
-        # Get the stopped time from the crawl state
-        crawl_state = prospector.crawls[request.crawl_id]
+        crawl_id, run_state = prospector.stop(request.crawl_id)
         
         return StopCrawlResponse(
-            crawl_id=request.crawl_id,
-            crawl_stopped_time=crawl_state.crawl_stopped_time
+            crawl_id=crawl_id,
+            run_state=run_state
         )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
