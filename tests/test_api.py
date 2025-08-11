@@ -87,7 +87,7 @@ class TestMainEndpoints:
         assert data["status"] == "healthy"
 
 
-class TestCreateCrawEndpoint:
+class TestCreateCrawlEndpoint:
     """Tests for the crawl create endpoint."""
     
     def test_create_crawl_success(self, client, mock_prospector, sample_crawl_spec_dict, sample_crawl_state):
@@ -108,7 +108,7 @@ class TestCreateCrawEndpoint:
         assert response.status_code == 200
         data = response.json()
         assert data["crawl_id"] == test_crawl_id
-        assert data["crawl_creation_time"] == sample_crawl_state.crawl_created_time
+        assert data["crawl_created_time"] == sample_crawl_state.crawl_created_time
         mock_prospector.create.assert_called_once()
     
     def test_create_crawl_duplicate_id(self, client, mock_prospector, sample_crawl_spec_dict):

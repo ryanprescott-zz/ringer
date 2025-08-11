@@ -49,8 +49,8 @@ class TestDhStoreHandler:
         # Verify request payload structure
         request_data = call_args[1]['json']
         assert 'record' in request_data
-        assert 'crawl_name' in request_data
-        assert request_data['crawl_name'] == "test_crawl_id"
+        assert 'crawl_id' in request_data
+        assert request_data['crawl_id'] == "test_crawl_id"
     
     @patch('prospector.core.storage_handlers.dh_store_handler.requests.Session.post')
     def test_store_record_http_error_after_retries(self, mock_post, sample_crawl_record):

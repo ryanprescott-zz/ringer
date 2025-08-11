@@ -89,7 +89,7 @@ class DhStoreHandler(CrawlStorageHandler):
         # Apply retry decorator with settings-based configuration
         @retry(
             stop=stop_after_attempt(self.settings.service_max_retries),
-            wait=wait_exponential(multiplier=1, base=self.settings.service_retry_exponential_base),
+            wait=wait_exponential(multiplier=1, exp_base=self.settings.service_retry_exponential_base),
             retry=retry_if_exception_type((requests.exceptions.RequestException, Exception))
         )
         def _do_send():
