@@ -11,6 +11,7 @@ from prospector.core import (
     CrawlSpec,
     AnalyzerSpec,
     WeightedKeyword,
+    RunStateEnum,
 )
 
 
@@ -25,7 +26,7 @@ class TestCrawlState:
         assert len(state.frontier) == len(sample_crawl_spec.seed_urls)
         assert len(state.visited_urls) == 0
         assert len(state.analyzers) == 0
-        assert not state.running
+        assert state.current_state == RunStateEnum.CREATED
     
     def test_add_urls_with_scores(self, sample_crawl_spec):
         """Test adding URLs with scores to frontier."""
@@ -110,7 +111,7 @@ class TestProspector:
         crawl_state = prospector.crawls[crawl_id]
         assert crawl_state.crawl_spec == sample_crawl_spec
         assert len(crawl_state.analyzers) == 1
-        assert not crawl_state.running
+        assert crawl_state.current_state == RunStateEnum.CREATED
     
     def test_create_duplicate_crawl(self, prospector, sample_crawl_spec):
         """Test creating a crawl with duplicate ID raises error."""
@@ -151,7 +152,7 @@ class TestProspector:
         prospector.start(crawl_id)
         
         crawl_state = prospector.crawls[crawl_id]
-        assert crawl_state.running
+        assert crawl_state.current_state == RunStateEnum.RUNNING
     
     def test_start_nonexistent_crawl(self, prospector):
         """Test starting a non-existent crawl raises error."""
@@ -163,7 +164,7 @@ class TestProspector:
         crawl_id = prospector.create(sample_crawl_spec)
         
         # Manually set to running
-        prospector.crawls[crawl_id].running = True
+        prospector.crawls[crawl_id].add_state(RunStateEnum.RUNNING)
         
         with pytest.raises(RuntimeError, match="already running"):
             prospector.start(crawl_id)
@@ -171,12 +172,12 @@ class TestProspector:
     def test_stop_crawl(self, prospector, sample_crawl_spec):
         """Test stopping a crawl."""
         crawl_id = prospector.create(sample_crawl_spec)
-        prospector.crawls[crawl_id].running = True  # Set to running
+        prospector.crawls[crawl_id].add_state(RunStateEnum.RUNNING)  # Set to running
         
         prospector.stop(crawl_id)
         
         crawl_state = prospector.crawls[crawl_id]
-        assert not crawl_state.running
+        assert crawl_state.current_state == RunStateEnum.STOPPED
     
     def test_stop_nonexistent_crawl(self, prospector):
         """Test stopping a non-existent crawl raises error."""
@@ -199,7 +200,7 @@ class TestProspector:
     def test_delete_running_crawl(self, prospector, sample_crawl_spec):
         """Test deleting a running crawl raises error."""
         crawl_id = prospector.create(sample_crawl_spec)
-        prospector.crawls[crawl_id].running = True  # Set to running
+        prospector.crawls[crawl_id].add_state(RunStateEnum.RUNNING)  # Set to running
         
         with pytest.raises(RuntimeError, match="Cannot delete running crawl"):
             prospector.delete(crawl_id)

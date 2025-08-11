@@ -13,6 +13,7 @@ from prospector.core import (
     CrawlRecord,
     Prospector,
     KeywordScoreAnalyzer,
+    RunStateEnum,
 )
 
 

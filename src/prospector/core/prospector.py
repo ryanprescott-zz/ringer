@@ -12,7 +12,7 @@ from typing import Dict, List, Set, Optional
 from urllib.parse import urlparse
 from sortedcontainers import SortedList
 
-from .models import CrawlSpec, CrawlRecord, AnalyzerSpec
+from .models import CrawlSpec, CrawlRecord, AnalyzerSpec, RunStateEnum, RunState
 from .score_analyzers import ScoreAnalyzer, KeywordScoreAnalyzer, LLMServiceScoreAnalyzer
 from .scrapers import Scraper, PlaywrightScraper  
 from .storage_handlers import CrawlStorageHandler, FsStoreHandler, DhStoreHandler
@@ -36,7 +36,7 @@ class CrawlState:
         self.visited_urls: Set[str] = set()
         self.analyzers: List[ScoreAnalyzer] = []
         self.analyzer_weights: Dict[str, float] = {}
-        self.running = False
+        self.state_history: List[RunState] = []
         self.lock = Lock()
         
         # Datetime tracking
@@ -47,6 +47,28 @@ class CrawlState:
         # Initialize frontier with seed URLs (score 0.0 initially)
         for url in crawl_spec.seed_urls:
             self.frontier.add((0.0, url))
+    
+    @property
+    def current_state(self) -> RunStateEnum:
+        """
+        Get the current run state of the crawl.
+        
+        Returns:
+            RunStateEnum: The most recent state from the history
+        """
+        if not self.state_history:
+            return RunStateEnum.CREATED
+        return self.state_history[-1].state
+    
+    def add_state(self, state: RunStateEnum) -> None:
+        """
+        Add a new state to the crawl's history.
+        
+        Args:
+            state: The new state to add
+        """
+        with self.lock:
+            self.state_history.append(RunState(state=state))
     
     def add_urls_with_scores(self, url_scores: List[tuple]) -> None:
         """
@@ -144,8 +166,9 @@ class Prospector:
             # Initialize analyzers
             self._initialize_analyzers(crawl_state, crawl_spec.analyzer_specs)
             
-            # Set created time
+            # Set created time and add CREATED state
             crawl_state.crawl_created_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            crawl_state.add_state(RunStateEnum.CREATED)
             
             # Store crawl state
             self.crawls[crawl_id] = crawl_state
@@ -173,10 +196,10 @@ class Prospector:
                 raise ValueError(f"Crawl {crawl_id} not found")
             
             crawl_state = self.crawls[crawl_id]
-            if crawl_state.running:
+            if crawl_state.current_state == RunStateEnum.RUNNING:
                 raise RuntimeError(f"Crawl {crawl_id} is already running")
             
-            crawl_state.running = True
+            crawl_state.add_state(RunStateEnum.RUNNING)
             crawl_state.crawl_started_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         
         # create crawl workers to thread pool
@@ -203,7 +226,7 @@ class Prospector:
                 raise ValueError(f"Crawl {crawl_id} not found")
             
             crawl_state = self.crawls[crawl_id]
-            crawl_state.running = False
+            crawl_state.add_state(RunStateEnum.STOPPED)
             crawl_state.crawl_stopped_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         
         logger.info(f"Stopped crawl {crawl_id}")
@@ -225,7 +248,7 @@ class Prospector:
                 raise ValueError(f"Crawl {crawl_id} not found")
             
             crawl_state = self.crawls[crawl_id]
-            if crawl_state.running:
+            if crawl_state.current_state == RunStateEnum.RUNNING:
                 raise RuntimeError(f"Cannot delete running crawl {crawl_id}")
             
             del self.crawls[crawl_id]
@@ -269,7 +292,7 @@ class Prospector:
         """
         crawl_state = self.crawls[crawl_id]
         
-        while crawl_state.running:
+        while crawl_state.current_state == RunStateEnum.RUNNING:
             url = crawl_state.get_next_url()
             if url is None:
                 # No more URLs to process
@@ -384,7 +407,8 @@ class Prospector:
         # Stop all running crawls
         with self.crawls_lock:
             for crawl_id, crawl_state in self.crawls.items():
-                crawl_state.running = False
+                if crawl_state.current_state == RunStateEnum.RUNNING:
+                    crawl_state.add_state(RunStateEnum.STOPPED)
         
         # Shutdown thread pool
         self.executor.shutdown(wait=True)

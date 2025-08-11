@@ -3,7 +3,21 @@
 import hashlib
 from datetime import datetime
 from typing import Any, Dict, List, Optional
+from enum import Enum
 from pydantic import BaseModel, Field
+
+
+class RunStateEnum(str, Enum):
+    """Enumeration of crawl run states."""
+    CREATED = "CREATED"
+    RUNNING = "RUNNING"
+    STOPPED = "STOPPED"
+
+
+class RunState(BaseModel):
+    """Represents a state change in a crawl's lifecycle."""
+    state: RunStateEnum = Field(..., description="The run state")
+    timestamp: datetime = Field(default_factory=datetime.now, description="When this state was entered")
 
 
 class WeightedKeyword(BaseModel):
