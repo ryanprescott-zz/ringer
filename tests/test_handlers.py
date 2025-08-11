@@ -101,7 +101,8 @@ class TestDhStoreHandler:
         # Should have made multiple attempts
         assert mock_post.call_count >= 3
     
-    def test_store_record_success_after_retry(self, sample_crawl_record):
+    @patch('prospector.core.storage_handlers.dh_store_handler.requests.Session.post')
+    def test_store_record_success_after_retry(self, mock_post, sample_crawl_record):
         """Test successful handling after initial failures."""
         # Mock first call fails, second succeeds
         mock_response_fail = Mock()
@@ -112,16 +113,15 @@ class TestDhStoreHandler:
         mock_response_success.status_code = 200
         mock_response_success.text = "Success"
         
-        handler = DhStoreHandler()
+        mock_post.side_effect = [mock_response_fail, mock_response_success]
         
-        # Mock the session's post method directly on the handler instance
-        handler.session.post = Mock(side_effect=[mock_response_fail, mock_response_success])
+        handler = DhStoreHandler()
         
         # Should succeed after retry
         handler.store_record(sample_crawl_record, "test_crawl_id")
         
         # Should have made 2 calls
-        assert handler.session.post.call_count == 2
+        assert mock_post.call_count == 2
     
 
 
