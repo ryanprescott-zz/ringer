@@ -15,7 +15,7 @@ from sortedcontainers import SortedList
 from .models import CrawlSpec, CrawlRecord, AnalyzerSpec
 from .score_analyzers import ScoreAnalyzer, KeywordScoreAnalyzer, LLMServiceScoreAnalyzer
 from .scrapers import Scraper, PlaywrightScraper  
-from .storage_handlers import CrawlRecordHandler, FsStoreHandler, ServiceCallHandler
+from .storage_handlers import CrawlStorageHandler, FsStoreHandler, DhStoreHandler
 from .settings import ProspectorSettings, HandlerType
 
 
@@ -108,9 +108,9 @@ class Prospector:
         
         # Initialize handler based on settings
         if self.settings.handler_type == HandlerType.FILE_SYSTEM:
-            self.handler: CrawlRecordHandler = FsStoreHandler()
+            self.handler: CrawlStorageHandler = FsStoreHandler()
         elif self.settings.handler_type == HandlerType.DH:
-            self.handler: CrawlRecordHandler = ServiceCallHandler()
+            self.handler: CrawlStorageHandler = DhStoreHandler()
         else:
             raise ValueError(f"Unknown handler type: {self.settings.handler_type}")
         
@@ -151,7 +151,7 @@ class Prospector:
             self.crawls[crawl_id] = crawl_state
 
             # Create crawl in storage handler
-            self.handler.create_crawl(crawl_spec.name)
+            self.handler.create_crawl(crawl_spec)
             
         logger.info(f"Created crawl {crawl_spec.name} with ID {crawl_id}")
         return crawl_id

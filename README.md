@@ -34,7 +34,7 @@ Prospector combines intelligent content analysis with efficient crawling to:
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Prospector    │    │   ScoreAnalyzer │    │ CrawlRecordHandler│
+│   Prospector    │    │   ScoreAnalyzer │    │ CrawlStorageHandler│
 │   (Orchestrator)│───▶│   (Content      │───▶│   (Output       │
 │                 │    │    Scoring)     │    │    Processing)  │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
@@ -123,11 +123,11 @@ class ScoreAnalyzer(ABC):
         """Return relevance score between 0 and 1."""
 ```
 
-### 4. CrawlRecordHandlers (Output Processing)
+### 4. CrawlStorageHandlers (Output Processing)
 
-**CrawlRecordHandlers** process and store crawled content using different storage strategies.
+**CrawlStorageHandlers** process and store crawled content using different storage strategies.
 
-#### FsStoreCrawlRecordHandler
+#### FsStoreCrawlStorageHandler
 - **Purpose**: Store crawl records as JSON files on the filesystem
 - **Organization**: Structured by crawl name and datetime
 - **Features**:
@@ -135,7 +135,7 @@ class ScoreAnalyzer(ABC):
   - URL-based filename generation (MD5 hash)
   - JSON serialization with proper encoding
 
-#### ServiceCrawlRecordHandler
+#### ServiceCrawlStorageHandler
 - **Purpose**: Send crawl records to external web services
 - **Integration**: HTTP POST with JSON payloads
 - **Features**:
@@ -146,7 +146,7 @@ class ScoreAnalyzer(ABC):
 
 **Design Pattern:**
 ```python
-class CrawlRecordHandler(ABC):
+class CrawlStorageHandler(ABC):
     @abstractmethod
     def handle(self, crawl_record: CrawlRecord, crawl_name: str, crawl_datetime: str):
         """Process a crawl record."""
@@ -335,7 +335,7 @@ from prospector.settings import HandlerType
 os.environ['PROSPECTOR_HANDLER_TYPE'] = 'service_call'
 os.environ['HANDLER_SERVICE_URL'] = 'https://api.mycompany.com/crawl-records'
 
-# Prospector will automatically use ServiceCrawlRecordHandler
+# Prospector will automatically use ServiceCrawlStorageHandler
 prospector = Prospector()
 ```
 
