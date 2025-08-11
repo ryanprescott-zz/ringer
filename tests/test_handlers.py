@@ -7,24 +7,24 @@ import os
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from prospector.core.storage_handlers import (
+from prospector.core.handlers import (
     FsStoreHandler,
-    DhStoreHandler,
+    ServiceCallHandler,
 )
 from prospector.core.models import CrawlRecord
 
 
-class TestDhStoreHandler:
-    """Tests for DhStoreHandler class."""
+class TestServiceCallHandler:
+    """Tests for ServiceCallHandler class."""
     
     def test_init(self):
         """Test service handler initialization."""
-        handler = DhStoreHandler()
+        handler = ServiceCallHandler()
         assert handler.settings is not None
         assert handler.session is not None
         assert handler.session.headers['Content-Type'] == 'application/json'
     
-    @patch('prospector.core.storage_handlers.dh_store_handler.requests.Session.post')
+    @patch('prospector.core.handlers.service_call_handler.requests.Session.post')
     def test_store_record_success(self, mock_post, sample_crawl_record):
         """Test successful record handling via service."""
         # Mock successful response
@@ -33,7 +33,7 @@ class TestDhStoreHandler:
         mock_response.text = "Success"
         mock_post.return_value = mock_response
         
-        handler = DhStoreHandler()
+        handler = ServiceCallHandler()
         
         # Should not raise any exception
         handler.store_record(sample_crawl_record, "test_crawl")
@@ -52,7 +52,7 @@ class TestDhStoreHandler:
         assert 'crawl_name' in request_data
         assert request_data['crawl_name'] == "test_crawl"
     
-    @patch('prospector.core.storage_handlers.dh_store_handler.requests.Session.post')
+    @patch('prospector.core.handlers.service_call_handler.requests.Session.post')
     def test_store_record_http_error_after_retries(self, mock_post, sample_crawl_record):
         """Test handling with HTTP error after all retries."""
         # Mock HTTP error response
@@ -61,7 +61,7 @@ class TestDhStoreHandler:
         mock_response.text = "Internal Server Error"
         mock_post.return_value = mock_response
         
-        handler = DhStoreHandler()
+        handler = ServiceCallHandler()
         
         # Should not raise exception, just log and discard
         handler.store_record(sample_crawl_record, "test_crawl")
@@ -69,7 +69,7 @@ class TestDhStoreHandler:
         # Should have made multiple attempts (3 retries + 1 initial = 4 total)
         assert mock_post.call_count >= 3
     
-    @patch('prospector.core.storage_handlers.dh_store_handler.requests.Session.post')
+    @patch('prospector.core.handlers.service_call_handler.requests.Session.post')
     def test_store_record_timeout_after_retries(self, mock_post, sample_crawl_record):
         """Test handling with timeout after all retries."""
         import requests
@@ -77,7 +77,7 @@ class TestDhStoreHandler:
         # Mock timeout exception
         mock_post.side_effect = requests.exceptions.Timeout("Request timeout")
         
-        handler = DhStoreHandler()
+        handler = ServiceCallHandler()
         
         # Should not raise exception, just log and discard
         handler.store_record(sample_crawl_record, "test_crawl")
@@ -85,7 +85,7 @@ class TestDhStoreHandler:
         # Should have made multiple attempts
         assert mock_post.call_count >= 3
     
-    @patch('prospector.core.storage_handlers.dh_store_handler.requests.Session.post')
+    @patch('prospector.core.handlers.service_call_handler.requests.Session.post')
     def test_store_record_connection_error_after_retries(self, mock_post, sample_crawl_record):
         """Test handling with connection error after all retries."""
         import requests
@@ -93,7 +93,7 @@ class TestDhStoreHandler:
         # Mock connection error
         mock_post.side_effect = requests.exceptions.ConnectionError("Connection failed")
         
-        handler = DhStoreHandler()
+        handler = ServiceCallHandler()
         
         # Should not raise exception, just log and discard
         handler.store_record(sample_crawl_record, "test_crawl")
@@ -101,7 +101,7 @@ class TestDhStoreHandler:
         # Should have made multiple attempts
         assert mock_post.call_count >= 3
     
-    @patch('prospector.core.storage_handlers.dh_store_handler.requests.Session.post')
+    @patch('prospector.core.handlers.service_call_handler.requests.Session.post')
     def test_store_record_success_after_retry(self, mock_post, sample_crawl_record):
         """Test successful handling after initial failures."""
         # Mock first call fails, second succeeds
@@ -115,7 +115,7 @@ class TestDhStoreHandler:
         
         mock_post.side_effect = [mock_response_fail, mock_response_success]
         
-        handler = DhStoreHandler()
+        handler = ServiceCallHandler()
         
         # Should succeed after retry
         handler.store_record(sample_crawl_record, "test_crawl")

@@ -62,8 +62,8 @@ class FsStoreHandlerSettings(BaseSettings):
         "env_prefix": "fs_store_handler_"
     }
 
-class DhStoreHandlerSettings(BaseSettings):
-    """Settings for DH service storage of crawl records."""
+class ServiceCallHandlerSettings(BaseSettings):
+    """Settings for service call storage of crawl records."""
 
     # Service handler settings
     service_url: str = "http://localhost:8000/handle_record"

@@ -3,7 +3,7 @@ from .settings import (
     ProspectorSettings,
     PlaywrightScraperSettings,
     FsStoreHandlerSettings,
-    DhStoreHandlerSettings,
+    ServiceCallHandlerSettings,
     LLMServiceScoreAnalyzerSettings,
     ProspectorServiceSettings
 )
@@ -13,7 +13,7 @@ __all__ = [
     "ProspectorSettings",
     "PlaywrightScraperSettings",
     "FsStoreHandlerSettings",
-    "DhStoreHandlerSettings",
+    "ServiceCallHandlerSettings",
     "LLMServiceScoreAnalyzerSettings",
     "ProspectorServiceSettings",
     "HandlerType",
