@@ -39,11 +39,6 @@ class CrawlState:
         self.run_state_history: List[RunState] = []
         self.lock = Lock()
         
-        # Datetime tracking
-        self.crawl_created_time: Optional[str] = None
-        self.crawl_started_time: Optional[str] = None
-        self.crawl_stopped_time: Optional[str] = None
-        
         # Initialize frontier with seed URLs (score 0.0 initially)
         for url in crawl_spec.seed_urls:
             self.frontier.add((0.0, url))
@@ -166,8 +161,7 @@ class Prospector:
             # Initialize analyzers
             self._initialize_analyzers(crawl_state, crawl_spec.analyzer_specs)
             
-            # Set created time and add CREATED state
-            crawl_state.crawl_created_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            # Add CREATED state
             crawl_state.add_state(RunStateEnum.CREATED)
             
             # Store crawl state
@@ -200,7 +194,6 @@ class Prospector:
                 raise RuntimeError(f"Crawl {crawl_id} is already running")
             
             crawl_state.add_state(RunStateEnum.RUNNING)
-            crawl_state.crawl_started_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         
         # create crawl workers to thread pool
         futures = []
@@ -227,7 +220,6 @@ class Prospector:
             
             crawl_state = self.crawls[crawl_id]
             crawl_state.add_state(RunStateEnum.STOPPED)
-            crawl_state.crawl_stopped_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         
         logger.info(f"Stopped crawl {crawl_id}")
     
