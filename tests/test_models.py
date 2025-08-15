@@ -15,7 +15,6 @@ from prospector.core.models import (
     AnalyzerSpec,
     CrawlSpec,
     CrawlRecord,
-    CrawlSeeds
 )
 
 
@@ -141,24 +140,31 @@ class TestCrawlSpec:
         """Test creating a valid crawl spec."""
         
         assert sample_crawl_spec.name == "test_crawl"
-        assert len(sample_crawl_spec.seeds.url_seeds) == 1
-        assert len(sample_crawl_spec.seeds.search_engine_seeds) == 1
+        assert len(sample_crawl_spec.seeds) == 1
+        assert sample_crawl_spec.seeds[0] == "https://example.com"
         assert len(sample_crawl_spec.analyzer_specs) == 1
         assert sample_crawl_spec.worker_count == 1
         assert "spam.com" in sample_crawl_spec.domain_blacklist
     
+    def test_empty_seeds_validation(self, sample_analyzer_spec):
+        """Test that empty seeds list raises validation error."""
+        with pytest.raises(ValueError, match="Seeds list cannot be empty"):
+            CrawlSpec(
+                name="test_crawl",
+                seeds=[],
+                analyzer_specs=[sample_analyzer_spec]
+            )
     
     def test_default_values(self, sample_analyzer_spec):
         """Test default values for optional fields."""
         spec = CrawlSpec(
             name="test_crawl",
-            seeds=CrawlSeeds(url_seeds=["https://example.com"]),
+            seeds=["https://example.com"],
             analyzer_specs=[sample_analyzer_spec]
         )
         
         assert spec.worker_count == 1
         assert spec.domain_blacklist is None
-        assert spec.seeds.search_engine_seeds is None
 
 
 class TestCrawlRecord:

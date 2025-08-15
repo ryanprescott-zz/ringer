@@ -9,7 +9,6 @@ from prospector.core import (
     Prospector,
     CrawlState,
     CrawlSpec,
-    CrawlSeeds,
     AnalyzerSpec,
     WeightedKeyword,
     RunStateEnum,
