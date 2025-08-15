@@ -341,6 +341,93 @@ class TestDeleteCrawlEndpoint:
         assert "Internal server error" in response.json()["detail"]
 
 
+class TestAnalyzersEndpoint:
+    """Tests for the analyzers information endpoint."""
+    
+    def test_get_analyzer_info_success(self, client):
+        """Test successful retrieval of analyzer information."""
+        response = client.get("/api/v1/analyzers/info")
+        
+        assert response.status_code == 200
+        data = response.json()
+        
+        # Should have analyzers list
+        assert "analyzers" in data
+        analyzers = data["analyzers"]
+        
+        # Should have at least KeywordScoreAnalyzer and LLMServiceScoreAnalyzer
+        analyzer_names = [analyzer["name"] for analyzer in analyzers]
+        assert "KeywordScoreAnalyzer" in analyzer_names
+        assert "LLMServiceScoreAnalyzer" in analyzer_names
+        
+        # Check structure of analyzer info
+        for analyzer in analyzers:
+            assert "name" in analyzer
+            assert "description" in analyzer
+            assert "spec_fields" in analyzer
+            
+            # Check field structure
+            for field in analyzer["spec_fields"]:
+                assert "name" in field
+                assert "type" in field
+                assert "description" in field
+                assert "required" in field
+                # default is optional
+    
+    def test_get_analyzer_info_keyword_analyzer_fields(self, client):
+        """Test that KeywordScoreAnalyzer has expected fields."""
+        response = client.get("/api/v1/analyzers/info")
+        
+        assert response.status_code == 200
+        data = response.json()
+        
+        # Find KeywordScoreAnalyzer
+        keyword_analyzer = None
+        for analyzer in data["analyzers"]:
+            if analyzer["name"] == "KeywordScoreAnalyzer":
+                keyword_analyzer = analyzer
+                break
+        
+        assert keyword_analyzer is not None
+        
+        # Check expected fields
+        field_names = [field["name"] for field in keyword_analyzer["spec_fields"]]
+        assert "name" in field_names
+        assert "composite_weight" in field_names
+        assert "keywords" in field_names
+        
+        # Check keywords field type
+        keywords_field = next(field for field in keyword_analyzer["spec_fields"] if field["name"] == "keywords")
+        assert "List[WeightedKeyword]" in keywords_field["type"]
+    
+    def test_get_analyzer_info_llm_analyzer_fields(self, client):
+        """Test that LLMServiceScoreAnalyzer has expected fields."""
+        response = client.get("/api/v1/analyzers/info")
+        
+        assert response.status_code == 200
+        data = response.json()
+        
+        # Find LLMServiceScoreAnalyzer
+        llm_analyzer = None
+        for analyzer in data["analyzers"]:
+            if analyzer["name"] == "LLMServiceScoreAnalyzer":
+                llm_analyzer = analyzer
+                break
+        
+        assert llm_analyzer is not None
+        
+        # Check expected fields
+        field_names = [field["name"] for field in llm_analyzer["spec_fields"]]
+        assert "name" in field_names
+        assert "composite_weight" in field_names
+        assert "scoring_input" in field_names
+        
+        # Check scoring_input field shows union type
+        scoring_input_field = next(field for field in llm_analyzer["spec_fields"] if field["name"] == "scoring_input")
+        assert "PromptInput" in scoring_input_field["type"]
+        assert "TopicListInput" in scoring_input_field["type"]
+
+
 class TestSeedsEndpoint:
     """Tests for the seeds collection endpoint."""
     

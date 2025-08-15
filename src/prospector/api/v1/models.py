@@ -67,3 +67,27 @@ class SeedUrlScrapeResponse(BaseModel):
     """Response model for seed URL collection."""
     
     seed_urls: List[str]
+
+
+class FieldDescriptor(BaseModel):
+    """Descriptor for a field in an analyzer spec."""
+    
+    name: str
+    type: str
+    description: str
+    required: bool
+    default: str = None
+
+
+class AnalyzerInfo(BaseModel):
+    """Information about a score analyzer."""
+    
+    name: str
+    description: str
+    spec_fields: List[FieldDescriptor]
+
+
+class AnalyzerInfoResponse(BaseModel):
+    """Response model for analyzer information."""
+    
+    analyzers: List[AnalyzerInfo]

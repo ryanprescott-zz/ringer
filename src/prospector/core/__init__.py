@@ -31,6 +31,7 @@ from .storage_handlers import (
     FsStoreHandler,
     DhStoreHandler,
 )
+from .utils import ScoreAnalyzerInfoUtil
 
 __version__ = "1.0.0"
 __all__ = [
@@ -60,4 +61,5 @@ __all__ = [
     "LLMServiceScoreAnalyzer",
     "RunStateEnum",
     "RunState",
+    "ScoreAnalyzerInfoUtil",
 ]
