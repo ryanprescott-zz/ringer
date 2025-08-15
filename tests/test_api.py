@@ -347,13 +347,17 @@ class TestCrawlStatusEndpoint:
     def test_get_crawl_status_success(self, client, mock_prospector):
         """Test successful crawl status retrieval."""
         from prospector.core.models import CrawlStatus, RunState, RunStateEnum
+        from datetime import datetime
         
         test_crawl_id = "test_crawl_123"
         test_status = CrawlStatus(
             crawl_id=test_crawl_id,
             crawl_name="test_crawl",
             current_state="RUNNING",
-            state_history=[RunState(state=RunStateEnum.CREATED), RunState(state=RunStateEnum.RUNNING)],
+            state_history=[
+                RunState(state=RunStateEnum.CREATED, timestamp=datetime.now()), 
+                RunState(state=RunStateEnum.RUNNING, timestamp=datetime.now())
+            ],
             crawled_count=10,
             processed_count=8,
             error_count=2,
