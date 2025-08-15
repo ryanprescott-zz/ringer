@@ -148,8 +148,10 @@ class ScoreAnalyzerInfoUtil:
         if origin is not None:
             args = get_args(field_type)
             
-            # Handle Union types
-            if hasattr(field_type, '__origin__') and str(field_type).startswith('typing.Union'):
+            # Handle Union types (both typing.Union and | syntax)
+            import types
+            if (origin is types.UnionType or 
+                (hasattr(field_type, '__origin__') and str(field_type).startswith('typing.Union'))):
                 type_names = [cls._get_simple_type_name(arg) for arg in args if arg != type(None)]
                 return " | ".join(type_names)
             
