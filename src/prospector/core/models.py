@@ -152,7 +152,7 @@ class CrawlSpec(BaseModel):
     
     name: str = Field(..., description="Name of the crawl")
     seeds: CrawlSeeds = Field(..., description="Seed sources for the crawl")
-    analyzer_specs: List[AnalyzerSpec] = Field(..., description="Analyzers to use")
+    analyzer_specs: List[KeywordScoringSpec|LLMScoringSpec] = Field(..., description="Analyzers to use")
     worker_count: int = Field(default=1, description="Number of workers to use")
     domain_blacklist: Optional[List[str]] = Field(
         default=None, description="Domains to exclude from crawling"

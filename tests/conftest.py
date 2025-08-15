@@ -5,10 +5,15 @@ import threading
 import time
 import atexit
 import tempfile
+from fastapi.testclient import TestClient
 from unittest.mock import Mock, patch
+from prospector.main import app
 from prospector.core import (
     CrawlSpec,
     CrawlSeeds,
+    CrawlState,
+    SearchEngineSeed,
+    SearchEngineEnum,
     AnalyzerSpec,
     WeightedKeyword,
     CrawlRecord,
@@ -82,7 +87,7 @@ def sample_weighted_keywords():
 
 
 @pytest.fixture
-def sample_analyzer_spec(sample_weighted_keywords):
+def sample_analyzer_spec(sample_weighted_keywords) -> KeywordScoringSpec:
     """Sample analyzer specification for testing."""
     from prospector.core.models import KeywordScoringSpec
     return KeywordScoringSpec(
@@ -95,7 +100,16 @@ def sample_analyzer_spec(sample_weighted_keywords):
 @pytest.fixture
 def sample_crawl_spec(sample_analyzer_spec):
     """Sample crawl specification for testing."""
-    seeds = CrawlSeeds(url_seeds=["https://example.com"])
+    seeds = CrawlSeeds(
+        url_seeds=["https://example.com"],
+        search_engine_seeds=[
+            SearchEngineSeed(
+                search_engine=SearchEngineEnum.GOOGLE,
+                query="breeds of dogs",
+                result_count=10
+            )
+        ]
+    )
     return CrawlSpec(
         name="test_crawl",
         seeds=seeds,
@@ -104,6 +118,33 @@ def sample_crawl_spec(sample_analyzer_spec):
         domain_blacklist=["spam.com"]
     )
 
+@pytest.fixture
+def sample_crawl_spec_dict(sample_crawl_spec):
+    #return sample_crawl_spec.model_dump_json()
+    # TODO: This is supposed to work, but excludes the subtype fields of analyzer_specs (KeywordScoringSpec)
+
+    return {
+        "name": "test_crawl",
+        "seeds": {
+        "url_seeds": ["https://example.com"],
+        "search_engine_seeds": [
+            {"search_engine": "Google", "query": "breeds of dogs", "result_count": 10}
+        ]
+        },
+        "analyzer_specs": [
+        {
+            "name": "KeywordScoreAnalyzer",
+            "composite_weight": 1.0,
+            "keywords": [
+            {"keyword": "python", "weight": 1.0},
+            {"keyword": "programming", "weight": 0.8},
+            {"keyword": "code", "weight": 0.6}
+            ]
+        }
+        ],
+        "worker_count": 1,
+        "domain_blacklist": ["spam.com"]
+    }
 
 @pytest.fixture
 def sample_crawl_record():
@@ -167,3 +208,24 @@ def mock_handler():
     """Mock crawl record handler for testing."""
     handler = Mock()
     return handler
+
+@pytest.fixture
+def client():
+    """Create a test client for the FastAPI application."""
+    return TestClient(app)
+
+
+@pytest.fixture
+def mock_prospector():
+    """Create a mock Prospector instance."""
+    prospector = Mock(spec=Prospector)
+    prospector.crawls = {}
+    return prospector
+
+
+@pytest.fixture
+def sample_crawl_state(sample_crawl_spec):
+    """Create a sample CrawlState for testing."""
+    from prospector.core.models import RunState, RunStateEnum
+    crawl_state = CrawlState(sample_crawl_spec)
+    return crawl_state

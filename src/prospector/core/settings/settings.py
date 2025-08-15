@@ -27,7 +27,7 @@ class ProspectorSettings(BaseSettings):
 class PlaywrightScraperSettings(BaseSettings):
     """Settings for the Playwright web scraper."""
     
-    timeout: int = 30
+    timeout: int = 60
     user_agent: str = "Prospector/1.0"
     javascript_enabled: bool = True
     

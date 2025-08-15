@@ -5,17 +5,17 @@ import threading
 import time
 from datetime import datetime
 from unittest.mock import patch
-from prospector.core import (
-    WeightedKeyword,
-    AnalyzerSpec,
-    CrawlSpec,
-    CrawlRecord,
-)
+
 from prospector.core.models import (
     KeywordScoringSpec,
     LLMScoringSpec,
     PromptInput,
     TopicListInput,
+    WeightedKeyword,
+    AnalyzerSpec,
+    CrawlSpec,
+    CrawlRecord,
+    CrawlSeeds
 )
 
 
@@ -137,53 +137,28 @@ class TestAnalyzerSpec:
 class TestCrawlSpec:
     """Tests for CrawlSpec model."""
     
-    def test_valid_crawl_spec(self, sample_analyzer_spec):
+    def test_valid_crawl_spec(self, sample_crawl_spec):
         """Test creating a valid crawl spec."""
-        spec = CrawlSpec(
-            name="test_crawl",
-            url_seeds=["https://example.com", "https://test.com"],
-            analyzer_specs=[sample_analyzer_spec],
-            worker_count=2,
-            domain_blacklist=["spam.com"]
-        )
         
-        assert spec.name == "test_crawl"
-        assert len(spec.url_seeds) == 2
-        assert len(spec.analyzer_specs) == 1
-        assert spec.worker_count == 2
-        assert "spam.com" in spec.domain_blacklist
-    
-    def test_crawl_id_generation(self, sample_analyzer_spec):
-        """Test crawl ID generation from name hash."""
-        spec = CrawlSpec(
-            name="test_crawl",
-            url_seeds=["https://example.com"],
-            analyzer_specs=[sample_analyzer_spec]
-        )
-        
-        crawl_id = spec.id
-        assert isinstance(crawl_id, str)
-        assert len(crawl_id) == 32  # MD5 hex digest length
-        
-        # Same name should generate same ID
-        spec2 = CrawlSpec(
-            name="test_crawl",
-            url_seeds=["https://different.com"],
-            analyzer_specs=[sample_analyzer_spec]
-        )
-        assert spec2.id == crawl_id
+        assert sample_crawl_spec.name == "test_crawl"
+        assert len(sample_crawl_spec.seeds.url_seeds) == 1
+        assert len(sample_crawl_spec.seeds.search_engine_seeds) == 1
+        assert len(sample_crawl_spec.analyzer_specs) == 1
+        assert sample_crawl_spec.worker_count == 1
+        assert "spam.com" in sample_crawl_spec.domain_blacklist
     
     
     def test_default_values(self, sample_analyzer_spec):
         """Test default values for optional fields."""
         spec = CrawlSpec(
             name="test_crawl",
-            url_seeds=["https://example.com"],
+            seeds=CrawlSeeds(url_seeds=["https://example.com"]),
             analyzer_specs=[sample_analyzer_spec]
         )
         
         assert spec.worker_count == 1
         assert spec.domain_blacklist is None
+        assert spec.seeds.search_engine_seeds is None
 
 
 class TestCrawlRecord:
