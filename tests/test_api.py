@@ -388,14 +388,29 @@ class TestApplicationLifespan:
     """Tests for FastAPI application lifespan management."""
     
     @patch('prospector.main.Prospector')
-    def test_lifespan_startup_shutdown(self, mock_prospector_class, client):
+    def test_lifespan_startup_shutdown(self, mock_prospector_class):
         """Test that Prospector is created on startup and shutdown on exit."""
+        from contextlib import asynccontextmanager
+        from fastapi import FastAPI
+        from prospector.main import lifespan
+        
         mock_prospector_instance = Mock()
         mock_prospector_class.return_value = mock_prospector_instance
         
-        # Verify Prospector was created and stored in app state
-        mock_prospector_class.assert_called_once()
-        assert hasattr(client.app.state, 'prospector')
+        # Create a test app to test the lifespan
+        test_app = FastAPI()
+        
+        # Manually run the lifespan context manager
+        async def run_lifespan():
+            async with lifespan(test_app):
+                # Verify Prospector was created and stored in app state
+                mock_prospector_class.assert_called_once()
+                assert hasattr(test_app.state, 'prospector')
+                assert test_app.state.prospector == mock_prospector_instance
+        
+        # Run the async lifespan
+        import asyncio
+        asyncio.run(run_lifespan())
         
         # Verify shutdown was called
         mock_prospector_instance.shutdown.assert_called_once()
