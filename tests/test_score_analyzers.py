@@ -139,6 +139,7 @@ class TestLLMServiceScoreAnalyzer:
         mock_response = Mock()
         mock_response.json.return_value = {"score": "0.85"}
         mock_response.raise_for_status.return_value = None
+        mock_response.status_code = 200
         mock_post.return_value = mock_response
         
         spec = LLMScoringSpec(
@@ -169,6 +170,7 @@ class TestLLMServiceScoreAnalyzer:
         mock_response = Mock()
         mock_response.json.return_value = {"score": "0.75"}
         mock_response.raise_for_status.return_value = None
+        mock_response.status_code = 200
         mock_post.return_value = mock_response
         
         spec = LLMScoringSpec(
@@ -195,6 +197,7 @@ class TestLLMServiceScoreAnalyzer:
         mock_response = Mock()
         mock_response.json.return_value = {"score": "0.65"}
         mock_response.raise_for_status.return_value = None
+        mock_response.status_code = 200
         mock_post.return_value = mock_response
         
         spec = LLMScoringSpec(
