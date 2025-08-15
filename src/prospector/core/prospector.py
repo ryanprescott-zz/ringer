@@ -212,7 +212,7 @@ class Prospector:
         return (crawl_id, created_state)
     
 
-    async def start(self, crawl_id: str) -> tuple:
+    def start(self, crawl_id: str) -> tuple:
         """
         Start a crawl.
         
@@ -241,7 +241,8 @@ class Prospector:
             crawl_state.add_state(started_state)
         
         # Resolve seed URLs from all sources
-        await self._resolve_seed_urls(crawl_state)
+        import asyncio
+        asyncio.run(self._resolve_seed_urls(crawl_state))
         
         # Initialize frontier with resolved seed URLs
         for url in crawl_state.resolved_seed_urls:

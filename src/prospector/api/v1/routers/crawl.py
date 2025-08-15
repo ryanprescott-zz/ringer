@@ -47,7 +47,7 @@ def create_crawl(request: CreateCrawlRequest, app_request: Request) -> CreateCra
 @router.post("/start", response_model=StartCrawlResponse)
 def start_crawl(request: StartCrawlRequest, app_request: Request) -> StartCrawlResponse:
     """
-    Start a previously createted crawl.
+    Start a previously created crawl.
     
     Args:
         request: The crawl start request containing crawl ID
