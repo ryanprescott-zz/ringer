@@ -4,7 +4,7 @@ import hashlib
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 from enum import Enum
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class RunStateEnum(str, Enum):
@@ -12,6 +12,13 @@ class RunStateEnum(str, Enum):
     CREATED = "CREATED"
     RUNNING = "RUNNING"
     STOPPED = "STOPPED"
+
+
+class SearchEngineEnum(str, Enum):
+    """Enumeration of supported search engines."""
+    GOOGLE = "Google"
+    BING = "Bing"
+    DUCKDUCKGO = "DuckDuckGo"
 
 
 class RunState(BaseModel):
@@ -106,11 +113,45 @@ class LLMScoringSpec(AnalyzerSpec):
 
     scoring_input: PromptInput | TopicListInput = Field(..., description="Scoring input - either prompt or topics")
 
+
+class SearchEngineSeed(BaseModel):
+    """Specification for search engine seed generation."""
+    
+    search_engine: SearchEngineEnum = Field(..., description="Search engine to use")
+    query: str = Field(..., description="Search query string")
+    result_count: int = Field(..., description="Number of search results to collect as seeds", gt=0, le=100)
+
+    @field_validator('query')
+    @classmethod
+    def check_query_not_empty(cls, value: str) -> str:
+        """Ensure the query is not empty."""
+        if not value.strip():
+            raise ValueError("Search query cannot be empty")
+        return value
+
+
+class CrawlSeeds(BaseModel):
+    """Container for crawl seed sources."""
+    
+    url_seeds: Optional[List[str]] = Field(default=None, description="Direct URL seeds")
+    search_engine_seeds: Optional[List[SearchEngineSeed]] = Field(default=None, description="Search engine seed specifications")
+
+    @model_validator(mode='after')
+    def check_at_least_one_seed_source(self):
+        """Ensure at least one seed source is provided."""
+        url_seeds_empty = not self.url_seeds
+        search_engine_seeds_empty = not self.search_engine_seeds
+        
+        if url_seeds_empty and search_engine_seeds_empty:
+            raise ValueError("At least one of url_seeds or search_engine_seeds must be provided")
+        
+        return self
+
 class CrawlSpec(BaseModel):
     """Specification for a web crawl."""
     
     name: str = Field(..., description="Name of the crawl")
-    url_seeds: List[str] = Field(..., description="Initial URLs to crawl")
+    seeds: CrawlSeeds = Field(..., description="Seed sources for the crawl")
     analyzer_specs: List[AnalyzerSpec] = Field(..., description="Analyzers to use")
     worker_count: int = Field(default=1, description="Number of workers to use")
     domain_blacklist: Optional[List[str]] = Field(
