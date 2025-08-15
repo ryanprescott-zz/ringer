@@ -10,6 +10,9 @@ from prospector.core import (
     CrawlState,
     CrawlSpec,
     AnalyzerSpec,
+    KeywordScoringSpec,
+    LLMScoringSpec,
+    TopicListInput,
     WeightedKeyword,
     RunStateEnum,
 )
@@ -140,10 +143,10 @@ class TestProspector:
     
     def test_create_crawl_with_llm_analyzer(self, prospector, sample_analyzer_spec):
         """Test creating a crawl with LLM analyzer."""
-        llm_spec = AnalyzerSpec(
+        llm_spec = LLMScoringSpec(
             name="LLMServiceScoreAnalyzer",
             composite_weight=0.5,
-            params=None  # LLM analyzer doesn't need params
+            scoring_input=TopicListInput(topics=["test", "example"])
         )
         
         crawl_spec = CrawlSpec(

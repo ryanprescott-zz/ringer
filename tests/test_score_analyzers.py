@@ -7,6 +7,10 @@ from prospector.core import (
     KeywordScoreAnalyzer,
     WeightedKeyword,
     LLMServiceScoreAnalyzer,
+    KeywordScoringSpec,
+    LLMScoringSpec,
+    PromptInput,
+    TopicListInput,
 )
 
 
@@ -15,13 +19,22 @@ class TestKeywordScoreAnalyzer:
     
     def test_init_with_keywords(self, sample_weighted_keywords):
         """Test initialization with valid keywords."""
-        analyzer = KeywordScoreAnalyzer(sample_weighted_keywords)
-        assert analyzer.keywords == sample_weighted_keywords
+        spec = KeywordScoringSpec(
+            name="KeywordScoreAnalyzer",
+            composite_weight=1.0,
+            keywords=sample_weighted_keywords
+        )
+        analyzer = KeywordScoreAnalyzer(spec)
+        assert analyzer.spec.keywords == sample_weighted_keywords
     
     def test_init_empty_keywords(self):
         """Test initialization with empty keywords list raises error."""
         with pytest.raises(ValueError, match="Keywords list cannot be empty"):
-            KeywordScoreAnalyzer([])
+            spec = KeywordScoringSpec(
+                name="KeywordScoreAnalyzer",
+                composite_weight=1.0,
+                keywords=[]
+            )
     
     def test_score_with_string_content(self, keyword_analyzer):
         """Test scoring with valid string content."""
@@ -68,7 +81,12 @@ class TestKeywordScoreAnalyzer:
         high_weight = WeightedKeyword(keyword="important", weight=10.0)
         low_weight = WeightedKeyword(keyword="unimportant", weight=0.1)
         
-        analyzer = KeywordScoreAnalyzer([high_weight, low_weight])
+        spec = KeywordScoringSpec(
+            name="KeywordScoreAnalyzer",
+            composite_weight=1.0,
+            keywords=[high_weight, low_weight]
+        )
+        analyzer = KeywordScoreAnalyzer(spec)
         
         # Use multiple occurrences to amplify the weight difference
         content_high = "This is important important important"
@@ -101,8 +119,13 @@ class TestLLMServiceScoreAnalyzer:
     
     def test_init(self):
         """Test initialization of LLM service analyzer."""
-        analyzer = LLMServiceScoreAnalyzer()
-        assert analyzer.settings is not None
+        spec = LLMScoringSpec(
+            name="LLMServiceScoreAnalyzer",
+            composite_weight=1.0,
+            scoring_input=TopicListInput(topics=["test", "example"])
+        )
+        analyzer = LLMServiceScoreAnalyzer(spec)
+        assert analyzer.spec == spec
         assert analyzer.session is not None
         assert analyzer.session.headers['Content-Type'] == 'application/json'
         assert analyzer.session.headers['Accept'] == 'application/json'
@@ -110,16 +133,19 @@ class TestLLMServiceScoreAnalyzer:
     @patch('prospector.core.score_analyzers.llm_service_score_analyzer.requests.Session.post')
     def test_score_with_valid_response(self, mock_post):
         """Test scoring with valid LLM service response."""
-        from prospector.core import LLMScoreServiceInput
-        
         # Mock successful response
         mock_response = Mock()
         mock_response.json.return_value = {"score": "0.85"}
         mock_response.raise_for_status.return_value = None
         mock_post.return_value = mock_response
         
-        analyzer = LLMServiceScoreAnalyzer()
-        content = LLMScoreServiceInput(text="Test content about python programming")
+        spec = LLMScoringSpec(
+            name="LLMServiceScoreAnalyzer",
+            composite_weight=1.0,
+            scoring_input=TopicListInput(topics=["python", "programming"])
+        )
+        analyzer = LLMServiceScoreAnalyzer(spec)
+        content = "Test content about python programming"
         
         score = analyzer.score(content)
         
@@ -130,26 +156,26 @@ class TestLLMServiceScoreAnalyzer:
         call_args = mock_post.call_args
         assert call_args[1]['timeout'] == analyzer.settings.llm_request_timeout
         request_data = call_args[1]['json']
-        assert 'prompt' in request_data
-        assert 'model_output_format' in request_data
-        assert "Test content about python programming" in request_data['prompt']
+        assert 'generation_input' in request_data
+        assert 'text_inputs' in request_data
+        assert "Test content about python programming" in request_data['text_inputs']
     
     @patch('prospector.core.score_analyzers.llm_service_score_analyzer.requests.Session.post')
     def test_score_with_custom_prompt(self, mock_post):
         """Test scoring with custom prompt."""
-        from prospector.core import LLMScoreServiceInput
-        
         # Mock successful response
         mock_response = Mock()
         mock_response.json.return_value = {"score": "0.75"}
         mock_response.raise_for_status.return_value = None
         mock_post.return_value = mock_response
         
-        analyzer = LLMServiceScoreAnalyzer()
-        content = LLMScoreServiceInput(
-            text="Test content", 
-            prompt="Custom scoring prompt:"
+        spec = LLMScoringSpec(
+            name="LLMServiceScoreAnalyzer",
+            composite_weight=1.0,
+            scoring_input=PromptInput(prompt="Custom scoring prompt:")
         )
+        analyzer = LLMServiceScoreAnalyzer(spec)
+        content = "Test content"
         
         score = analyzer.score(content)
         
@@ -158,49 +184,62 @@ class TestLLMServiceScoreAnalyzer:
         # Verify custom prompt was used
         call_args = mock_post.call_args
         request_data = call_args[1]['json']
-        assert request_data['prompt'].startswith("Custom scoring prompt:")
+        assert "Custom scoring prompt:" in request_data['generation_input']['prompt']
     
     @patch('prospector.core.score_analyzers.llm_service_score_analyzer.requests.Session.post')
     def test_score_with_default_prompt(self, mock_post):
-        """Test scoring with default prompt when none provided."""
-        from prospector.core import LLMScoreServiceInput
-        
+        """Test scoring with default prompt when using topics."""
         # Mock successful response
         mock_response = Mock()
         mock_response.json.return_value = {"score": "0.65"}
         mock_response.raise_for_status.return_value = None
         mock_post.return_value = mock_response
         
-        analyzer = LLMServiceScoreAnalyzer()
-        content = LLMScoreServiceInput(text="Test content")  # No prompt provided
+        spec = LLMScoringSpec(
+            name="LLMServiceScoreAnalyzer",
+            composite_weight=1.0,
+            scoring_input=TopicListInput(topics=["test", "content"])
+        )
+        analyzer = LLMServiceScoreAnalyzer(spec)
+        content = "Test content"
         
         score = analyzer.score(content)
         
         assert score == 0.65
         
-        # Verify default prompt was used
+        # Verify default prompt was built from topics
         call_args = mock_post.call_args
         request_data = call_args[1]['json']
-        assert analyzer.settings.llm_default_prompt in request_data['prompt']
+        prompt = request_data['generation_input']['prompt']
+        assert "test" in prompt and "content" in prompt
     
     def test_score_with_invalid_content_type(self):
         """Test scoring with invalid content type raises error."""
-        analyzer = LLMServiceScoreAnalyzer()
+        spec = LLMScoringSpec(
+            name="LLMServiceScoreAnalyzer",
+            composite_weight=1.0,
+            scoring_input=TopicListInput(topics=["test"])
+        )
+        analyzer = LLMServiceScoreAnalyzer(spec)
         
-        with pytest.raises(TypeError, match="Content must be LLMScoreServiceInput"):
-            analyzer.score("invalid content type")
+        with pytest.raises(TypeError, match="Content must be a string"):
+            analyzer.score(123)
     
     @patch('prospector.core.score_analyzers.llm_service_score_analyzer.requests.Session.post')
     def test_score_with_http_error(self, mock_post):
         """Test scoring with HTTP error returns 0.0."""
-        from prospector.core import LLMScoreServiceInput
         import requests
         
         # Mock HTTP error
         mock_post.side_effect = requests.exceptions.HTTPError("HTTP 500 Error")
         
-        analyzer = LLMServiceScoreAnalyzer()
-        content = LLMScoreServiceInput(text="Test content")
+        spec = LLMScoringSpec(
+            name="LLMServiceScoreAnalyzer",
+            composite_weight=1.0,
+            scoring_input=TopicListInput(topics=["test"])
+        )
+        analyzer = LLMServiceScoreAnalyzer(spec)
+        content = "Test content"
         
         score = analyzer.score(content)
         
@@ -209,14 +248,18 @@ class TestLLMServiceScoreAnalyzer:
     @patch('prospector.core.score_analyzers.llm_service_score_analyzer.requests.Session.post')
     def test_score_with_timeout(self, mock_post):
         """Test scoring with timeout returns 0.0."""
-        from prospector.core import LLMScoreServiceInput
         import requests
         
         # Mock timeout
         mock_post.side_effect = requests.exceptions.Timeout("Request timeout")
         
-        analyzer = LLMServiceScoreAnalyzer()
-        content = LLMScoreServiceInput(text="Test content")
+        spec = LLMScoringSpec(
+            name="LLMServiceScoreAnalyzer",
+            composite_weight=1.0,
+            scoring_input=TopicListInput(topics=["test"])
+        )
+        analyzer = LLMServiceScoreAnalyzer(spec)
+        content = "Test content"
         
         score = analyzer.score(content)
         
@@ -225,7 +268,6 @@ class TestLLMServiceScoreAnalyzer:
     @patch('prospector.core.score_analyzers.llm_service_score_analyzer.requests.Session.post')
     def test_score_with_invalid_json_response(self, mock_post):
         """Test scoring with invalid JSON response returns 0.0."""
-        from prospector.core import LLMScoreServiceInput
         import json
         
         # Mock response with invalid JSON
@@ -234,8 +276,13 @@ class TestLLMServiceScoreAnalyzer:
         mock_response.raise_for_status.return_value = None
         mock_post.return_value = mock_response
         
-        analyzer = LLMServiceScoreAnalyzer()
-        content = LLMScoreServiceInput(text="Test content")
+        spec = LLMScoringSpec(
+            name="LLMServiceScoreAnalyzer",
+            composite_weight=1.0,
+            scoring_input=TopicListInput(topics=["test"])
+        )
+        analyzer = LLMServiceScoreAnalyzer(spec)
+        content = "Test content"
         
         score = analyzer.score(content)
         
@@ -244,16 +291,19 @@ class TestLLMServiceScoreAnalyzer:
     @patch('prospector.core.score_analyzers.llm_service_score_analyzer.requests.Session.post')
     def test_score_with_missing_score_field(self, mock_post):
         """Test scoring with missing score field in response returns 0.0."""
-        from prospector.core import LLMScoreServiceInput
-        
         # Mock response missing score field
         mock_response = Mock()
         mock_response.json.return_value = {"result": "success"}  # No score field
         mock_response.raise_for_status.return_value = None
         mock_post.return_value = mock_response
         
-        analyzer = LLMServiceScoreAnalyzer()
-        content = LLMScoreServiceInput(text="Test content")
+        spec = LLMScoringSpec(
+            name="LLMServiceScoreAnalyzer",
+            composite_weight=1.0,
+            scoring_input=TopicListInput(topics=["test"])
+        )
+        analyzer = LLMServiceScoreAnalyzer(spec)
+        content = "Test content"
         
         score = analyzer.score(content)
         

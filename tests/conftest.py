@@ -82,10 +82,11 @@ def sample_weighted_keywords():
 @pytest.fixture
 def sample_analyzer_spec(sample_weighted_keywords):
     """Sample analyzer specification for testing."""
-    return AnalyzerSpec(
+    from prospector.core.models import KeywordScoringSpec
+    return KeywordScoringSpec(
         name="KeywordScoreAnalyzer",
         composite_weight=1.0,
-        params=sample_weighted_keywords
+        keywords=sample_weighted_keywords
     )
 
 
@@ -117,7 +118,13 @@ def sample_crawl_record():
 @pytest.fixture
 def keyword_analyzer(sample_weighted_keywords):
     """Sample keyword analyzer for testing."""
-    return KeywordScoreAnalyzer(sample_weighted_keywords)
+    from prospector.core.models import KeywordScoringSpec
+    spec = KeywordScoringSpec(
+        name="KeywordScoreAnalyzer",
+        composite_weight=1.0,
+        keywords=sample_weighted_keywords
+    )
+    return KeywordScoreAnalyzer(spec)
 
 
 @pytest.fixture

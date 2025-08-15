@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 from fastapi.testclient import TestClient
 from prospector.main import app
 from prospector.core.prospector import Prospector, CrawlState
-from prospector.core.models import CrawlSpec, AnalyzerSpec, WeightedKeyword
+from prospector.core.models import CrawlSpec, KeywordScoringSpec, WeightedKeyword
 from prospector.api.v1.models import (
     CreateCrawlRequest, StartCrawlRequest, StopCrawlRequest, DeleteCrawlRequest
 )
@@ -36,7 +36,7 @@ def sample_crawl_spec_dict():
             {
                 "name": "KeywordScoreAnalyzer",
                 "composite_weight": 1.0,
-                "params": [
+                "keywords": [
                     {"keyword": "test", "weight": 1.0}
                 ]
             }
@@ -54,10 +54,10 @@ def sample_crawl_state():
         name="test_crawl",
         seed_urls=["https://example.com"],
         analyzer_specs=[
-            AnalyzerSpec(
+            KeywordScoringSpec(
                 name="KeywordScoreAnalyzer",
                 composite_weight=1.0,
-                params=[WeightedKeyword(keyword="test", weight=1.0)]
+                keywords=[WeightedKeyword(keyword="test", weight=1.0)]
             )
         ]
     )

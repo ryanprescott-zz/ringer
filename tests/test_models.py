@@ -8,10 +8,12 @@ from unittest.mock import patch
 from prospector.core import (
     WeightedKeyword,
     AnalyzerSpec,
+    KeywordScoringSpec,
+    LLMScoringSpec,
+    PromptInput,
+    TopicListInput,
     CrawlSpec,
     CrawlRecord,
-    LLMScoreServiceInput,
-    LLMScoreRequest,
 )
 
 
@@ -32,70 +34,102 @@ class TestWeightedKeyword:
             WeightedKeyword(weight=1.0)
 
 
-class TestLLMScoreServiceInput:
-    """Tests for LLMScoreServiceInput model."""
+class TestPromptInput:
+    """Tests for PromptInput model."""
     
-    def test_valid_input_with_prompt(self):
-        """Test creating valid input with prompt."""
-        input_obj = LLMScoreServiceInput(
-            text="Test content to score",
-            prompt="Score this content:"
-        )
-        
-        assert input_obj.text == "Test content to score"
+    def test_valid_prompt_input(self):
+        """Test creating valid prompt input."""
+        input_obj = PromptInput(prompt="Score this content:")
         assert input_obj.prompt == "Score this content:"
     
-    def test_valid_input_without_prompt(self):
-        """Test creating valid input without prompt."""
-        input_obj = LLMScoreServiceInput(text="Test content to score")
+    def test_empty_prompt_validation(self):
+        """Test empty prompt validation."""
+        with pytest.raises(ValueError, match="Prompt cannot be empty"):
+            PromptInput(prompt="")
         
-        assert input_obj.text == "Test content to score"
-        assert input_obj.prompt is None
-    
-    def test_input_validation(self):
-        """Test input field validation."""
-        # Should require text field
-        with pytest.raises(ValueError):
-            LLMScoreServiceInput(prompt="Test prompt")
+        with pytest.raises(ValueError, match="Prompt cannot be empty"):
+            PromptInput(prompt="   ")
 
 
-class TestLLMScoreRequest:
-    """Tests for LLMScoreRequest model."""
+class TestTopicListInput:
+    """Tests for TopicListInput model."""
     
-    def test_valid_request(self):
-        """Test creating a valid LLM score request."""
-        request = LLMScoreRequest(
-            prompt="Score this text: test content",
-            model_output_format={"score": "string"}
+    def test_valid_topic_list_input(self):
+        """Test creating valid topic list input."""
+        input_obj = TopicListInput(topics=["python", "programming", "code"])
+        assert input_obj.topics == ["python", "programming", "code"]
+    
+    def test_empty_topics_validation(self):
+        """Test empty topics list validation."""
+        with pytest.raises(ValueError, match="Topics list cannot be empty"):
+            TopicListInput(topics=[])
+
+
+class TestKeywordScoringSpec:
+    """Tests for KeywordScoringSpec model."""
+    
+    def test_valid_keyword_scoring_spec(self, sample_weighted_keywords):
+        """Test creating valid keyword scoring spec."""
+        spec = KeywordScoringSpec(
+            name="KeywordScoreAnalyzer",
+            composite_weight=0.8,
+            keywords=sample_weighted_keywords
         )
         
-        assert "test content" in request.prompt
-        assert request.model_output_format == {"score": "string"}
+        assert spec.name == "KeywordScoreAnalyzer"
+        assert spec.composite_weight == 0.8
+        assert spec.keywords == sample_weighted_keywords
     
-    def test_request_validation(self):
-        """Test request field validation."""
-        # Should require both fields
-        with pytest.raises(ValueError):
-            LLMScoreRequest(prompt="Test prompt")
+    def test_empty_keywords_validation(self):
+        """Test empty keywords validation."""
+        with pytest.raises(ValueError, match="Keywords list cannot be empty"):
+            KeywordScoringSpec(
+                name="KeywordScoreAnalyzer",
+                composite_weight=1.0,
+                keywords=[]
+            )
+
+
+class TestLLMScoringSpec:
+    """Tests for LLMScoringSpec model."""
+    
+    def test_valid_llm_scoring_spec_with_prompt(self):
+        """Test creating valid LLM scoring spec with prompt."""
+        spec = LLMScoringSpec(
+            name="LLMServiceScoreAnalyzer",
+            composite_weight=0.7,
+            scoring_input=PromptInput(prompt="Score this content:")
+        )
         
-        with pytest.raises(ValueError):
-            LLMScoreRequest(model_output_format={"score": "string"})
+        assert spec.name == "LLMServiceScoreAnalyzer"
+        assert spec.composite_weight == 0.7
+        assert isinstance(spec.scoring_input, PromptInput)
+    
+    def test_valid_llm_scoring_spec_with_topics(self):
+        """Test creating valid LLM scoring spec with topics."""
+        spec = LLMScoringSpec(
+            name="LLMServiceScoreAnalyzer",
+            composite_weight=0.9,
+            scoring_input=TopicListInput(topics=["python", "programming"])
+        )
+        
+        assert spec.name == "LLMServiceScoreAnalyzer"
+        assert spec.composite_weight == 0.9
+        assert isinstance(spec.scoring_input, TopicListInput)
 
 
 class TestAnalyzerSpec:
     """Tests for AnalyzerSpec model."""
     
-    def test_valid_analyzer_spec(self, sample_weighted_keywords):
+    def test_valid_analyzer_spec(self):
         """Test creating a valid analyzer spec."""
         spec = AnalyzerSpec(
             name="TestAnalyzer",
-            composite_weight=0.8,
-            params=sample_weighted_keywords
+            composite_weight=0.8
         )
         
         assert spec.name == "TestAnalyzer"
         assert spec.composite_weight == 0.8
-        assert spec.params == sample_weighted_keywords
 
 
 class TestCrawlSpec:
