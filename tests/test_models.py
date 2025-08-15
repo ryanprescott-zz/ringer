@@ -8,12 +8,14 @@ from unittest.mock import patch
 from prospector.core import (
     WeightedKeyword,
     AnalyzerSpec,
+    CrawlSpec,
+    CrawlRecord,
+)
+from prospector.core.models import (
     KeywordScoringSpec,
     LLMScoringSpec,
     PromptInput,
     TopicListInput,
-    CrawlSpec,
-    CrawlRecord,
 )
 
 

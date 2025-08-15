@@ -6,7 +6,8 @@ from unittest.mock import Mock, patch
 from fastapi.testclient import TestClient
 from prospector.main import app
 from prospector.core.prospector import Prospector, CrawlState
-from prospector.core.models import CrawlSpec, KeywordScoringSpec, WeightedKeyword
+from prospector.core import CrawlSpec, WeightedKeyword
+from prospector.core.models import KeywordScoringSpec
 from prospector.api.v1.models import (
     CreateCrawlRequest, StartCrawlRequest, StopCrawlRequest, DeleteCrawlRequest
 )

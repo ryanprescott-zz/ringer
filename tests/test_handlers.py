@@ -11,7 +11,7 @@ from prospector.core.storage_handlers import (
     FsStoreHandler,
     DhStoreHandler,
 )
-from prospector.core.models import CrawlRecord
+from prospector.core import CrawlRecord
 
 
 class TestDhStoreHandler:

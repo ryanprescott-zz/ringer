@@ -15,6 +15,7 @@ from prospector.core import (
     KeywordScoreAnalyzer,
     RunStateEnum,
 )
+from prospector.core.models import KeywordScoringSpec
 
 
 # Global cleanup registry

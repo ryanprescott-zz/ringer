@@ -10,11 +10,13 @@ from prospector.core import (
     CrawlState,
     CrawlSpec,
     AnalyzerSpec,
+    WeightedKeyword,
+    RunStateEnum,
+)
+from prospector.core.models import (
     KeywordScoringSpec,
     LLMScoringSpec,
     TopicListInput,
-    WeightedKeyword,
-    RunStateEnum,
 )
 
 

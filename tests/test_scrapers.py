@@ -2,10 +2,7 @@
 
 import pytest
 from unittest.mock import Mock, patch, MagicMock
-from prospector.core import (
-    PlaywrightScraper,
-    CrawlRecord,
-)
+from prospector.core import PlaywrightScraper, CrawlRecord
 
 
 class TestPlaywrightScraper:
