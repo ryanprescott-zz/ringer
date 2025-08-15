@@ -141,14 +141,14 @@ class TestCrawlSpec:
         """Test creating a valid crawl spec."""
         spec = CrawlSpec(
             name="test_crawl",
-            seed_urls=["https://example.com", "https://test.com"],
+            url_seeds=["https://example.com", "https://test.com"],
             analyzer_specs=[sample_analyzer_spec],
             worker_count=2,
             domain_blacklist=["spam.com"]
         )
         
         assert spec.name == "test_crawl"
-        assert len(spec.seed_urls) == 2
+        assert len(spec.url_seeds) == 2
         assert len(spec.analyzer_specs) == 1
         assert spec.worker_count == 2
         assert "spam.com" in spec.domain_blacklist
@@ -157,7 +157,7 @@ class TestCrawlSpec:
         """Test crawl ID generation from name hash."""
         spec = CrawlSpec(
             name="test_crawl",
-            seed_urls=["https://example.com"],
+            url_seeds=["https://example.com"],
             analyzer_specs=[sample_analyzer_spec]
         )
         
@@ -168,7 +168,7 @@ class TestCrawlSpec:
         # Same name should generate same ID
         spec2 = CrawlSpec(
             name="test_crawl",
-            seed_urls=["https://different.com"],
+            url_seeds=["https://different.com"],
             analyzer_specs=[sample_analyzer_spec]
         )
         assert spec2.id == crawl_id
@@ -178,7 +178,7 @@ class TestCrawlSpec:
         """Test default values for optional fields."""
         spec = CrawlSpec(
             name="test_crawl",
-            seed_urls=["https://example.com"],
+            url_seeds=["https://example.com"],
             analyzer_specs=[sample_analyzer_spec]
         )
         

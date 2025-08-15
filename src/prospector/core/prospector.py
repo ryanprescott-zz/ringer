@@ -77,7 +77,7 @@ class CrawlState:
         self.lock = Lock()
         
         # Initialize frontier with seed URLs (score 0.0 initially)
-        for url in crawl_spec.seed_urls:
+        for url in crawl_spec.url_seeds:
             self.frontier.add(ScoreUrlTuple(0.0, url))
     
     @property

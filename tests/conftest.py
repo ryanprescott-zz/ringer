@@ -96,7 +96,7 @@ def sample_crawl_spec(sample_analyzer_spec):
     """Sample crawl specification for testing."""
     return CrawlSpec(
         name="test_crawl",
-        seed_urls=["https://example.com"],
+        url_seeds=["https://example.com"],
         analyzer_specs=[sample_analyzer_spec],
         worker_count=1,
         domain_blacklist=["spam.com"]

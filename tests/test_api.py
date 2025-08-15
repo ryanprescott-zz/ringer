@@ -32,7 +32,7 @@ def sample_crawl_spec_dict():
     """Sample crawl specification as dictionary for API requests."""
     return {
         "name": "test_crawl",
-        "seed_urls": ["https://example.com"],
+        "url_seeds": ["https://example.com"],
         "analyzer_specs": [
             {
                 "name": "KeywordScoreAnalyzer",
@@ -53,7 +53,7 @@ def sample_crawl_state():
     from prospector.core.models import RunState, RunStateEnum
     crawl_spec = CrawlSpec(
         name="test_crawl",
-        seed_urls=["https://example.com"],
+        url_seeds=["https://example.com"],
         analyzer_specs=[
             KeywordScoringSpec(
                 name="KeywordScoreAnalyzer",

@@ -110,7 +110,7 @@ class CrawlSpec(BaseModel):
     """Specification for a web crawl."""
     
     name: str = Field(..., description="Name of the crawl")
-    seed_urls: List[str] = Field(..., description="Initial URLs to crawl")
+    url_seeds: List[str] = Field(..., description="Initial URLs to crawl")
     analyzer_specs: List[AnalyzerSpec] = Field(..., description="Analyzers to use")
     worker_count: int = Field(default=1, description="Number of workers to use")
     domain_blacklist: Optional[List[str]] = Field(

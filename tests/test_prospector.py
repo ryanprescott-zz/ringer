@@ -28,7 +28,7 @@ class TestCrawlState:
         state = CrawlState(sample_crawl_spec)
         
         assert state.crawl_spec == sample_crawl_spec
-        assert len(state.frontier) == len(sample_crawl_spec.seed_urls)
+        assert len(state.frontier) == len(sample_crawl_spec.url_seeds)
         assert len(state.visited_urls) == 0
         assert len(state.analyzers) == 0
         assert state.current_state == RunStateEnum.CREATED
@@ -41,7 +41,7 @@ class TestCrawlState:
         state.add_urls_with_scores(url_scores)
         
         # Should be sorted by score descending
-        assert len(state.frontier) == len(sample_crawl_spec.seed_urls) + 2
+        assert len(state.frontier) == len(sample_crawl_spec.url_seeds) + 2
         # Check that higher score comes first
         frontier_list = list(state.frontier)
         scores = [item.score for item in frontier_list]
@@ -101,7 +101,7 @@ class TestCrawlState:
         """Test URL filtering with no domain blacklist."""
         spec = CrawlSpec(
             name="test",
-            seed_urls=["https://example.com"],
+            url_seeds=["https://example.com"],
             analyzer_specs=[sample_analyzer_spec],
             domain_blacklist=None
         )
@@ -153,7 +153,7 @@ class TestProspector:
         
         crawl_spec = CrawlSpec(
             name="test_llm_crawl",
-            seed_urls=["https://example.com"],
+            url_seeds=["https://example.com"],
             analyzer_specs=[sample_analyzer_spec, llm_spec],
             worker_count=1
         )
