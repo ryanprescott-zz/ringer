@@ -24,6 +24,7 @@ from .models import (
 from .score_analyzers import ScoreAnalyzer, KeywordScoreAnalyzer, LLMServiceScoreAnalyzer
 from .scrapers import Scraper, PlaywrightScraper  
 from .storage_handlers import CrawlStorageHandler, FsStoreHandler, DhStoreHandler
+from .search_engines import SearchEngineService
 from .settings import ProspectorSettings, HandlerType
 
 
@@ -75,10 +76,7 @@ class CrawlState:
         self.analyzer_weights: Dict[str, float] = {}
         self.run_state_history: List[RunState] = []
         self.lock = Lock()
-        
-        # Initialize frontier with seed URLs (score 0.0 initially)
-        for url in crawl_spec.url_seeds:
-            self.frontier.add(ScoreUrlTuple(0.0, url))
+        self.resolved_seed_urls: List[str] = []  # Will be populated when crawl starts
     
     @property
     def current_state(self) -> RunStateEnum:
@@ -160,6 +158,7 @@ class Prospector:
         self.settings = ProspectorSettings()
         self.crawls: Dict[str, CrawlState] = {}
         self.scraper: Scraper = PlaywrightScraper()
+        self.search_engine_service = SearchEngineService()
         
         # Initialize handler based on settings
         if self.settings.handler_type == HandlerType.FILE_SYSTEM:
@@ -213,7 +212,7 @@ class Prospector:
         return (crawl_id, created_state)
     
 
-    def start(self, crawl_id: str) -> tuple:
+    async def start(self, crawl_id: str) -> tuple:
         """
         Start a crawl.
         
@@ -228,6 +227,8 @@ class Prospector:
             RuntimeError: If crawl is already running
         """
         started_state = None
+        crawl_state = None
+        
         with self.crawls_lock:
             if crawl_id not in self.crawls:
                 raise ValueError(f"Crawl {crawl_id} not found")
@@ -239,14 +240,50 @@ class Prospector:
             started_state = RunState(state=RunStateEnum.RUNNING)
             crawl_state.add_state(started_state)
         
+        # Resolve seed URLs from all sources
+        await self._resolve_seed_urls(crawl_state)
+        
+        # Initialize frontier with resolved seed URLs
+        for url in crawl_state.resolved_seed_urls:
+            crawl_state.frontier.add(ScoreUrlTuple(0.0, url))
+        
         # create crawl workers to thread pool
         futures = []
         for _ in range(crawl_state.crawl_spec.worker_count):
             future = self.executor.submit(self._crawl_worker, crawl_id)
             futures.append(future)
         
-        logger.info(f"Started crawl {crawl_id} with {len(futures)} workers")
+        logger.info(f"Started crawl {crawl_id} with {len(futures)} workers and {len(crawl_state.resolved_seed_urls)} seed URLs")
         return (crawl_id, started_state)
+    
+    async def _resolve_seed_urls(self, crawl_state: CrawlState) -> None:
+        """
+        Resolve all seed URLs from url_seeds and search_engine_seeds.
+        
+        Args:
+            crawl_state: State of the crawl to resolve seeds for
+        """
+        all_urls: Set[str] = set()
+        
+        # Add direct URL seeds
+        if crawl_state.crawl_spec.seeds.url_seeds:
+            all_urls.update(crawl_state.crawl_spec.seeds.url_seeds)
+            logger.info(f"Added {len(crawl_state.crawl_spec.seeds.url_seeds)} direct URL seeds")
+        
+        # Fetch URLs from search engines
+        if crawl_state.crawl_spec.seeds.search_engine_seeds:
+            try:
+                search_urls = await self.search_engine_service.fetch_seed_urls(
+                    crawl_state.crawl_spec.seeds.search_engine_seeds
+                )
+                all_urls.update(search_urls)
+                logger.info(f"Added {len(search_urls)} URLs from search engines")
+            except Exception as e:
+                logger.error(f"Failed to fetch search engine URLs: {e}")
+        
+        # Store resolved URLs
+        crawl_state.resolved_seed_urls = list(all_urls)
+        logger.info(f"Resolved {len(crawl_state.resolved_seed_urls)} total seed URLs")
     
 
     def stop(self, crawl_id: str) -> tuple:

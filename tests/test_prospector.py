@@ -9,6 +9,7 @@ from prospector.core import (
     Prospector,
     CrawlState,
     CrawlSpec,
+    CrawlSeeds,
     AnalyzerSpec,
     WeightedKeyword,
     RunStateEnum,
@@ -28,10 +29,11 @@ class TestCrawlState:
         state = CrawlState(sample_crawl_spec)
         
         assert state.crawl_spec == sample_crawl_spec
-        assert len(state.frontier) == len(sample_crawl_spec.url_seeds)
+        assert len(state.frontier) == 0  # Frontier is now populated when crawl starts
         assert len(state.visited_urls) == 0
         assert len(state.analyzers) == 0
         assert state.current_state == RunStateEnum.CREATED
+        assert len(state.resolved_seed_urls) == 0
     
     def test_add_urls_with_scores(self, sample_crawl_spec):
         """Test adding URLs with scores to frontier."""
@@ -41,7 +43,7 @@ class TestCrawlState:
         state.add_urls_with_scores(url_scores)
         
         # Should be sorted by score descending
-        assert len(state.frontier) == len(sample_crawl_spec.url_seeds) + 2
+        assert len(state.frontier) == 2
         # Check that higher score comes first
         frontier_list = list(state.frontier)
         scores = [item.score for item in frontier_list]
@@ -99,9 +101,10 @@ class TestCrawlState:
     
     def test_is_url_allowed_no_blacklist(self, sample_analyzer_spec):
         """Test URL filtering with no domain blacklist."""
+        seeds = CrawlSeeds(url_seeds=["https://example.com"])
         spec = CrawlSpec(
             name="test",
-            url_seeds=["https://example.com"],
+            seeds=seeds,
             analyzer_specs=[sample_analyzer_spec],
             domain_blacklist=None
         )
@@ -151,9 +154,10 @@ class TestProspector:
             scoring_input=TopicListInput(topics=["test", "example"])
         )
         
+        seeds = CrawlSeeds(url_seeds=["https://example.com"])
         crawl_spec = CrawlSpec(
             name="test_llm_crawl",
-            url_seeds=["https://example.com"],
+            seeds=seeds,
             analyzer_specs=[sample_analyzer_spec, llm_spec],
             worker_count=1
         )
