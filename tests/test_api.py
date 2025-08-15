@@ -388,7 +388,7 @@ class TestApplicationLifespan:
     """Tests for FastAPI application lifespan management."""
     
     @patch('prospector.main.Prospector')
-    def test_lifespan_startup_shutdown(self, client, mock_prospector_class):
+    def test_lifespan_startup_shutdown(self, mock_prospector_class, client):
         """Test that Prospector is created on startup and shutdown on exit."""
         mock_prospector_instance = Mock()
         mock_prospector_class.return_value = mock_prospector_instance
