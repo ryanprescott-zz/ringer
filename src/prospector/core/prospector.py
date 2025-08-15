@@ -187,7 +187,7 @@ class Prospector:
             ValueError: If crawl with same ID already exists or invalid analyzer specs
         """
         crawl_id = crawl_spec.id
-        
+    
         with self.crawls_lock:
             if crawl_id in self.crawls:
                 raise ValueError(f"Crawl with ID {crawl_id} already exists")
