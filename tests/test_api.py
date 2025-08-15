@@ -3,67 +3,44 @@
 import pytest
 from datetime import datetime
 from unittest.mock import Mock, patch
-from fastapi.testclient import TestClient
 from prospector.main import app
-from prospector.core.prospector import Prospector, CrawlState
-from prospector.core import CrawlSpec, WeightedKeyword
+from prospector.core.prospector import Prospector
+from prospector.core import (
+    CrawlSpec,
+    WeightedKeyword,
+)
 from prospector.core.models import KeywordScoringSpec
 from prospector.api.v1.models import (
     CreateCrawlRequest, StartCrawlRequest, StopCrawlRequest, DeleteCrawlRequest
 )
 
 
-@pytest.fixture
-def client():
-    """Create a test client for the FastAPI application."""
-    return TestClient(app)
-
-
-@pytest.fixture
-def mock_prospector():
-    """Create a mock Prospector instance."""
-    prospector = Mock(spec=Prospector)
-    prospector.crawls = {}
-    return prospector
-
-
-@pytest.fixture
-def sample_crawl_spec_dict():
-    """Sample crawl specification as dictionary for API requests."""
-    return {
-        "name": "test_crawl",
-        "url_seeds": ["https://example.com"],
-        "analyzer_specs": [
-            {
-                "name": "KeywordScoreAnalyzer",
-                "composite_weight": 1.0,
-                "keywords": [
-                    {"keyword": "test", "weight": 1.0}
-                ]
-            }
-        ],
-        "worker_count": 2,
-        "domain_blacklist": []
-    }
-
-
-@pytest.fixture
-def sample_crawl_state():
-    """Create a sample CrawlState for testing."""
-    from prospector.core.models import RunState, RunStateEnum
-    crawl_spec = CrawlSpec(
-        name="test_crawl",
-        url_seeds=["https://example.com"],
-        analyzer_specs=[
-            KeywordScoringSpec(
-                name="KeywordScoreAnalyzer",
-                composite_weight=1.0,
-                keywords=[WeightedKeyword(keyword="test", weight=1.0)]
-            )
-        ]
-    )
-    crawl_state = CrawlState(crawl_spec)
-    return crawl_state
+#@pytest.fixture
+# def sample_crawl_spec_dict():
+#     """Sample crawl specification as dictionary for API requests."""
+#     return {
+#         "name": "test_crawl",
+#         "seeds": [
+#             {
+#                 "url_seeds": ["https://example.com"],
+#                 "search_engine_seeds": [
+#                     {"search_engine": "google", "query": "breeds of dogs", "result_count": 10}
+#                 ]
+#             }
+#         ],
+#         "url_seeds": ["https://example.com"],
+#         "analyzer_specs": [
+#             {
+#                 "name": "KeywordScoreAnalyzer",
+#                 "composite_weight": 1.0,
+#                 "keywords": [
+#                     {"keyword": "test", "weight": 1.0}
+#                 ]
+#             }
+#         ],
+#         "worker_count": 2,
+#         "domain_blacklist": []
+#     }
 
 
 class TestMainEndpoints:
@@ -366,10 +343,10 @@ class TestDeleteCrawlEndpoint:
 class TestAPIModels:
     """Tests for API request/response models."""
     
-    def test_create_crawl_request_validation(self, sample_crawl_spec_dict):
+    def test_create_crawl_request_validation(self, sample_crawl_spec):
         """Test CreateCrawlRequest model validation."""
         # Valid request
-        request = CreateCrawlRequest(crawl_spec=sample_crawl_spec_dict)
+        request = CreateCrawlRequest(crawl_spec=sample_crawl_spec)
         assert request.crawl_spec.name == "test_crawl"
         
         # Invalid request - missing crawl_spec
@@ -411,16 +388,14 @@ class TestApplicationLifespan:
     """Tests for FastAPI application lifespan management."""
     
     @patch('prospector.main.Prospector')
-    def test_lifespan_startup_shutdown(self, mock_prospector_class):
+    def test_lifespan_startup_shutdown(self, client, mock_prospector_class):
         """Test that Prospector is created on startup and shutdown on exit."""
         mock_prospector_instance = Mock()
         mock_prospector_class.return_value = mock_prospector_instance
         
-        # Test startup and shutdown
-        with TestClient(app) as client:
-            # Verify Prospector was created and stored in app state
-            mock_prospector_class.assert_called_once()
-            assert hasattr(client.app.state, 'prospector')
+        # Verify Prospector was created and stored in app state
+        mock_prospector_class.assert_called_once()
+        assert hasattr(client.app.state, 'prospector')
         
         # Verify shutdown was called
         mock_prospector_instance.shutdown.assert_called_once()
