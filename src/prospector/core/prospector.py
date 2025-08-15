@@ -301,7 +301,7 @@ class Prospector:
             logger.error(f"Failed to collect seed URLs from search engines: {e}")
             raise
     
-    def get_crawl_status(self, crawl_id: str):
+    def get_crawl_status(self, crawl_id: str) -> dict:
         """
         Get status information for a crawl.
         
@@ -309,7 +309,7 @@ class Prospector:
             crawl_id: ID of the crawl to get status for
             
         Returns:
-            CrawlStatus object with current crawl information
+            Dictionary with current crawl information
             
         Raises:
             ValueError: If crawl ID not found
@@ -323,19 +323,17 @@ class Prospector:
             # Get thread-safe snapshot of counts
             crawled_count, processed_count, error_count, frontier_size = crawl_state.get_status_counts()
             
-            # Import here to avoid circular imports
-            from .models import CrawlStatus
-            
-            return CrawlStatus(
-                crawl_id=crawl_id,
-                crawl_name=crawl_state.crawl_spec.name,
-                current_state=crawl_state.current_state.value,
-                state_history=crawl_state.run_state_history.copy(),
-                crawled_count=crawled_count,
-                processed_count=processed_count,
-                error_count=error_count,
-                frontier_size=frontier_size
-            )
+            # Return as dictionary to avoid model conflicts
+            return {
+                "crawl_id": crawl_id,
+                "crawl_name": crawl_state.crawl_spec.name,
+                "current_state": crawl_state.current_state.value,
+                "state_history": [state.model_dump() for state in crawl_state.run_state_history],
+                "crawled_count": crawled_count,
+                "processed_count": processed_count,
+                "error_count": error_count,
+                "frontier_size": frontier_size
+            }
     
 
     def stop(self, crawl_id: str) -> tuple:

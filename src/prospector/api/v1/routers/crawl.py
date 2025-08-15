@@ -156,7 +156,11 @@ def get_crawl_status(crawl_id: str, app_request: Request) -> CrawlStatusResponse
     """
     try:
         prospector = app_request.app.state.prospector
-        crawl_status = prospector.get_crawl_status(crawl_id)
+        crawl_status_dict = prospector.get_crawl_status(crawl_id)
+        
+        # Create the API models from the dictionary
+        from prospector.api.v1.models import CrawlStatus
+        crawl_status = CrawlStatus(**crawl_status_dict)
         
         return CrawlStatusResponse(status=crawl_status)
         

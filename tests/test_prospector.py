@@ -289,16 +289,16 @@ class TestProspector:
         crawl_state.increment_processed_count()
         crawl_state.add_urls_with_scores([(0.8, "https://test.com")])
         
-        status = prospector.get_crawl_status(crawl_id)
+        status_dict = prospector.get_crawl_status(crawl_id)
         
-        assert status.crawl_id == crawl_id
-        assert status.crawl_name == sample_crawl_spec.name
-        assert status.current_state == "CREATED"
-        assert status.crawled_count == 1
-        assert status.processed_count == 1
-        assert status.error_count == 0
-        assert status.frontier_size == 1
-        assert len(status.state_history) == 1
+        assert status_dict["crawl_id"] == crawl_id
+        assert status_dict["crawl_name"] == sample_crawl_spec.name
+        assert status_dict["current_state"] == "CREATED"
+        assert status_dict["crawled_count"] == 1
+        assert status_dict["processed_count"] == 1
+        assert status_dict["error_count"] == 0
+        assert status_dict["frontier_size"] == 1
+        assert len(status_dict["state_history"]) == 1
     
     def test_get_crawl_status_not_found(self, prospector):
         """Test getting status for non-existent crawl raises error."""
