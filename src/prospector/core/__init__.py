@@ -3,7 +3,6 @@
 from .prospector import Prospector, CrawlState
 from .models import (
     CrawlSpec,
-    CrawlSeeds,
     SearchEngineSeed,
     SearchEngineEnum,
     AnalyzerSpec,
@@ -38,7 +37,6 @@ __all__ = [
     "Prospector",
     "CrawlState",
     "CrawlSpec",
-    "CrawlSeeds",
     "SearchEngineSeed",
     "SearchEngineEnum",
     "AnalyzerSpec", 

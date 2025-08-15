@@ -11,7 +11,8 @@ from prospector.core import (
 )
 from prospector.core.models import KeywordScoringSpec
 from prospector.api.v1.models import (
-    CreateCrawlRequest, StartCrawlRequest, StopCrawlRequest, DeleteCrawlRequest
+    CreateCrawlRequest, StartCrawlRequest, StopCrawlRequest, DeleteCrawlRequest,
+    SeedUrlScrapeRequest, SeedUrlScrapeResponse
 )
 
 
@@ -340,6 +341,62 @@ class TestDeleteCrawlEndpoint:
         assert "Internal server error" in response.json()["detail"]
 
 
+class TestSeedsEndpoint:
+    """Tests for the seeds collection endpoint."""
+    
+    def test_collect_seed_urls_success(self, client, mock_prospector):
+        """Test successful seed URL collection."""
+        from prospector.core.models import SearchEngineSeed, SearchEngineEnum
+        
+        # Setup mock
+        test_seed_urls = ["https://example1.com", "https://example2.com"]
+        mock_prospector.collect_seed_urls_from_search_engines.return_value = test_seed_urls
+        
+        # Set the prospector in app state
+        app.state.prospector = mock_prospector
+        
+        search_engine_seeds = [
+            {
+                "search_engine": "Google",
+                "query": "test query",
+                "result_count": 10
+            }
+        ]
+        
+        response = client.post(
+            "/api/v1/seeds/collect",
+            json={"search_engine_seeds": search_engine_seeds}
+        )
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["seed_urls"] == test_seed_urls
+        mock_prospector.collect_seed_urls_from_search_engines.assert_called_once()
+    
+    def test_collect_seed_urls_internal_error(self, client, mock_prospector):
+        """Test internal server error during seed URL collection."""
+        mock_prospector.collect_seed_urls_from_search_engines.side_effect = Exception("Search engine failed")
+        
+        # Set the prospector in app state
+        app.state.prospector = mock_prospector
+        
+        search_engine_seeds = [
+            {
+                "search_engine": "Google", 
+                "query": "test query",
+                "result_count": 10
+            }
+        ]
+        
+        response = client.post(
+            "/api/v1/seeds/collect",
+            json={"search_engine_seeds": search_engine_seeds}
+        )
+        
+        assert response.status_code == 500
+        assert "Internal server error" in response.json()["detail"]
+
+
 class TestAPIModels:
     """Tests for API request/response models."""
     
@@ -352,6 +409,25 @@ class TestAPIModels:
         # Invalid request - missing crawl_spec
         with pytest.raises(ValueError):
             CreateCrawlRequest()
+    
+    def test_seed_url_scrape_request_validation(self):
+        """Test SeedUrlScrapeRequest model validation."""
+        from prospector.core.models import SearchEngineSeed, SearchEngineEnum
+        
+        # Valid request
+        search_engine_seeds = [
+            SearchEngineSeed(
+                search_engine=SearchEngineEnum.GOOGLE,
+                query="test query",
+                result_count=10
+            )
+        ]
+        request = SeedUrlScrapeRequest(search_engine_seeds=search_engine_seeds)
+        assert len(request.search_engine_seeds) == 1
+        
+        # Invalid request - missing search_engine_seeds
+        with pytest.raises(ValueError):
+            SeedUrlScrapeRequest()
     
     def test_crawl_start_request_validation(self):
         """Test StartCrawlRequest model validation."""

@@ -33,7 +33,6 @@ class TestCrawlState:
         assert len(state.visited_urls) == 0
         assert len(state.analyzers) == 0
         assert state.current_state == RunStateEnum.CREATED
-        assert len(state.resolved_seed_urls) == 0
     
     def test_add_urls_with_scores(self, sample_crawl_spec):
         """Test adding URLs with scores to frontier."""
@@ -101,10 +100,9 @@ class TestCrawlState:
     
     def test_is_url_allowed_no_blacklist(self, sample_analyzer_spec):
         """Test URL filtering with no domain blacklist."""
-        seeds = CrawlSeeds(url_seeds=["https://example.com"])
         spec = CrawlSpec(
             name="test",
-            seeds=seeds,
+            seeds=["https://example.com"],
             analyzer_specs=[sample_analyzer_spec],
             domain_blacklist=None
         )
@@ -154,10 +152,9 @@ class TestProspector:
             scoring_input=TopicListInput(topics=["test", "example"])
         )
         
-        seeds = CrawlSeeds(url_seeds=["https://example.com"])
         crawl_spec = CrawlSpec(
             name="test_llm_crawl",
-            seeds=seeds,
+            seeds=["https://example.com"],
             analyzer_specs=[sample_analyzer_spec, llm_spec],
             worker_count=1
         )

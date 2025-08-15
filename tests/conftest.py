@@ -10,7 +10,6 @@ from unittest.mock import Mock, patch
 from prospector.main import app
 from prospector.core import (
     CrawlSpec,
-    CrawlSeeds,
     CrawlState,
     SearchEngineSeed,
     SearchEngineEnum,
@@ -100,19 +99,9 @@ def sample_analyzer_spec(sample_weighted_keywords) -> KeywordScoringSpec:
 @pytest.fixture
 def sample_crawl_spec(sample_analyzer_spec):
     """Sample crawl specification for testing."""
-    seeds = CrawlSeeds(
-        url_seeds=["https://example.com"],
-        search_engine_seeds=[
-            SearchEngineSeed(
-                search_engine=SearchEngineEnum.GOOGLE,
-                query="breeds of dogs",
-                result_count=10
-            )
-        ]
-    )
     return CrawlSpec(
         name="test_crawl",
-        seeds=seeds,
+        seeds=["https://example.com"],
         analyzer_specs=[sample_analyzer_spec],
         worker_count=1,
         domain_blacklist=["spam.com"]
@@ -120,17 +109,9 @@ def sample_crawl_spec(sample_analyzer_spec):
 
 @pytest.fixture
 def sample_crawl_spec_dict(sample_crawl_spec):
-    #return sample_crawl_spec.model_dump_json()
-    # TODO: This is supposed to work, but excludes the subtype fields of analyzer_specs (KeywordScoringSpec)
-
     return {
         "name": "test_crawl",
-        "seeds": {
-        "url_seeds": ["https://example.com"],
-        "search_engine_seeds": [
-            {"search_engine": "Google", "query": "breeds of dogs", "result_count": 10}
-        ]
-        },
+        "seeds": ["https://example.com"],
         "analyzer_specs": [
         {
             "name": "KeywordScoreAnalyzer",

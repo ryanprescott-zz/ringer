@@ -19,7 +19,8 @@ from .models import (
     CrawlRecord,
     AnalyzerSpec,
     RunStateEnum,
-    RunState
+    RunState,
+    SearchEngineSeed
 )
 from .score_analyzers import ScoreAnalyzer, KeywordScoreAnalyzer, LLMServiceScoreAnalyzer
 from .scrapers import Scraper, PlaywrightScraper  
@@ -76,7 +77,6 @@ class CrawlState:
         self.analyzer_weights: Dict[str, float] = {}
         self.run_state_history: List[RunState] = []
         self.lock = Lock()
-        self.resolved_seed_urls: List[str] = []  # Will be populated when crawl starts
     
     @property
     def current_state(self) -> RunStateEnum:
@@ -240,12 +240,8 @@ class Prospector:
             started_state = RunState(state=RunStateEnum.RUNNING)
             crawl_state.add_state(started_state)
         
-        # Resolve seed URLs from all sources
-        import asyncio
-        asyncio.run(self._resolve_seed_urls(crawl_state))
-        
-        # Initialize frontier with resolved seed URLs
-        for url in crawl_state.resolved_seed_urls:
+        # Initialize frontier with seed URLs
+        for url in crawl_state.crawl_spec.seeds:
             crawl_state.frontier.add(ScoreUrlTuple(0.0, url))
         
         # create crawl workers to thread pool
@@ -254,37 +250,26 @@ class Prospector:
             future = self.executor.submit(self._crawl_worker, crawl_id)
             futures.append(future)
         
-        logger.info(f"Started crawl {crawl_id} with {len(futures)} workers and {len(crawl_state.resolved_seed_urls)} seed URLs")
+        logger.info(f"Started crawl {crawl_id} with {len(futures)} workers and {len(crawl_state.crawl_spec.seeds)} seed URLs")
         return (crawl_id, started_state)
     
-    async def _resolve_seed_urls(self, crawl_state: CrawlState) -> None:
+    async def collect_seed_urls_from_search_engines(self, search_engine_seeds: List[SearchEngineSeed]) -> List[str]:
         """
-        Resolve all seed URLs from url_seeds and search_engine_seeds.
+        Collect seed URLs from search engines.
         
         Args:
-            crawl_state: State of the crawl to resolve seeds for
+            search_engine_seeds: List of search engine seed specifications
+            
+        Returns:
+            List of collected seed URLs
         """
-        all_urls: Set[str] = set()
-        
-        # Add direct URL seeds
-        if crawl_state.crawl_spec.seeds.url_seeds:
-            all_urls.update(crawl_state.crawl_spec.seeds.url_seeds)
-            logger.info(f"Added {len(crawl_state.crawl_spec.seeds.url_seeds)} direct URL seeds")
-        
-        # Fetch URLs from search engines
-        if crawl_state.crawl_spec.seeds.search_engine_seeds:
-            try:
-                search_urls = await self.search_engine_service.fetch_seed_urls(
-                    crawl_state.crawl_spec.seeds.search_engine_seeds
-                )
-                all_urls.update(search_urls)
-                logger.info(f"Added {len(search_urls)} URLs from search engines")
-            except Exception as e:
-                logger.error(f"Failed to fetch search engine URLs: {e}")
-        
-        # Store resolved URLs
-        crawl_state.resolved_seed_urls = list(all_urls)
-        logger.info(f"Resolved {len(crawl_state.resolved_seed_urls)} total seed URLs")
+        try:
+            seed_urls = await self.search_engine_service.fetch_seed_urls(search_engine_seeds)
+            logger.info(f"Collected {len(seed_urls)} seed URLs from search engines")
+            return seed_urls
+        except Exception as e:
+            logger.error(f"Failed to collect seed URLs from search engines: {e}")
+            raise
     
 
     def stop(self, crawl_id: str) -> tuple:

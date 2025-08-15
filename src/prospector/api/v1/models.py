@@ -1,7 +1,8 @@
 """Pydantic models for the Prospector FastAPI web service."""
 
+from typing import List
 from pydantic import BaseModel
-from prospector.core.models import CrawlSpec, RunState
+from prospector.core.models import CrawlSpec, RunState, SearchEngineSeed
 
 
 class CreateCrawlRequest(BaseModel):
@@ -54,3 +55,15 @@ class DeleteCrawlResponse(BaseModel):
     
     crawl_id: str
     crawl_deleted_time: str
+
+
+class SeedUrlScrapeRequest(BaseModel):
+    """Request model for collecting seed URLs from search engines."""
+    
+    search_engine_seeds: List[SearchEngineSeed]
+
+
+class SeedUrlScrapeResponse(BaseModel):
+    """Response model for seed URL collection."""
+    
+    seed_urls: List[str]
