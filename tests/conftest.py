@@ -8,6 +8,7 @@ import tempfile
 from unittest.mock import Mock, patch
 from prospector.core import (
     CrawlSpec,
+    CrawlSeeds,
     AnalyzerSpec,
     WeightedKeyword,
     CrawlRecord,
@@ -94,9 +95,10 @@ def sample_analyzer_spec(sample_weighted_keywords):
 @pytest.fixture
 def sample_crawl_spec(sample_analyzer_spec):
     """Sample crawl specification for testing."""
+    seeds = CrawlSeeds(url_seeds=["https://example.com"])
     return CrawlSpec(
         name="test_crawl",
-        url_seeds=["https://example.com"],
+        seeds=seeds,
         analyzer_specs=[sample_analyzer_spec],
         worker_count=1,
         domain_blacklist=["spam.com"]
