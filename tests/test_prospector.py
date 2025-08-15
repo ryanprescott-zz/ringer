@@ -32,6 +32,11 @@ class TestCrawlState:
         assert len(state.visited_urls) == 0
         assert len(state.analyzers) == 0
         assert state.current_state == RunStateEnum.CREATED
+        
+        # Check that counters are initialized to 0
+        assert state.crawled_count == 0
+        assert state.processed_count == 0
+        assert state.error_count == 0
     
     def test_add_urls_with_scores(self, sample_crawl_spec):
         """Test adding URLs with scores to frontier."""
@@ -109,6 +114,44 @@ class TestCrawlState:
         
         # Should allow all URLs when no blacklist
         assert state.is_url_allowed("https://any-domain.com/page")
+    
+    def test_counter_methods(self, sample_crawl_spec):
+        """Test thread-safe counter increment methods."""
+        state = CrawlState(sample_crawl_spec)
+        
+        # Test increment methods
+        state.increment_crawled_count()
+        state.increment_processed_count()
+        state.increment_error_count()
+        
+        assert state.crawled_count == 1
+        assert state.processed_count == 1
+        assert state.error_count == 1
+        
+        # Test multiple increments
+        state.increment_crawled_count()
+        state.increment_crawled_count()
+        assert state.crawled_count == 3
+    
+    def test_get_status_counts(self, sample_crawl_spec):
+        """Test getting thread-safe status counts."""
+        state = CrawlState(sample_crawl_spec)
+        
+        # Add some URLs to frontier
+        state.add_urls_with_scores([(0.8, "https://test1.com"), (0.6, "https://test2.com")])
+        
+        # Increment counters
+        state.increment_crawled_count()
+        state.increment_processed_count()
+        state.increment_error_count()
+        
+        # Get status counts
+        crawled, processed, errors, frontier_size = state.get_status_counts()
+        
+        assert crawled == 1
+        assert processed == 1
+        assert errors == 1
+        assert frontier_size == 2
 
 
 class TestProspector:
@@ -235,4 +278,30 @@ class TestProspector:
         
         with pytest.raises(RuntimeError, match="Cannot delete running crawl"):
             prospector.delete(crawl_id)
+    
+    def test_get_crawl_status(self, prospector, sample_crawl_spec):
+        """Test getting crawl status."""
+        crawl_id, create_state = prospector.create(sample_crawl_spec)
+        
+        # Add some test data
+        crawl_state = prospector.crawls[crawl_id]
+        crawl_state.increment_crawled_count()
+        crawl_state.increment_processed_count()
+        crawl_state.add_urls_with_scores([(0.8, "https://test.com")])
+        
+        status = prospector.get_crawl_status(crawl_id)
+        
+        assert status.crawl_id == crawl_id
+        assert status.crawl_name == sample_crawl_spec.name
+        assert status.current_state == "CREATED"
+        assert status.crawled_count == 1
+        assert status.processed_count == 1
+        assert status.error_count == 0
+        assert status.frontier_size == 1
+        assert len(status.state_history) == 1
+    
+    def test_get_crawl_status_not_found(self, prospector):
+        """Test getting status for non-existent crawl raises error."""
+        with pytest.raises(ValueError, match="not found"):
+            prospector.get_crawl_status("nonexistent_id")
     

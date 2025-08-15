@@ -18,6 +18,7 @@ from .models import (
     StoreCrawlRecordRequest,
     RunStateEnum,
     RunState,
+    CrawlStatus,
 )
 
 from .score_analyzers import (
@@ -61,5 +62,6 @@ __all__ = [
     "LLMServiceScoreAnalyzer",
     "RunStateEnum",
     "RunState",
+    "CrawlStatus",
     "ScoreAnalyzerInfoUtil",
 ]

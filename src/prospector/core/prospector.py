@@ -77,6 +77,11 @@ class CrawlState:
         self.analyzer_weights: Dict[str, float] = {}
         self.run_state_history: List[RunState] = []
         self.lock = Lock()
+        
+        # Thread-safe counters for status tracking
+        self.crawled_count = 0  # URLs pulled from frontier
+        self.processed_count = 0  # Successfully processed pages
+        self.error_count = 0  # URLs that failed to process
     
     @property
     def current_state(self) -> RunStateEnum:
@@ -148,6 +153,31 @@ class CrawlState:
                     return False
         
         return True
+    
+    def increment_crawled_count(self) -> None:
+        """Thread-safe increment of crawled URL count."""
+        with self.lock:
+            self.crawled_count += 1
+    
+    def increment_processed_count(self) -> None:
+        """Thread-safe increment of processed page count."""
+        with self.lock:
+            self.processed_count += 1
+    
+    def increment_error_count(self) -> None:
+        """Thread-safe increment of error count."""
+        with self.lock:
+            self.error_count += 1
+    
+    def get_status_counts(self) -> tuple:
+        """
+        Get thread-safe snapshot of status counts.
+        
+        Returns:
+            tuple: (crawled_count, processed_count, error_count, frontier_size)
+        """
+        with self.lock:
+            return (self.crawled_count, self.processed_count, self.error_count, len(self.frontier))
 
 
 class Prospector:
@@ -271,6 +301,42 @@ class Prospector:
             logger.error(f"Failed to collect seed URLs from search engines: {e}")
             raise
     
+    def get_crawl_status(self, crawl_id: str):
+        """
+        Get status information for a crawl.
+        
+        Args:
+            crawl_id: ID of the crawl to get status for
+            
+        Returns:
+            CrawlStatus object with current crawl information
+            
+        Raises:
+            ValueError: If crawl ID not found
+        """
+        with self.crawls_lock:
+            if crawl_id not in self.crawls:
+                raise ValueError(f"Crawl {crawl_id} not found")
+            
+            crawl_state = self.crawls[crawl_id]
+            
+            # Get thread-safe snapshot of counts
+            crawled_count, processed_count, error_count, frontier_size = crawl_state.get_status_counts()
+            
+            # Import here to avoid circular imports
+            from .models import CrawlStatus
+            
+            return CrawlStatus(
+                crawl_id=crawl_id,
+                crawl_name=crawl_state.crawl_spec.name,
+                current_state=crawl_state.current_state.value,
+                state_history=crawl_state.run_state_history.copy(),
+                crawled_count=crawled_count,
+                processed_count=processed_count,
+                error_count=error_count,
+                frontier_size=frontier_size
+            )
+    
 
     def stop(self, crawl_id: str) -> tuple:
         """
@@ -363,10 +429,15 @@ class Prospector:
                 time.sleep(1)
                 continue
             
+            # Increment crawled count when URL is pulled from frontier
+            crawl_state.increment_crawled_count()
+            
             try:
                 self._process_url(crawl_state, url)
             except Exception as e:
                 logger.error(f"Error processing URL {url}: {e}")
+                # Increment error count when URL processing fails
+                crawl_state.increment_error_count()
                 continue
     
     def _process_url(self, crawl_state: CrawlState, url: str) -> None:
@@ -402,11 +473,15 @@ class Prospector:
                 crawl_state.crawl_spec.id,
             )
             
+            # Increment processed count on successful processing
+            crawl_state.increment_processed_count()
+            
             logger.debug(f"Processed URL {url} with score {crawl_record.composite_score}")
             
         except Exception as e:
             logger.error(f"Failed to process URL {url}: {e}")
-            # Do not retry failed URLs
+            # Error count is incremented in _crawl_worker
+            raise  # Re-raise to be caught by worker
     
     def _score_content(self, crawl_state: CrawlState, crawl_record: CrawlRecord) -> None:
         """

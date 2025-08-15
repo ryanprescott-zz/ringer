@@ -170,5 +170,18 @@ class CrawlRecord(BaseModel):
         """Generate a hash ID for this record based on the url."""
         return hashlib.md5(self.url.encode()).hexdigest()
 
+
+class CrawlStatus(BaseModel):
+    """Status information for a crawl."""
+    
+    crawl_id: str = Field(..., description="ID of the crawl")
+    crawl_name: str = Field(..., description="Name of the crawl")
+    current_state: str = Field(..., description="Current run state")
+    state_history: List[RunState] = Field(..., description="History of state changes")
+    crawled_count: int = Field(..., description="Total URLs pulled from frontier")
+    processed_count: int = Field(..., description="Successfully processed pages")
+    error_count: int = Field(..., description="URLs that failed to process")
+    frontier_size: int = Field(..., description="Current size of the frontier")
+
 # Forward reference resolution for StoreCrawlRecordRequest
 StoreCrawlRecordRequest.model_rebuild()

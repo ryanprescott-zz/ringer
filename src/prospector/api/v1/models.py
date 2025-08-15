@@ -91,3 +91,22 @@ class AnalyzerInfoResponse(BaseModel):
     """Response model for analyzer information."""
     
     analyzers: List[AnalyzerInfo]
+
+
+class CrawlStatus(BaseModel):
+    """Status information for a crawl."""
+    
+    crawl_id: str
+    crawl_name: str
+    current_state: str  # RunStateEnum as string
+    state_history: List[RunState]
+    crawled_count: int
+    processed_count: int
+    error_count: int
+    frontier_size: int
+
+
+class CrawlStatusResponse(BaseModel):
+    """Response model for crawl status."""
+    
+    status: CrawlStatus
