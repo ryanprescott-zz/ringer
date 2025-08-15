@@ -2,30 +2,32 @@ import math
 import re
 from typing import List
 
-from prospector.core.models import WeightedKeyword
+from prospector.core.models import KeywordScoringSpec, WeightedKeyword
 from .score_analyzer import ScoreAnalyzer
 
 
 class KeywordScoreAnalyzer(ScoreAnalyzer):
     """Score analyzer that scores text based on keyword matches."""
     
-    def __init__(self, keywords: List[WeightedKeyword]):
+    def __init__(self, spec: KeywordScoringSpec):
         """
         Initialize the keyword analyzer.
         
         Args:
-            keywords: List of weighted keywords to search for
+            spec: KeywordScoringSpec containing weighted keywords
             
         Raises:
             ValueError: If keywords list is empty
         """
-        if not keywords:
-            raise ValueError("Keywords list cannot be empty")
-        self.keywords = keywords
+
+        if not spec:
+            raise ValueError("KeywordScoringSpec cannot be None")
+
+        self.keywords = spec.keywords
     
     def score(self, content: str) -> float:
         """
-        Score text content based on weighted keyword matches.
+        Score content based on weighted keyword matches.
         
         Uses case-insensitive matching and counts all occurrences.
         Overlapping matches are handled as single matches.

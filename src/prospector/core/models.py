@@ -4,7 +4,7 @@ import hashlib
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 from enum import Enum
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class RunStateEnum(str, Enum):
@@ -19,27 +19,62 @@ class RunState(BaseModel):
     state: RunStateEnum = Field(..., description="The run state")
     timestamp: datetime = Field(default_factory=datetime.now, description="When this state was entered")
 
-
 class WeightedKeyword(BaseModel):
     """A keyword with an associated weight for scoring."""
     
     keyword: str = Field(..., description="The keyword to search for")
     weight: float = Field(..., description="Weight for this keyword in scoring")
 
-
-class LLMScoreServiceInput(BaseModel):
-    """Input for LLM service score analyzer."""
+class PromptInput(BaseModel):
+    """Input for a prompt to the LLM service."""
     
-    text: str = Field(..., description="The text string to score")
-    prompt: Optional[str] = Field(default=None, description="Optional LLM prompt string")
+    prompt: str = Field(..., description="The prompt string to send to the LLM")
 
+    @field_validator('prompt')
+    @classmethod
+    def check_prompt_not_empty(cls, value: str) -> str:
+        """Ensure the prompt is not empty."""
+        if not value.strip():
+            raise ValueError("Prompt cannot be empty")
+        return value
 
-class LLMScoreRequest(BaseModel):
-    """Request object for LLM scoring service."""
+class TopicListInput(BaseModel):
+    """Input for a list of topics to score against."""
     
-    prompt: str = Field(..., description="The prompt string for the LLM")
-    model_output_format: Dict[str, str] = Field(..., description="Output format specification")
+    topics: List[str] = Field(..., description="List of topics to score against")
 
+    @field_validator('topics')
+    @classmethod
+    def check_topics_not_empty(cls, value: List[str]) -> List[str]:
+        """Ensure the topics list is not empty."""
+        if not value:
+            raise ValueError("Topics list cannot be empty")
+        return value
+
+class FieldMap(BaseModel):
+    """Mapping of field names to their types."""
+    
+    name_to_type: Dict[str, str] = Field(..., description="Mapping of field names to their types")
+
+    @field_validator('name_to_type')
+    @classmethod
+    def check_map_not_empty(cls, value: Dict[str, str]) -> Dict[str, str]:
+        """Ensure the field map is not empty."""
+        if not value:
+            raise ValueError("Field map cannot be empty")
+        return value
+
+class LLMGenerationInput(BaseModel):
+    """Input for text generation."""
+    
+    prompt: str = Field(..., description="The prompt to generate text from")
+    output_format: FieldMap = Field(..., description="Mapping of output fields to types")
+
+class LLMGenerationRequest(BaseModel):
+    """Request object for LLM generation service."""
+
+    generation_input: LLMGenerationInput = Field(..., description="Input for text generation")
+    text_inputs: List[str] = Field(..., description="List of text inputs to process")
 
 class StoreCrawlRecordRequest(BaseModel):
     """Request object for crawl record storage service."""
@@ -47,14 +82,29 @@ class StoreCrawlRecordRequest(BaseModel):
     record: 'CrawlRecord' = Field(..., description="The crawl record to handle")
     crawl_id: str = Field(..., description="ID of the crawl")
 
-
 class AnalyzerSpec(BaseModel):
     """Specification for a score analyzer."""
     
     name: str = Field(..., description="Name matching the analyzer class name")
     composite_weight: float = Field(..., description="Weight in composite scoring")
-    params: Any = Field(..., description="Parameters specific to the analyzer")
 
+class KeywordScoringSpec(AnalyzerSpec):
+    """Specification for keyword-based scoxring."""
+    
+    keywords: List[WeightedKeyword] = Field(..., description="List of weighted keywords to score against")
+
+    @field_validator('keywords')
+    @classmethod
+    def check_keywords_not_empty(cls, value: List[WeightedKeyword]) -> List[WeightedKeyword]:
+        """Ensure the keywords list is not empty."""
+        if not value:
+            raise ValueError("Keywords list cannot be empty")
+        return value
+
+class LLMScoringSpec(AnalyzerSpec):
+    """Input for LLM service score analyzer."""
+
+    scoring_input: PromptInput | TopicListInput = Field(..., description="Scoring input - either prompt or topics")
 
 class CrawlSpec(BaseModel):
     """Specification for a web crawl."""

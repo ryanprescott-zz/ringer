@@ -41,8 +41,8 @@ class LLMServiceScoreAnalyzerSettings(BaseSettings):
     
     llm_service_url: str = "http://localhost:8000/score"
     llm_request_timeout: int = 60
-    llm_default_prompt: str = "Please score the relevance and quality of the following text content on a scale from 0.0 to 1.0, where 1.0 represents highly relevant and high-quality content:"
-    llm_model_output_format: Dict[str, str] = {"score": "string"}
+    llm_default_prompt_template: str = "Please score the vtext content on a scale from 0.0 to 1.0 based on how much the content deals with one or more of the following topics. A score of 1.0 indicates that one or more of the topics is appears extensively in the text. Here are the topics: "
+    llm_output_format: Dict[str, str] = {"score": "string"}
     
     model_config = {
         "env_prefix": "llm_service_score_analyzer_"

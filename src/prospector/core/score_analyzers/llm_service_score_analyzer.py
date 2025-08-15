@@ -4,7 +4,14 @@ import json
 import logging
 import requests
 
-from prospector.core.models import LLMScoreServiceInput, LLMScoreRequest
+from prospector.core.models import (
+    LLMScoringSpec,
+    PromptInput,
+    TopicListInput,
+    LLMGenerationInput,
+    FieldMap,
+    LLMGenerationRequest
+)
 from prospector.core.settings import LLMServiceScoreAnalyzerSettings
 from .score_analyzer import ScoreAnalyzer
 
@@ -14,8 +21,16 @@ logger = logging.getLogger(__name__)
 class LLMServiceScoreAnalyzer(ScoreAnalyzer):
     """Score analyzer that uses an external LLM service for content scoring."""
     
-    def __init__(self):
-        """Initialize the LLM service analyzer with settings and session."""
+    def __init__(self, spec: LLMScoringSpec):
+        """
+        Initialize the LLM service score analyzer.
+        
+        Args:
+            spec: LLMScoringSpec containing LLM inputs (prompt or topics)
+            
+        Raises:
+            ValueError: If keywords list is empty
+        """
         self.settings = LLMServiceScoreAnalyzerSettings()
         # Create a requests session for connection pooling
         self.session = requests.Session()
@@ -23,8 +38,38 @@ class LLMServiceScoreAnalyzer(ScoreAnalyzer):
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         })
+
+        # Get a prompt string based on the scoring input
+        scoring_input = spec.scoring_input
+        prompt_str = (
+            scoring_input.prompt if isinstance(scoring_input, PromptInput)
+            else self._build_default_prompt(scoring_input.topics) if isinstance(scoring_input, TopicListInput)
+            else None
+        )
+
+        logger.info(f"Scoring prompt: {prompt_str}")
+
+        # Create the generation input for the LLM service
+        self._generation_input = LLMGenerationInput(
+            prompt=prompt_str,
+            output_format=FieldMap(name_to_type=self.settings.llm_output_format)
+        )
     
-    def score(self, content: LLMScoreServiceInput) -> float:
+    def _build_default_prompt(self, topics: list[str]) -> str:
+        """
+        Build a default prompt string based on the provided topics.
+        
+        Args:
+            topics: List of topics to include in the prompt
+            
+        Returns:
+            str: Formatted prompt string
+        """
+        
+        topics_str = ', '.join(topics)
+        return f"{self.settings.llm_default_prompt_template} {topics_str}"
+
+    def score(self, content: str) -> float:
         """
         Score content using an external LLM service.
         
@@ -32,7 +77,7 @@ class LLMServiceScoreAnalyzer(ScoreAnalyzer):
         content and prompt. Returns the score provided by the service.
         
         Args:
-            content: LLMScoreServiceInput containing text and optional prompt
+            content (str): Content to score
             
         Returns:
             float: Score between 0 and 1 from the LLM service
@@ -40,24 +85,21 @@ class LLMServiceScoreAnalyzer(ScoreAnalyzer):
         Raises:
             TypeError: If content is not LLMScoreServiceInput
         """
-        if not isinstance(content, LLMScoreServiceInput):
-            raise TypeError("Content must be LLMScoreServiceInput")
-        
-        try:
-            # Use provided prompt or default from settings
-            prompt = content.prompt if content.prompt is not None else self.settings.llm_default_prompt
+        if not isinstance(content, str):
+            raise TypeError("Content must be a string")
             
+        try:
             # Create the request payload
-            request_data = LLMScoreRequest(
-                prompt=f"{prompt}\n\nText to score: {content.text}",
-                model_output_format=self.settings.llm_model_output_format
+            request_data = LLMGenerationRequest(
+                generation_input=self._generation_input,
+                text_inputs=[content],  # Wrap text in a list for processing
             )
             
             # Make the HTTP POST request
             response = self.session.post(
                 self.settings.llm_service_url,
                 json=request_data.model_dump(),
-                timeout=self.settings.llm_request_timeout
+                timeout=self.settings.llm_request_timeout,
             )
             
             # Check for HTTP errors

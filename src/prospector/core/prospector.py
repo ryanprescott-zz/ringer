@@ -12,7 +12,15 @@ from typing import Dict, List, Set, Optional
 from urllib.parse import urlparse
 from sortedcontainers import SortedSet
 
-from .models import CrawlSpec, CrawlRecord, AnalyzerSpec, RunStateEnum, RunState
+from .models import (
+    CrawlSpec,
+    LLMScoringSpec,
+    KeywordScoringSpec,
+    CrawlRecord,
+    AnalyzerSpec,
+    RunStateEnum,
+    RunState
+)
 from .score_analyzers import ScoreAnalyzer, KeywordScoreAnalyzer, LLMServiceScoreAnalyzer
 from .scrapers import Scraper, PlaywrightScraper  
 from .storage_handlers import CrawlStorageHandler, FsStoreHandler, DhStoreHandler
@@ -307,11 +315,9 @@ class Prospector:
         """
         for spec in analyzer_specs:
             if spec.name == "KeywordScoreAnalyzer":
-                if not hasattr(spec.params, '__iter__'):
-                    raise ValueError(f"KeywordScoreAnalyzer requires iterable params")
-                analyzer = KeywordScoreAnalyzer(spec.params)
+                analyzer = KeywordScoreAnalyzer(spec)
             elif spec.name == "LLMServiceScoreAnalyzer":
-                analyzer = LLMServiceScoreAnalyzer()
+                analyzer = LLMServiceScoreAnalyzer(spec)
             else:
                 raise ValueError(f"Unknown analyzer type: {spec.name}")
             
