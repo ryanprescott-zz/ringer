@@ -5,6 +5,7 @@ from .settings import (
     FsStoreHandlerSettings,
     DhStoreHandlerSettings,
     LLMServiceScoreAnalyzerSettings,
+    SearchEngineSettings,
     ProspectorServiceSettings
 )
 
@@ -15,6 +16,7 @@ __all__ = [
     "FsStoreHandlerSettings",
     "DhStoreHandlerSettings",
     "LLMServiceScoreAnalyzerSettings",
+    "SearchEngineSettings",
     "ProspectorServiceSettings",
     "HandlerType",
 ]

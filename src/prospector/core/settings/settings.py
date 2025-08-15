@@ -76,6 +76,24 @@ class DhStoreHandlerSettings(BaseSettings):
     }
 
 
+class SearchEngineSettings(BaseSettings):
+    """Settings for search engine integration."""
+    
+    google_base_url: str = "https://www.google.com/search"
+    bing_base_url: str = "https://www.bing.com/search"
+    duckduckgo_base_url: str = "https://duckduckgo.com/"
+    
+    request_timeout: int = 30
+    rate_limit_delay: float = 2.0
+    max_retries: int = 3
+    
+    user_agent: str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    
+    model_config = {
+        "env_prefix": "search_engine_"
+    }
+
+
 class ProspectorServiceSettings(BaseSettings):
     """Settings for the FastAPI web service."""
     
