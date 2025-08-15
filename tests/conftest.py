@@ -124,7 +124,8 @@ def keyword_analyzer(sample_weighted_keywords):
         composite_weight=1.0,
         keywords=sample_weighted_keywords
     )
-    return KeywordScoreAnalyzer(spec)
+    analyzer = KeywordScoreAnalyzer(spec)
+    return analyzer
 
 
 @pytest.fixture
