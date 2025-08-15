@@ -130,33 +130,24 @@ class SearchEngineSeed(BaseModel):
         return value
 
 
-class CrawlSeeds(BaseModel):
-    """Container for crawl seed sources."""
-    
-    url_seeds: Optional[List[str]] = Field(default=None, description="Direct URL seeds")
-    search_engine_seeds: Optional[List[SearchEngineSeed]] = Field(default=None, description="Search engine seed specifications")
-
-    @model_validator(mode='after')
-    def check_at_least_one_seed_source(self):
-        """Ensure at least one seed source is provided."""
-        url_seeds_empty = not self.url_seeds
-        search_engine_seeds_empty = not self.search_engine_seeds
-        
-        if url_seeds_empty and search_engine_seeds_empty:
-            raise ValueError("At least one of url_seeds or search_engine_seeds must be provided")
-        
-        return self
-
 class CrawlSpec(BaseModel):
     """Specification for a web crawl."""
     
     name: str = Field(..., description="Name of the crawl")
-    seeds: CrawlSeeds = Field(..., description="Seed sources for the crawl")
+    seeds: List[str] = Field(..., description="List of seed URLs for the crawl")
     analyzer_specs: List[KeywordScoringSpec|LLMScoringSpec] = Field(..., description="Analyzers to use")
     worker_count: int = Field(default=1, description="Number of workers to use")
     domain_blacklist: Optional[List[str]] = Field(
         default=None, description="Domains to exclude from crawling"
     )
+    
+    @field_validator('seeds')
+    @classmethod
+    def check_seeds_not_empty(cls, value: List[str]) -> List[str]:
+        """Ensure the seeds list is not empty."""
+        if not value:
+            raise ValueError("Seeds list cannot be empty")
+        return value
     
     @property
     def id(self) -> str:
