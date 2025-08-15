@@ -1,6 +1,6 @@
 """Pydantic models for the Prospector FastAPI web service."""
 
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel
 from prospector.core.models import CrawlSpec, RunState, SearchEngineSeed
 
@@ -76,7 +76,7 @@ class FieldDescriptor(BaseModel):
     type: str
     description: str
     required: bool
-    default: str = None
+    default: Optional[str] = None
 
 
 class AnalyzerInfo(BaseModel):
