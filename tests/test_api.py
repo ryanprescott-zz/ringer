@@ -344,7 +344,7 @@ class TestDeleteCrawlEndpoint:
 class TestCrawlStatusEndpoint:
     """Tests for the crawl status endpoint."""
     
-    def test_get_crawl_status_success(self, client, mock_prospector):
+    def test_get_crawl_status_success(self, client, mock_prospector, sample_crawl_state):
         """Test successful crawl status retrieval."""
         from prospector.core.models import CrawlStatus, RunState, RunStateEnum
         from datetime import datetime
@@ -364,7 +364,10 @@ class TestCrawlStatusEndpoint:
             frontier_size=5
         )
         
+        # Mock the get_crawl_status method to return our test status
         mock_prospector.get_crawl_status.return_value = test_status
+        # Also add the crawl to the mock's crawls dictionary to avoid any internal checks
+        mock_prospector.crawls = {test_crawl_id: sample_crawl_state}
         
         # Set the prospector in app state
         app.state.prospector = mock_prospector
