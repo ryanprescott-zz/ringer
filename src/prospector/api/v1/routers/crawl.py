@@ -7,7 +7,7 @@ from prospector.api.v1.models import (
     StartCrawlRequest, StartCrawlResponse,
     StopCrawlRequest, StopCrawlResponse,
     DeleteCrawlRequest, DeleteCrawlResponse,
-    CrawlStatusResponse
+    CrawlStatusResponse, CrawlStatusListResponse
 )
 
 router = APIRouter(
@@ -137,6 +137,34 @@ def delete_crawl(request: DeleteCrawlRequest, app_request: Request) -> DeleteCra
         raise HTTPException(status_code=404, detail=str(e))
     except RuntimeError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+@router.get("/status", response_model=CrawlStatusListResponse)
+def get_all_crawl_statuses(app_request: Request) -> CrawlStatusListResponse:
+    """
+    Get status information for all crawls.
+    
+    Args:
+        app_request: FastAPI request object to access application state
+        
+    Returns:
+        CrawlStatusListResponse: Response containing list of crawl status information
+        
+    Raises:
+        HTTPException: If crawl status retrieval fails
+    """
+    try:
+        prospector = app_request.app.state.prospector
+        crawl_status_dicts = prospector.get_all_crawl_statuses()
+        
+        # Create the API models from the dictionaries
+        from prospector.api.v1.models import CrawlStatus
+        crawl_statuses = [CrawlStatus(**status_dict) for status_dict in crawl_status_dicts]
+        
+        return CrawlStatusListResponse(crawls=crawl_statuses)
+        
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 

@@ -359,6 +359,107 @@ class TestDeleteCrawlEndpoint:
 class TestCrawlStatusEndpoint:
     """Tests for the crawl status endpoint."""
     
+    def test_get_all_crawl_statuses_success(self, client, mock_prospector):
+        """Test successful retrieval of all crawl statuses."""
+        from datetime import datetime
+        
+        # Mock the get_all_crawl_statuses method
+        test_status_dicts = [
+            {
+                "crawl_id": "crawl_1",
+                "crawl_name": "test_crawl_1",
+                "current_state": "RUNNING",
+                "state_history": [
+                    {
+                        "state": "CREATED",
+                        "timestamp": datetime.now().isoformat()
+                    },
+                    {
+                        "state": "RUNNING", 
+                        "timestamp": datetime.now().isoformat()
+                    }
+                ],
+                "crawled_count": 10,
+                "processed_count": 8,
+                "error_count": 2,
+                "frontier_size": 5
+            },
+            {
+                "crawl_id": "crawl_2",
+                "crawl_name": "test_crawl_2",
+                "current_state": "STOPPED",
+                "state_history": [
+                    {
+                        "state": "CREATED",
+                        "timestamp": datetime.now().isoformat()
+                    },
+                    {
+                        "state": "STOPPED", 
+                        "timestamp": datetime.now().isoformat()
+                    }
+                ],
+                "crawled_count": 5,
+                "processed_count": 5,
+                "error_count": 0,
+                "frontier_size": 0
+            }
+        ]
+        
+        mock_prospector.get_all_crawl_statuses.return_value = test_status_dicts
+        
+        # Set the prospector in app state
+        app.state.prospector = mock_prospector
+        
+        response = client.get("/api/v1/crawl/status")
+        
+        assert response.status_code == 200
+        data = response.json()
+        
+        assert "crawls" in data
+        crawls = data["crawls"]
+        assert len(crawls) == 2
+        
+        # Check first crawl
+        assert crawls[0]["crawl_id"] == "crawl_1"
+        assert crawls[0]["crawl_name"] == "test_crawl_1"
+        assert crawls[0]["current_state"] == "RUNNING"
+        
+        # Check second crawl
+        assert crawls[1]["crawl_id"] == "crawl_2"
+        assert crawls[1]["crawl_name"] == "test_crawl_2"
+        assert crawls[1]["current_state"] == "STOPPED"
+        
+        mock_prospector.get_all_crawl_statuses.assert_called_once()
+    
+    def test_get_all_crawl_statuses_empty(self, client, mock_prospector):
+        """Test retrieval of all crawl statuses when no crawls exist."""
+        mock_prospector.get_all_crawl_statuses.return_value = []
+        
+        # Set the prospector in app state
+        app.state.prospector = mock_prospector
+        
+        response = client.get("/api/v1/crawl/status")
+        
+        assert response.status_code == 200
+        data = response.json()
+        
+        assert "crawls" in data
+        assert data["crawls"] == []
+        
+        mock_prospector.get_all_crawl_statuses.assert_called_once()
+    
+    def test_get_all_crawl_statuses_internal_error(self, client, mock_prospector):
+        """Test internal server error during all crawl statuses retrieval."""
+        mock_prospector.get_all_crawl_statuses.side_effect = Exception("Database connection failed")
+        
+        # Set the prospector in app state
+        app.state.prospector = mock_prospector
+        
+        response = client.get("/api/v1/crawl/status")
+        
+        assert response.status_code == 500
+        assert "Internal server error" in response.json()["detail"]
+    
     def test_get_crawl_status_success(self, client, mock_prospector, sample_crawl_state):
         """Test successful crawl status retrieval."""
         from prospector.core.models import RunState, RunStateEnum

@@ -326,6 +326,45 @@ class Prospector:
                 "error_count": error_count,
                 "frontier_size": frontier_size
             }
+
+    def get_all_crawl_statuses(self) -> List[dict]:
+        """
+        Get status information for all crawls.
+        
+        Returns:
+            List of dictionaries with crawl information, ordered by creation time (newest first)
+        """
+        with self.crawls_lock:
+            crawl_statuses = []
+            
+            for crawl_id, crawl_state in self.crawls.items():
+                # Get thread-safe snapshot of counts
+                crawled_count, processed_count, error_count, frontier_size = crawl_state.get_status_counts()
+                
+                # Get state history from storage
+                state_history = crawl_state.get_state_history()
+                
+                # Create status dictionary
+                status_dict = {
+                    "crawl_id": crawl_id,
+                    "crawl_name": crawl_state.crawl_spec.name,
+                    "current_state": crawl_state.current_state.value,
+                    "state_history": [state.model_dump() for state in state_history],
+                    "crawled_count": crawled_count,
+                    "processed_count": processed_count,
+                    "error_count": error_count,
+                    "frontier_size": frontier_size
+                }
+                
+                crawl_statuses.append(status_dict)
+            
+            # Sort by creation time (newest first) - use the first state's timestamp
+            crawl_statuses.sort(
+                key=lambda x: x["state_history"][0]["timestamp"] if x["state_history"] else "",
+                reverse=True
+            )
+            
+            return crawl_statuses
     
 
     def stop(self, crawl_id: str) -> tuple:
