@@ -32,7 +32,7 @@ from .results_management import (
     FsCrawlResultsManager,
     DhCrawlResultsManager,
 )
-from .state_management import (
+from .state_managers import (
     CrawlStateManager,
     MemoryCrawlStateManager,
     RedisCrawlStateManager,

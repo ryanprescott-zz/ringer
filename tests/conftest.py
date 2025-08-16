@@ -208,7 +208,7 @@ def mock_prospector():
 def sample_crawl_state(sample_crawl_spec):
     """Create a sample CrawlState for testing."""
     from prospector.core.models import RunState, RunStateEnum
-    from prospector.core.state_management.memory_crawl_state_manager import MemoryCrawlStateManager
+    from prospector.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
     manager = MemoryCrawlStateManager()
     crawl_state = CrawlState(sample_crawl_spec, manager)
     return crawl_state
