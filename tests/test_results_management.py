@@ -142,6 +142,7 @@ class TestFsCrawlResultsManager:
                 manager.settings = type('Settings', (), {
                     'crawl_data_dir': temp_dir
                 })()
+                manager.base_dir = Path(temp_dir)
                 
                 # First create the crawl
                 manager.create_crawl(sample_crawl_spec)
@@ -173,6 +174,7 @@ class TestFsCrawlResultsManager:
                 manager.settings = type('Settings', (), {
                     'crawl_data_dir': temp_dir
                 })()
+                manager.base_dir = Path(temp_dir)
                 
                 # Create crawl and handle multiple records for same crawl
                 manager.create_crawl(sample_crawl_spec)
@@ -203,6 +205,7 @@ class TestFsCrawlResultsManager:
             manager.settings = type('Settings', (), {
                 'crawl_data_dir': '/invalid/path'
             })()
+            manager.base_dir = Path('/invalid/path')
             
             with pytest.raises(Exception):
                 manager.store_record(sample_crawl_record, "test_crawl_id")
