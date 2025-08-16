@@ -597,6 +597,108 @@ class TestCrawlStatusEndpoint:
         assert response.status_code == 500
         assert "Internal server error" in response.json()["detail"]
     
+    def test_get_crawl_info_success(self, client, mock_prospector, sample_crawl_state):
+        """Test successful crawl info retrieval."""
+        from prospector.core.models import RunState, RunStateEnum
+        from datetime import datetime
+        
+        test_crawl_id = "test_crawl_123"
+        
+        # Mock the get_crawl_info method to return a dictionary (as the actual implementation does)
+        test_info_dict = {
+            "crawl_spec": {
+                "name": "test_crawl",
+                "seeds": ["https://example.com"],
+                "analyzer_specs": [
+                    {
+                        "name": "KeywordScoreAnalyzer",
+                        "composite_weight": 1.0,
+                        "keywords": [
+                            {"keyword": "test", "weight": 1.0}
+                        ]
+                    }
+                ],
+                "worker_count": 1,
+                "domain_blacklist": None
+            },
+            "crawl_status": {
+                "crawl_id": test_crawl_id,
+                "crawl_name": "test_crawl",
+                "current_state": "RUNNING",
+                "state_history": [
+                    {
+                        "state": "CREATED",
+                        "timestamp": datetime.now().isoformat()
+                    },
+                    {
+                        "state": "RUNNING", 
+                        "timestamp": datetime.now().isoformat()
+                    }
+                ],
+                "crawled_count": 10,
+                "processed_count": 8,
+                "error_count": 2,
+                "frontier_size": 5
+            }
+        }
+        
+        mock_prospector.get_crawl_info.return_value = test_info_dict
+        # Also add the crawl to the mock's crawls dictionary to avoid any internal checks
+        mock_prospector.crawls = {test_crawl_id: sample_crawl_state}
+        
+        # Set the prospector in app state
+        app.state.prospector = mock_prospector
+        
+        response = client.get(f"/api/v1/crawl/{test_crawl_id}/info")
+        
+        assert response.status_code == 200
+        data = response.json()
+        
+        assert "info" in data
+        info = data["info"]
+        assert "crawl_spec" in info
+        assert "crawl_status" in info
+        
+        # Check crawl spec
+        assert info["crawl_spec"]["name"] == "test_crawl"
+        assert info["crawl_spec"]["seeds"] == ["https://example.com"]
+        
+        # Check crawl status
+        assert info["crawl_status"]["crawl_id"] == test_crawl_id
+        assert info["crawl_status"]["crawl_name"] == "test_crawl"
+        assert info["crawl_status"]["current_state"] == "RUNNING"
+        assert info["crawl_status"]["crawled_count"] == 10
+        assert info["crawl_status"]["processed_count"] == 8
+        assert info["crawl_status"]["error_count"] == 2
+        assert info["crawl_status"]["frontier_size"] == 5
+        assert len(info["crawl_status"]["state_history"]) == 2
+        
+        mock_prospector.get_crawl_info.assert_called_once_with(test_crawl_id)
+    
+    def test_get_crawl_info_not_found(self, client, mock_prospector):
+        """Test getting info for non-existent crawl returns 404."""
+        mock_prospector.get_crawl_info.side_effect = ValueError("Crawl nonexistent_id not found")
+        
+        # Set the prospector in app state
+        app.state.prospector = mock_prospector
+        
+        response = client.get("/api/v1/crawl/nonexistent_id/info")
+        
+        assert response.status_code == 404
+        assert "Crawl nonexistent_id not found" in response.json()["detail"]
+    
+    def test_get_crawl_info_internal_error(self, client, mock_prospector):
+        """Test internal server error during info retrieval."""
+        mock_prospector.get_crawl_info.side_effect = Exception("Database connection failed")
+        
+        # Set the prospector in app state
+        app.state.prospector = mock_prospector
+        
+        response = client.get("/api/v1/crawl/test_crawl/info")
+        
+        assert response.status_code == 500
+        assert "Internal server error" in response.json()["detail"]
+    
     def test_get_crawl_status_success(self, client, mock_prospector, sample_crawl_state):
         """Test successful crawl status retrieval."""
         from prospector.core.models import RunState, RunStateEnum

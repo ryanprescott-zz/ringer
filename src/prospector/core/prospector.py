@@ -410,6 +410,51 @@ class Prospector:
             )
             
             return crawl_infos
+
+    def get_crawl_info(self, crawl_id: str) -> dict:
+        """
+        Get complete information (spec + status) for a crawl.
+        
+        Args:
+            crawl_id: ID of the crawl to get info for
+            
+        Returns:
+            Dictionary with crawl spec and status information
+            
+        Raises:
+            ValueError: If crawl ID not found
+        """
+        with self.crawls_lock:
+            if crawl_id not in self.crawls:
+                raise ValueError(f"Crawl {crawl_id} not found")
+            
+            crawl_state = self.crawls[crawl_id]
+            
+            # Get thread-safe snapshot of counts
+            crawled_count, processed_count, error_count, frontier_size = crawl_state.get_status_counts()
+            
+            # Get state history from storage
+            state_history = crawl_state.get_state_history()
+            
+            # Create status dictionary
+            status_dict = {
+                "crawl_id": crawl_id,
+                "crawl_name": crawl_state.crawl_spec.name,
+                "current_state": crawl_state.current_state.value,
+                "state_history": [state.model_dump() for state in state_history],
+                "crawled_count": crawled_count,
+                "processed_count": processed_count,
+                "error_count": error_count,
+                "frontier_size": frontier_size
+            }
+            
+            # Create info dictionary with spec and status
+            info_dict = {
+                "crawl_spec": crawl_state.crawl_spec.model_dump(),
+                "crawl_status": status_dict
+            }
+            
+            return info_dict
     
 
     def stop(self, crawl_id: str) -> tuple:

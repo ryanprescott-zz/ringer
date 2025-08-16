@@ -8,7 +8,7 @@ from prospector.api.v1.models import (
     StopCrawlRequest, StopCrawlResponse,
     DeleteCrawlRequest, DeleteCrawlResponse,
     CrawlStatusResponse, CrawlStatusListResponse,
-    CrawlInfoListResponse
+    CrawlInfoResponse, CrawlInfoListResponse
 )
 
 router = APIRouter(
@@ -201,6 +201,41 @@ def get_all_crawl_info(app_request: Request) -> CrawlInfoListResponse:
         
         return CrawlInfoListResponse(crawls=crawl_infos)
         
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+@router.get("/{crawl_id}/info", response_model=CrawlInfoResponse)
+def get_crawl_info(crawl_id: str, app_request: Request) -> CrawlInfoResponse:
+    """
+    Get complete information (spec + status) for a crawl.
+    
+    Args:
+        crawl_id: ID of the crawl to get info for
+        app_request: FastAPI request object to access application state
+        
+    Returns:
+        CrawlInfoResponse: Response containing crawl information
+        
+    Raises:
+        HTTPException: If crawl info retrieval fails
+    """
+    try:
+        prospector = app_request.app.state.prospector
+        crawl_info_dict = prospector.get_crawl_info(crawl_id)
+        
+        # Create the API models from the dictionary
+        from prospector.api.v1.models import CrawlInfo, CrawlStatus
+        from prospector.core.models import CrawlSpec
+        
+        crawl_spec = CrawlSpec(**crawl_info_dict["crawl_spec"])
+        crawl_status = CrawlStatus(**crawl_info_dict["crawl_status"])
+        crawl_info = CrawlInfo(crawl_spec=crawl_spec, crawl_status=crawl_status)
+        
+        return CrawlInfoResponse(info=crawl_info)
+        
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 

@@ -125,6 +125,12 @@ class CrawlInfo(BaseModel):
     crawl_status: CrawlStatus
 
 
+class CrawlInfoResponse(BaseModel):
+    """Response model for crawl information."""
+    
+    info: CrawlInfo
+
+
 class CrawlInfoListResponse(BaseModel):
     """Response model for list of crawl information."""
     
