@@ -340,6 +340,7 @@ class Prospector:
             
         Raises:
             ValueError: If crawl ID not found
+            RuntimeError: If crawl is not in RUNNING state
         """
         stopped_state = None
         with self.crawls_lock:
@@ -347,6 +348,11 @@ class Prospector:
                 raise ValueError(f"Crawl {crawl_id} not found")
             
             crawl_state = self.crawls[crawl_id]
+            current_state = crawl_state.current_state
+            
+            if current_state != RunStateEnum.RUNNING:
+                raise RuntimeError(f"Crawl {crawl_id} is already stopped")
+            
             stopped_state = RunState(state=RunStateEnum.STOPPED)
             crawl_state.add_state(stopped_state)
         

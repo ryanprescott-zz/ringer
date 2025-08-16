@@ -273,6 +273,21 @@ class TestProspector:
         crawl_state = prospector.crawls[crawl_id]
         assert crawl_state.current_state == RunStateEnum.STOPPED
     
+    def test_stop_crawl_not_running(self, prospector, sample_crawl_spec):
+        """Test stopping a crawl that is not running raises error."""
+        crawl_id, create_state = prospector.create(sample_crawl_spec)
+        
+        # Try to stop crawl that is in CREATED state
+        with pytest.raises(RuntimeError, match="is already stopped"):
+            prospector.stop(crawl_id)
+        
+        # Set to STOPPED and try again
+        from prospector.core.models import RunState
+        prospector.crawls[crawl_id].add_state(RunState(state=RunStateEnum.STOPPED))
+        
+        with pytest.raises(RuntimeError, match="is already stopped"):
+            prospector.stop(crawl_id)
+    
     def test_stop_nonexistent_crawl(self, prospector):
         """Test stopping a non-existent crawl raises error."""
         with pytest.raises(ValueError, match="not found"):

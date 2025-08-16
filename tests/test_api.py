@@ -255,6 +255,21 @@ class TestStopCrawlEndpoint:
         assert response.status_code == 404
         assert "Crawl nonexistent_id not found" in response.json()["detail"]
     
+    def test_stop_crawl_already_stopped(self, client, mock_prospector):
+        """Test stopping already stopped crawl returns 400."""
+        mock_prospector.stop.side_effect = RuntimeError("Crawl test_crawl is already stopped")
+        
+        # Set the prospector in app state
+        app.state.prospector = mock_prospector
+        
+        response = client.post(
+            "/api/v1/crawl/stop",
+            json={"crawl_id": "test_crawl"}
+        )
+        
+        assert response.status_code == 400
+        assert "Crawl test_crawl is already stopped" in response.json()["detail"]
+    
     def test_stop_crawl_internal_error(self, client, mock_prospector):
         """Test internal server error during crawl stop."""
         mock_prospector.stop.side_effect = Exception("Failed to stop workers")
