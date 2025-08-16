@@ -460,6 +460,143 @@ class TestCrawlStatusEndpoint:
         assert response.status_code == 500
         assert "Internal server error" in response.json()["detail"]
     
+    def test_get_all_crawl_info_success(self, client, mock_prospector):
+        """Test successful retrieval of all crawl info."""
+        from datetime import datetime
+        
+        # Mock the get_all_crawl_info method
+        test_info_dicts = [
+            {
+                "crawl_spec": {
+                    "name": "test_crawl_1",
+                    "seeds": ["https://example1.com"],
+                    "analyzer_specs": [
+                        {
+                            "name": "KeywordScoreAnalyzer",
+                            "composite_weight": 1.0,
+                            "keywords": [
+                                {"keyword": "test", "weight": 1.0}
+                            ]
+                        }
+                    ],
+                    "worker_count": 1,
+                    "domain_blacklist": None
+                },
+                "crawl_status": {
+                    "crawl_id": "crawl_1",
+                    "crawl_name": "test_crawl_1",
+                    "current_state": "RUNNING",
+                    "state_history": [
+                        {
+                            "state": "CREATED",
+                            "timestamp": datetime.now().isoformat()
+                        },
+                        {
+                            "state": "RUNNING", 
+                            "timestamp": datetime.now().isoformat()
+                        }
+                    ],
+                    "crawled_count": 10,
+                    "processed_count": 8,
+                    "error_count": 2,
+                    "frontier_size": 5
+                }
+            },
+            {
+                "crawl_spec": {
+                    "name": "test_crawl_2",
+                    "seeds": ["https://example2.com"],
+                    "analyzer_specs": [
+                        {
+                            "name": "KeywordScoreAnalyzer",
+                            "composite_weight": 1.0,
+                            "keywords": [
+                                {"keyword": "test", "weight": 1.0}
+                            ]
+                        }
+                    ],
+                    "worker_count": 1,
+                    "domain_blacklist": None
+                },
+                "crawl_status": {
+                    "crawl_id": "crawl_2",
+                    "crawl_name": "test_crawl_2",
+                    "current_state": "STOPPED",
+                    "state_history": [
+                        {
+                            "state": "CREATED",
+                            "timestamp": datetime.now().isoformat()
+                        },
+                        {
+                            "state": "STOPPED", 
+                            "timestamp": datetime.now().isoformat()
+                        }
+                    ],
+                    "crawled_count": 5,
+                    "processed_count": 5,
+                    "error_count": 0,
+                    "frontier_size": 0
+                }
+            }
+        ]
+        
+        mock_prospector.get_all_crawl_info.return_value = test_info_dicts
+        
+        # Set the prospector in app state
+        app.state.prospector = mock_prospector
+        
+        response = client.get("/api/v1/crawl/info")
+        
+        assert response.status_code == 200
+        data = response.json()
+        
+        assert "crawls" in data
+        crawls = data["crawls"]
+        assert len(crawls) == 2
+        
+        # Check first crawl
+        assert "crawl_spec" in crawls[0]
+        assert "crawl_status" in crawls[0]
+        assert crawls[0]["crawl_spec"]["name"] == "test_crawl_1"
+        assert crawls[0]["crawl_status"]["crawl_id"] == "crawl_1"
+        assert crawls[0]["crawl_status"]["current_state"] == "RUNNING"
+        
+        # Check second crawl
+        assert crawls[1]["crawl_spec"]["name"] == "test_crawl_2"
+        assert crawls[1]["crawl_status"]["crawl_id"] == "crawl_2"
+        assert crawls[1]["crawl_status"]["current_state"] == "STOPPED"
+        
+        mock_prospector.get_all_crawl_info.assert_called_once()
+    
+    def test_get_all_crawl_info_empty(self, client, mock_prospector):
+        """Test retrieval of all crawl info when no crawls exist."""
+        mock_prospector.get_all_crawl_info.return_value = []
+        
+        # Set the prospector in app state
+        app.state.prospector = mock_prospector
+        
+        response = client.get("/api/v1/crawl/info")
+        
+        assert response.status_code == 200
+        data = response.json()
+        
+        assert "crawls" in data
+        assert data["crawls"] == []
+        
+        mock_prospector.get_all_crawl_info.assert_called_once()
+    
+    def test_get_all_crawl_info_internal_error(self, client, mock_prospector):
+        """Test internal server error during all crawl info retrieval."""
+        mock_prospector.get_all_crawl_info.side_effect = Exception("Database connection failed")
+        
+        # Set the prospector in app state
+        app.state.prospector = mock_prospector
+        
+        response = client.get("/api/v1/crawl/info")
+        
+        assert response.status_code == 500
+        assert "Internal server error" in response.json()["detail"]
+    
     def test_get_crawl_status_success(self, client, mock_prospector, sample_crawl_state):
         """Test successful crawl status retrieval."""
         from prospector.core.models import RunState, RunStateEnum

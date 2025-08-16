@@ -7,7 +7,8 @@ from prospector.api.v1.models import (
     StartCrawlRequest, StartCrawlResponse,
     StopCrawlRequest, StopCrawlResponse,
     DeleteCrawlRequest, DeleteCrawlResponse,
-    CrawlStatusResponse, CrawlStatusListResponse
+    CrawlStatusResponse, CrawlStatusListResponse,
+    CrawlInfoListResponse
 )
 
 router = APIRouter(
@@ -164,6 +165,41 @@ def get_all_crawl_statuses(app_request: Request) -> CrawlStatusListResponse:
         crawl_statuses = [CrawlStatus(**status_dict) for status_dict in crawl_status_dicts]
         
         return CrawlStatusListResponse(crawls=crawl_statuses)
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+@router.get("/info", response_model=CrawlInfoListResponse)
+def get_all_crawl_info(app_request: Request) -> CrawlInfoListResponse:
+    """
+    Get complete information (spec + status) for all crawls.
+    
+    Args:
+        app_request: FastAPI request object to access application state
+        
+    Returns:
+        CrawlInfoListResponse: Response containing list of crawl information
+        
+    Raises:
+        HTTPException: If crawl info retrieval fails
+    """
+    try:
+        prospector = app_request.app.state.prospector
+        crawl_info_dicts = prospector.get_all_crawl_info()
+        
+        # Create the API models from the dictionaries
+        from prospector.api.v1.models import CrawlInfo, CrawlStatus
+        from prospector.core.models import CrawlSpec
+        
+        crawl_infos = []
+        for info_dict in crawl_info_dicts:
+            crawl_spec = CrawlSpec(**info_dict["crawl_spec"])
+            crawl_status = CrawlStatus(**info_dict["crawl_status"])
+            crawl_info = CrawlInfo(crawl_spec=crawl_spec, crawl_status=crawl_status)
+            crawl_infos.append(crawl_info)
+        
+        return CrawlInfoListResponse(crawls=crawl_infos)
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
