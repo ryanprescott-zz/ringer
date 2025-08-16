@@ -48,6 +48,11 @@ class DhLlmScoreAnalyzerSettings(BaseSettings):
         "env_prefix": "dh_llm_score_analyzer_"
     }
 
+class CrawlResultsManagerSettings(BaseSettings):
+    """Settings for crawl results management."""
+    
+    manager_type: ResultsManagerType = ResultsManagerType.FILE_SYSTEM
+
 
 class FsCrawlResultsManagerSettings(BaseSettings):
     """Settings for Filesystem data storage handling of crawl records."""

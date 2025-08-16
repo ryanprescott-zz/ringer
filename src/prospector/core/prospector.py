@@ -24,7 +24,7 @@ from .models import (
 )
 from .score_analyzers import ScoreAnalyzer, KeywordScoreAnalyzer, DhLlmScoreAnalyzer
 from .scrapers import Scraper, PlaywrightScraper  
-from .results_managers import CrawlResultsManager, FsCrawlResultsManager, DhCrawlResultsManager
+from .results_managers import create_crawl_results_manager, CrawlResultsManager
 from .state_managers import create_crawl_state_manager, CrawlStateManager
 from .search_engines import SearchEngineService
 from .settings import ProspectorSettings, ResultsManagerType
@@ -178,15 +178,8 @@ class Prospector:
         self.crawls: Dict[str, CrawlState] = {}
         self.scraper: Scraper = PlaywrightScraper()
         self.search_engine_service = SearchEngineService()
-        self.storage = create_crawl_state_manager()
-        
-        # Initialize results manager based on settings
-        if self.settings.results_manager_type == ResultsManagerType.FILE_SYSTEM:
-            self.results_manager: CrawlResultsManager = FsCrawlResultsManager()
-        elif self.settings.results_manager_type == ResultsManagerType.DH:
-            self.results_manager: CrawlResultsManager = DhCrawlResultsManager()
-        else:
-            raise ValueError(f"Unknown results manager type: {self.settings.results_manager_type}")
+        self.state_manager = create_crawl_state_manager()
+        self.results_manager = create_crawl_results_manager()
         
         self.executor = ThreadPoolExecutor(
             max_workers=min(max(1, os.cpu_count() - 2), self.settings.max_workers)
@@ -213,7 +206,7 @@ class Prospector:
                 raise ValueError(f"Crawl with ID {crawl_id} already exists")
             
             # Create crawl state with persistent storage
-            crawl_state = CrawlState(crawl_spec, self.storage)
+            crawl_state = CrawlState(crawl_spec, self.state_manager)
             
             # Initialize analyzers
             self._initialize_analyzers(crawl_state, crawl_spec.analyzer_specs)
@@ -509,7 +502,7 @@ class Prospector:
                 raise RuntimeError(f"Cannot delete running crawl {crawl_id}")
             
             # Delete from persistent storage
-            self.storage.delete_crawl(crawl_id)
+            self.state_manager.delete_crawl(crawl_id)
             
             del self.crawls[crawl_id]
 

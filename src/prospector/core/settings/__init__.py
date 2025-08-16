@@ -7,7 +7,8 @@ from .settings import (
     DhLlmScoreAnalyzerSettings,
     SearchEngineSettings,
     ProspectorServiceSettings,
-    CrawlStateManagerSettings
+    CrawlStateManagerSettings,
+    CrawlResultsManagerSettings,
 )
 
 __version__ = "1.0.0"
@@ -20,5 +21,6 @@ __all__ = [
     "SearchEngineSettings",
     "ProspectorServiceSettings",
     "CrawlStateManagerSettings",
+    "CrawlResultsManagerSettings",
     "ResultsManagerType",
 ]
