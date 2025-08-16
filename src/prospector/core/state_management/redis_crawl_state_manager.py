@@ -3,6 +3,7 @@
 import json
 import logging
 import threading
+import redis
 from datetime import datetime
 from typing import List, Optional, Tuple
 
@@ -20,7 +21,6 @@ class RedisCrawlStateManager(CrawlStateManager):
     def __init__(self):
         self.settings = CrawlStateManagerSettings()
         try:
-            import redis
             self.redis = redis.from_url(
                 self.settings.redis_url,
                 db=self.settings.redis_db,
