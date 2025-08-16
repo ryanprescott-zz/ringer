@@ -8,9 +8,9 @@ from prospector.core.models import (
     DhLlmScoringSpec,
     PromptInput,
     TopicListInput,
-    LLMGenerationInput,
+    DhLlmGenerationInput,
     FieldMap,
-    LLMGenerationRequest
+    DhLlmGenerationRequest
 )
 from prospector.core.settings import DhLlmScoreAnalyzerSettings
 from .score_analyzer import ScoreAnalyzer
@@ -50,7 +50,7 @@ class DhLlmScoreAnalyzer(ScoreAnalyzer):
         logger.info(f"Scoring prompt: {prompt_str}")
 
         # Create the generation input for the DH LLM service
-        self._generation_input = LLMGenerationInput(
+        self._generation_input = DhLlmGenerationInput(
             prompt=prompt_str,
             output_format=FieldMap(name_to_type=self.settings.output_format)
         )
@@ -90,7 +90,7 @@ class DhLlmScoreAnalyzer(ScoreAnalyzer):
             
         try:
             # Create the request payload
-            request_data = LLMGenerationRequest(
+            request_data = DhLlmGenerationRequest(
                 generation_input=self._generation_input,
                 text_inputs=[content],  # Wrap text in a list for processing
             )

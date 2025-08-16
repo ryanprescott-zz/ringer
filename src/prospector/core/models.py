@@ -71,16 +71,16 @@ class FieldMap(BaseModel):
             raise ValueError("Field map cannot be empty")
         return value
 
-class LLMGenerationInput(BaseModel):
+class DhLlmGenerationInput(BaseModel):
     """Input for text generation."""
     
     prompt: str = Field(..., description="The prompt to generate text from")
     output_format: FieldMap = Field(..., description="Mapping of output fields to types")
 
-class LLMGenerationRequest(BaseModel):
+class DhLlmGenerationRequest(BaseModel):
     """Request object for LLM generation service."""
 
-    generation_input: LLMGenerationInput = Field(..., description="Input for text generation")
+    generation_input: DhLlmGenerationInput = Field(..., description="Input for text generation")
     text_inputs: List[str] = Field(..., description="List of text inputs to process")
 
 class StoreCrawlRecordRequest(BaseModel):
