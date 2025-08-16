@@ -8,7 +8,7 @@ from typing import List, Optional, Tuple
 
 from .crawl_state_manager import CrawlStateManager
 from ..models import CrawlSpec, RunState, RunStateEnum
-from ..settings import CrawlStateStorageSettings
+from ..settings import CrawlStateManagerSettings
 
 
 logger = logging.getLogger(__name__)
@@ -18,7 +18,7 @@ class RedisCrawlStateManager(CrawlStateManager):
     """Redis-based storage implementation for high performance and persistence."""
     
     def __init__(self):
-        self.settings = CrawlStateStorageSettings()
+        self.settings = CrawlStateManagerSettings()
         try:
             import redis
             self.redis = redis.from_url(
