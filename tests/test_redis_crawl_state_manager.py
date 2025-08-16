@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime
 from typing import List, Tuple
 
-from prospector.core.state_manager.redis_crawl_state_manager import RedisCrawlStateManager
+from prospector.core.state_managers.redis_crawl_state_manager import RedisCrawlStateManager
 from prospector.core.models import CrawlSpec, RunState, RunStateEnum, WeightedKeyword
 from prospector.core.score_analyzers import KeywordScoreAnalyzer
 
