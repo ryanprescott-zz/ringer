@@ -10,7 +10,7 @@
 Prospector combines intelligent content analysis with efficient crawling to:
 - **Prioritize relevant content** using configurable scoring algorithms
 - **Scale crawling operations** with concurrent worker pools
-- **Adapt to different content types** through pluggable analyzers and handlers
+- **Adapt to different content types** through pluggable analyzers and managers
 - **Provide robust error handling** with retry logic and comprehensive logging
 
 ## 📋 Requirements & Design Philosophy
@@ -18,14 +18,14 @@ Prospector combines intelligent content analysis with efficient crawling to:
 ### Core Requirements
 - **Best-first search crawling** with content-based prioritization
 - **Concurrent processing** with configurable worker pools
-- **Pluggable architecture** for analyzers, scrapers, and handlers
+- **Pluggable architecture** for analyzers, scrapers, and managers
 - **Comprehensive error handling** with logging and recovery
 - **Configuration-driven** operation via Pydantic Settings
 - **Production-ready** with proper resource management
 
 ### Design Principles
 - **Modularity**: Each component has a single responsibility
-- **Extensibility**: Easy to add new analyzers, scrapers, and handlers
+- **Extensibility**: Easy to add new analyzers, scrapers, and managers
 - **Configurability**: All behavior controlled via settings and environment variables
 - **Robustness**: Graceful handling of failures at every level
 - **Performance**: Efficient resource usage with connection pooling and async operations
@@ -34,7 +34,7 @@ Prospector combines intelligent content analysis with efficient crawling to:
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Prospector    │    │   ScoreAnalyzer │    │ CrawlStorageHandler│
+│   Prospector    │    │   ScoreAnalyzer │    │ CrawlResultManager│
 │   (Orchestrator)│───▶│   (Content      │───▶│   (Output       │
 │                 │    │    Scoring)     │    │    Processing)  │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
@@ -57,7 +57,7 @@ The **Prospector** class is the central orchestrator that manages the entire cra
 - Manages multiple concurrent crawls with separate state tracking
 - Maintains thread-safe frontier queues sorted by content relevance scores
 - Coordinates worker pools for parallel URL processing
-- Integrates all components (scrapers, analyzers, handlers)
+- Integrates all components (scrapers, analyzers, managers)
 
 **Design Features:**
 - **Thread-safe state management** using locks and thread-safe data structures
@@ -123,11 +123,11 @@ class ScoreAnalyzer(ABC):
         """Return relevance score between 0 and 1."""
 ```
 
-### 4. CrawlStorageHandlers (Output Processing)
+### 4. CrawlResultsManagers (Output Processing)
 
-**CrawlStorageHandlers** process and store crawled content using different storage strategies.
+**CrawlResultsManagers** process and store crawled content using different storage strategies.
 
-#### FsStoreCrawlStorageHandler
+#### FsCrawlResultsManager
 - **Purpose**: Store crawl records as JSON files on the filesystem
 - **Organization**: Structured by crawl name and datetime
 - **Features**:
@@ -135,7 +135,7 @@ class ScoreAnalyzer(ABC):
   - URL-based filename generation (MD5 hash)
   - JSON serialization with proper encoding
 
-#### ServiceCrawlStorageHandler
+#### DhCrawlResultsManager
 - **Purpose**: Send crawl records to external web services
 - **Integration**: HTTP POST with JSON payloads
 - **Features**:
@@ -146,7 +146,7 @@ class ScoreAnalyzer(ABC):
 
 **Design Pattern:**
 ```python
-class CrawlStorageHandler(ABC):
+class CrawlResultsManager(ABC):
     @abstractmethod
     def handle(self, crawl_record: CrawlRecord, crawl_name: str, crawl_datetime: str):
         """Process a crawl record."""
@@ -185,10 +185,10 @@ prospector/                                      # Prospector project root folde
            ├── __init__.py                       # Package initialization and exports
            ├── models.py                         # Pydantic data models
            ├── prospector.py                     # Prospector orchestrator
-           ├── handlers/                         # Crawl output handlers package
+           ├── results_managers/                 # Crawl output managers package
                ├── __init__.py                   # Package initialization and exports
-               ├── service_call_handler.py       # Service call output processing
-               └── fs_store_handler.py           # Filesystem storage output processing
+               ├── dh_crawl_results_manager.py   # Service call output processing
+               └── fs_crawl_results_mananger.py  # Filesystem storage output processing
            ├── score_analyzers/                  # Page scoring package
                ├── __init__.py                   # Package initialization and exports
                ├── keyword_score_analyzer.py.    # Keyword matching scorer
@@ -214,7 +214,7 @@ prospector/                                      # Prospector project root folde
     ├── test_prospector.py                       # Core orchestrator tests
     ├── test_scrapers.py                         # Scraper component tests
     ├── test_score_analyzers.py                  # Analyzer component tests
-    ├── test_handlers.py                         # Handler component tests
+    ├── test_crawl_results_managers.py           # Crawl results manager component tests
     └── test_models.py                           # Data model tests
 ├── pytest.ini                                   # Pytest configuration
 └──README.md                                     # This documentation
@@ -228,7 +228,7 @@ Prospector uses environment variable prefixes for different components:
 
 ```bash
 # Prospector Core Settings
-PROSPECTOR_HANDLER_TYPE=file_system  # or service_call
+PROSPECTOR_CRAWL_RESULTS_MANAGER_TYPE=file_system  # or service_call
 PROSPECTOR_MAX_WORKERS=10
 
 # Scraper Settings  
@@ -239,20 +239,15 @@ SCRAPER_JAVASCRIPT_ENABLED=true
 # Score Analyzer Settings
 ANALYZER_LLM_SERVICE_URL=http://localhost:8000/score
 ANALYZER_LLM_REQUEST_TIMEOUT=60
-
-# Handler Settings
-HANDLER_OUTPUT_DIRECTORY=./crawl_data
-HANDLER_SERVICE_URL=http://localhost:8000/handle_record
-HANDLER_SERVICE_MAX_RETRIES=3
 ```
 
 ### Programmatic Configuration
 
 ```python
-from prospector.settings import ProspectorSettings, HandlerType
+from prospector.settings import ProspectorSettings, CrawlResultsManagerType
 
 settings = ProspectorSettings(
-    handler_type=HandlerType.SERVICE_CALL,
+    crawl_results_manager_type=CrawlResultsManagerType.DH,
     max_workers=8
 )
 ```
@@ -329,13 +324,13 @@ crawl_spec = CrawlSpec(
 
 ```python
 import os
-from prospector.settings import HandlerType
+from prospector.settings import ResultsManagerType
 
 # Configure for service output
-os.environ['PROSPECTOR_HANDLER_TYPE'] = 'service_call'
-os.environ['HANDLER_SERVICE_URL'] = 'https://api.mycompany.com/crawl-records'
+os.environ['PROSPECTOR_RESULTS_MANAGER_TYPE'] = 'dh'
+os.environ['DH_CRAWL_RESULTS_MANAGER_SERVICE_URL'] = 'https://api.mycompany.com/crawl-records'
 
-# Prospector will automatically use ServiceCrawlStorageHandler
+# Prospector will automatically use DhCrawlResultsManager
 prospector = Prospector()
 ```
 
@@ -381,7 +376,7 @@ pytest --cov=prospector tests/
 ### Extension Points
 - **Custom Scrapers**: Implement domain-specific content extraction
 - **Specialized Analyzers**: Add industry-specific scoring algorithms  
-- **Alternative Handlers**: Support for databases, cloud storage, message queues
+- **Alternative Managers**: Support for databases, cloud storage, message queues
 - **Monitoring Integrations**: Prometheus metrics, custom dashboards
 
 ## 📄 License

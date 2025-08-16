@@ -184,7 +184,7 @@ class TestProspector:
         
         assert len(prospector.crawls) == 0
         assert prospector.scraper is not None
-        assert prospector.handler is not None
+        assert prospector.results_manager is not None
         assert prospector.executor is not None
     
     def test_create_crawl(self, prospector, sample_crawl_spec):
@@ -230,11 +230,11 @@ class TestProspector:
         assert len(crawl_state.analyzers) == 2
         assert "DhLlmScoreAnalyzer" in crawl_state.analyzer_weights
     
-    def test_start_crawl(self, prospector, sample_crawl_spec, mock_scraper, mock_handler):
+    def test_start_crawl(self, prospector, sample_crawl_spec, mock_scraper, mock_results_manager):
         """Test starting a crawl."""
-        # Mock the scraper and handler
+        # Mock the scraper and results_manager
         prospector.scraper = mock_scraper
-        prospector.handler = mock_handler
+        prospector.results_manager = mock_results_manager
         
         crawl_id, create_state = prospector.create(sample_crawl_spec)
         start_crawl_id, start_state = prospector.start(crawl_id)

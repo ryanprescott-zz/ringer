@@ -6,8 +6,8 @@ from typing import Dict, List
 from pydantic_settings import BaseSettings
 
 
-class HandlerType(str, Enum):
-    """Enum for crawl record handler types."""
+class ResultsManagerType(str, Enum):
+    """Enum for crawl results manager types."""
     FILE_SYSTEM = "file_system"
     DH = "dh"
 
@@ -17,7 +17,7 @@ class ProspectorSettings(BaseSettings):
     
     max_workers: int = 10
     prohibited_file_types: List[str] = []
-    handler_type: HandlerType = HandlerType.FILE_SYSTEM
+    results_manager_type: ResultsManagerType = ResultsManagerType.FILE_SYSTEM
     
     model_config = {
         "env_prefix": "prospector_"
@@ -62,7 +62,7 @@ class FsCrawlResultsManagerSettings(BaseSettings):
 class DhCrawlResultsManagerSettings(BaseSettings):
     """Settings for service call storage of crawl records."""
 
-    # Service handler settings
+    # DH crawl results manager settings
     service_url: str = "http://localhost:8000/handle_record"
     service_timeout_sec: int = 30
     service_max_retries: int = 3

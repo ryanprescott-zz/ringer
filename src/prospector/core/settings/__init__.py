@@ -1,5 +1,5 @@
 from .settings import (
-    HandlerType,
+    ResultsManagerType,
     ProspectorSettings,
     PlaywrightScraperSettings,
     FsCrawlResultsManagerSettings,
@@ -20,5 +20,5 @@ __all__ = [
     "SearchEngineSettings",
     "ProspectorServiceSettings",
     "CrawlStateManagerSettings",
-    "HandlerType",
+    "ResultsManagerType",
 ]

@@ -1,4 +1,4 @@
-"""File system handler for storing crawl records as JSON files."""
+"""File system crawl results manager for storing crawl records as JSON files."""
 
 import json
 import logging
@@ -13,10 +13,10 @@ from .crawl_results_manager import CrawlResultsManager
 logger = logging.getLogger(__name__)
 
 class FsCrawlResultsManager(CrawlResultsManager):
-    """Handler that stores crawl records as JSON files on the filesystem."""
+    """Results Manager that stores crawl records as JSON files on the filesystem."""
     
     def __init__(self):
-        """Initialize the file system handler with settings."""
+        """Initialize the file system results manager with settings."""
         self.settings = FsCrawlResultsManagerSettings()
         
         # Ensure the base directory exists

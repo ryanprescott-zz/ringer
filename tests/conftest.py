@@ -185,10 +185,10 @@ def mock_scraper():
 
 
 @pytest.fixture
-def mock_handler():
-    """Mock crawl record handler for testing."""
-    handler = Mock()
-    return handler
+def mock_results_manager():
+    """Mock crawl results_manager for testing."""
+    results_manager = Mock()
+    return results_manager
 
 @pytest.fixture
 def client():

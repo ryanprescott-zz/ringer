@@ -27,7 +27,7 @@ from .scrapers import Scraper, PlaywrightScraper
 from .results_managers import CrawlResultsManager, FsCrawlResultsManager, DhCrawlResultsManager
 from .state_managers import create_crawl_state_manager, CrawlStateManager
 from .search_engines import SearchEngineService
-from .settings import ProspectorSettings, HandlerType
+from .settings import ProspectorSettings, ResultsManagerType
 
 
 logger = logging.getLogger(__name__)
@@ -180,13 +180,13 @@ class Prospector:
         self.search_engine_service = SearchEngineService()
         self.storage = create_crawl_state_manager()
         
-        # Initialize handler based on settings
-        if self.settings.handler_type == HandlerType.FILE_SYSTEM:
-            self.handler: CrawlResultsManager = FsCrawlResultsManager()
-        elif self.settings.handler_type == HandlerType.DH:
-            self.handler: CrawlResultsManager = DhCrawlResultsManager()
+        # Initialize results manager based on settings
+        if self.settings.results_manager_type == ResultsManagerType.FILE_SYSTEM:
+            self.results_manager: CrawlResultsManager = FsCrawlResultsManager()
+        elif self.settings.results_manager_type == ResultsManagerType.DH:
+            self.results_manager: CrawlResultsManager = DhCrawlResultsManager()
         else:
-            raise ValueError(f"Unknown handler type: {self.settings.handler_type}")
+            raise ValueError(f"Unknown results manager type: {self.settings.results_manager_type}")
         
         self.executor = ThreadPoolExecutor(
             max_workers=min(max(1, os.cpu_count() - 2), self.settings.max_workers)
@@ -221,8 +221,8 @@ class Prospector:
             # Store crawl state
             self.crawls[crawl_id] = crawl_state
 
-            # Create crawl in storage handler
-            self.handler.create_crawl(crawl_spec)
+            # Create crawl in results manager
+            self.results_manager.create_crawl(crawl_spec)
             
         # Get the created state from storage (should have been added during CrawlState init)
         created_state = RunState(state=RunStateEnum.CREATED)
@@ -513,8 +513,8 @@ class Prospector:
             
             del self.crawls[crawl_id]
 
-            # Delete from storage handler
-            self.handler.delete_crawl(crawl_state.crawl_spec.id)
+            # Delete from results manager
+            self.results_manager.delete_crawl(crawl_state.crawl_spec.id)
         
         logger.info(f"Deleted crawl {crawl_id}")
     
@@ -596,7 +596,7 @@ class Prospector:
                 crawl_state.add_urls_with_scores(scored_links)
             
             # Handle the crawl record
-            self.handler.store_record(
+            self.results_manager.store_record(
                 crawl_record,
                 crawl_state.crawl_spec.id,
             )

@@ -1,4 +1,4 @@
-"""Service handler for sending crawl records to a web service."""
+"""DH crawl results manager for storing crawl records via the DH service."""
 
 import logging
 import requests
@@ -16,10 +16,10 @@ from .crawl_results_manager import CrawlResultsManager
 logger = logging.getLogger(__name__)
 
 class DhCrawlResultsManager(CrawlResultsManager):
-    """Handler that stores crawl data to the DH service."""
+    """Crawl Results manager that stores crawl data to the DH service."""
     
     def __init__(self):
-        """Initialize the storage handler with settings and session."""
+        """Initialize the results manager with settings and session."""
         self.settings = DhCrawlResultsManagerSettings()
         # Create a requests session for connection pooling
         self.session = requests.Session()
