@@ -218,16 +218,15 @@ class Prospector:
             # Initialize analyzers
             self._initialize_analyzers(crawl_state, crawl_spec.analyzer_specs)
             
-            # Add CREATED state
-            created_state = RunState(state=RunStateEnum.CREATED)
-            crawl_state.add_state(created_state)
-            
             # Store crawl state
             self.crawls[crawl_id] = crawl_state
 
             # Create crawl in storage handler
             self.handler.create_crawl(crawl_spec)
             
+        # Get the created state from storage (should have been added during CrawlState init)
+        created_state = RunState(state=RunStateEnum.CREATED)
+        
         logger.info(f"Created crawl {crawl_spec.name} with ID {crawl_id}")
         return (crawl_id, created_state)
     
