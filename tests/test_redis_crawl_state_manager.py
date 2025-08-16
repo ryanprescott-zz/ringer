@@ -62,40 +62,40 @@ def sample_run_state():
 class TestRedisCrawlStateManager:
     """Tests for RedisCrawlStateManager class."""
     
-    @patch('prospector.core.state_management.redis_crawl_state_manager.redis.Redis')
-    def test_init_success(self, mock_redis_class, mock_redis):
+    @patch('prospector.core.state_management.redis_crawl_state_manager.redis')
+    def test_init_success(self, mock_redis_module, mock_redis):
         """Test successful initialization."""
-        mock_redis_class.return_value = mock_redis
+        mock_redis_module.Redis.return_value = mock_redis
         
         manager = RedisCrawlStateManager()
         
         assert manager.redis == mock_redis
         mock_redis.ping.assert_called_once()
-        mock_redis_class.assert_called_once()
+        mock_redis_module.Redis.assert_called_once()
     
-    @patch('prospector.core.state_management.redis_crawl_state_manager.redis.Redis')
-    def test_init_connection_failure(self, mock_redis_class):
+    @patch('prospector.core.state_management.redis_crawl_state_manager.redis')
+    def test_init_connection_failure(self, mock_redis_module):
         """Test initialization with Redis connection failure."""
         mock_redis_instance = Mock()
         mock_redis_instance.ping.side_effect = Exception("Connection failed")
-        mock_redis_class.return_value = mock_redis_instance
+        mock_redis_module.Redis.return_value = mock_redis_instance
         
         with pytest.raises(Exception, match="Connection failed"):
             RedisCrawlStateManager()
     
-    @patch('prospector.core.state_management.redis_crawl_state_manager.redis.Redis')
-    def test_key_generation(self, mock_redis_class, mock_redis):
+    @patch('prospector.core.state_management.redis_crawl_state_manager.redis')
+    def test_key_generation(self, mock_redis_module, mock_redis):
         """Test Redis key generation."""
-        mock_redis_class.return_value = mock_redis
+        mock_redis_module.Redis.return_value = mock_redis
         manager = RedisCrawlStateManager()
         
         assert manager._key("test_crawl", "state") == "crawl:test_crawl:state"
         assert manager._key("another_crawl", "urls") == "crawl:another_crawl:urls"
     
-    @patch('prospector.core.state_management.redis_crawl_state_manager.redis.Redis')
-    def test_create_crawl(self, mock_redis_class, mock_redis, sample_crawl_spec):
+    @patch('prospector.core.state_management.redis_crawl_state_manager.redis')
+    def test_create_crawl(self, mock_redis_module, mock_redis, sample_crawl_spec):
         """Test crawl creation."""
-        mock_redis_class.return_value = mock_redis
+        mock_redis_module.Redis.return_value = mock_redis
         manager = RedisCrawlStateManager()
         
         manager.create_crawl(sample_crawl_spec)
@@ -111,10 +111,10 @@ class TestRedisCrawlStateManager:
         mock_redis.hset.assert_any_call(counters_key, "processed", 0)
         mock_redis.hset.assert_any_call(counters_key, "errors", 0)
     
-    @patch('prospector.core.state_management.redis_crawl_state_manager.redis.Redis')
-    def test_delete_crawl(self, mock_redis_class, mock_redis):
+    @patch('prospector.core.state_management.redis_crawl_state_manager.redis')
+    def test_delete_crawl(self, mock_redis_module, mock_redis):
         """Test crawl deletion."""
-        mock_redis_class.return_value = mock_redis
+        mock_redis_module.Redis.return_value = mock_redis
         mock_redis.keys.return_value = [
             b"crawl:test_crawl:spec",
             b"crawl:test_crawl:state",
@@ -136,10 +136,10 @@ class TestRedisCrawlStateManager:
             b"crawl:test_crawl:counters"
         )
     
-    @patch('prospector.core.state_management.redis_crawl_state_manager.redis.Redis')
-    def test_add_state(self, mock_redis_class, mock_redis, sample_run_state):
+    @patch('prospector.core.state_management.redis_crawl_state_manager.redis')
+    def test_add_state(self, mock_redis_module, mock_redis, sample_run_state):
         """Test adding a run state."""
-        mock_redis_class.return_value = mock_redis
+        mock_redis_module.Redis.return_value = mock_redis
         manager = RedisCrawlStateManager()
         
         manager.add_state("test_crawl", sample_run_state)
@@ -148,10 +148,10 @@ class TestRedisCrawlStateManager:
         expected_data = json.dumps(sample_run_state.model_dump(), default=str)
         mock_redis.lpush.assert_called_once_with(expected_key, expected_data)
     
-    @patch('prospector.core.state_management.redis_crawl_state_manager.redis.Redis')
-    def test_get_current_state_with_states(self, mock_redis_class, mock_redis, sample_run_state):
+    @patch('prospector.core.state_management.redis_crawl_state_manager.redis')
+    def test_get_current_state_with_states(self, mock_redis_module, mock_redis, sample_run_state):
         """Test getting current state when states exist."""
-        mock_redis_class.return_value = mock_redis
+        mock_redis_module.Redis.return_value = mock_redis
         mock_redis.llen.return_value = 1
         mock_redis.lindex.return_value = json.dumps(sample_run_state.model_dump(), default=str)
         
@@ -161,10 +161,10 @@ class TestRedisCrawlStateManager:
         assert result == RunStateEnum.RUNNING
         mock_redis.lindex.assert_called_once_with("crawl:test_crawl:state", 0)
     
-    @patch('prospector.core.state_management.redis_crawl_state_manager.redis.Redis')
-    def test_get_current_state_no_states(self, mock_redis_class, mock_redis):
+    @patch('prospector.core.state_management.redis_crawl_state_manager.redis')
+    def test_get_current_state_no_states(self, mock_redis_module, mock_redis):
         """Test getting current state when no states exist."""
-        mock_redis_class.return_value = mock_redis
+        mock_redis_module.Redis.return_value = mock_redis
         mock_redis.llen.return_value = 0
         
         manager = RedisCrawlStateManager()
@@ -172,10 +172,10 @@ class TestRedisCrawlStateManager:
         
         assert result == RunStateEnum.CREATED
     
-    @patch('prospector.core.state_management.redis_crawl_state_manager.redis.Redis')
-    def test_get_state_history(self, mock_redis_class, mock_redis, sample_run_state):
+    @patch('prospector.core.state_management.redis_crawl_state_manager.redis')
+    def test_get_state_history(self, mock_redis_module, mock_redis, sample_run_state):
         """Test getting state history."""
-        mock_redis_class.return_value = mock_redis
+        mock_redis_module.Redis.return_value = mock_redis
         state_data = json.dumps(sample_run_state.model_dump(), default=str)
         mock_redis.lrange.return_value = [state_data.encode(), state_data.encode()]
         
@@ -187,10 +187,10 @@ class TestRedisCrawlStateManager:
         assert all(state.state == RunStateEnum.RUNNING for state in result)
         mock_redis.lrange.assert_called_once_with("crawl:test_crawl:state", 0, -1)
     
-    @patch('prospector.core.state_management.redis_crawl_state_manager.redis.Redis')
-    def test_add_urls_with_scores(self, mock_redis_class, mock_redis):
+    @patch('prospector.core.state_management.redis_crawl_state_manager.redis')
+    def test_add_urls_with_scores(self, mock_redis_module, mock_redis):
         """Test adding URLs with scores."""
-        mock_redis_class.return_value = mock_redis
+        mock_redis_module.Redis.return_value = mock_redis
         manager = RedisCrawlStateManager()
         
         url_scores = [(0.8, "https://example1.com"), (0.6, "https://example2.com")]
@@ -207,10 +207,10 @@ class TestRedisCrawlStateManager:
         counters_key = "crawl:test_crawl:counters"
         mock_redis.hincrby.assert_called_once_with(counters_key, "queued", 2)
     
-    @patch('prospector.core.state_management.redis_crawl_state_manager.redis.Redis')
-    def test_get_next_url_with_urls(self, mock_redis_class, mock_redis):
+    @patch('prospector.core.state_management.redis_crawl_state_manager.redis')
+    def test_get_next_url_with_urls(self, mock_redis_module, mock_redis):
         """Test getting next URL when URLs are available."""
-        mock_redis_class.return_value = mock_redis
+        mock_redis_module.Redis.return_value = mock_redis
         mock_redis.zpopmax.return_value = [("https://example.com", 0.8)]
         
         manager = RedisCrawlStateManager()
@@ -223,10 +223,10 @@ class TestRedisCrawlStateManager:
         visited_key = "crawl:test_crawl:visited"
         mock_redis.sadd.assert_called_once_with(visited_key, "https://example.com")
     
-    @patch('prospector.core.state_management.redis_crawl_state_manager.redis.Redis')
-    def test_get_next_url_no_urls(self, mock_redis_class, mock_redis):
+    @patch('prospector.core.state_management.redis_crawl_state_manager.redis')
+    def test_get_next_url_no_urls(self, mock_redis_module, mock_redis):
         """Test getting next URL when no URLs are available."""
-        mock_redis_class.return_value = mock_redis
+        mock_redis_module.Redis.return_value = mock_redis
         mock_redis.zpopmax.return_value = []
         
         manager = RedisCrawlStateManager()
@@ -234,10 +234,10 @@ class TestRedisCrawlStateManager:
         
         assert result is None
     
-    @patch('prospector.core.state_management.redis_crawl_state_manager.redis.Redis')
-    def test_is_url_visited_true(self, mock_redis_class, mock_redis):
+    @patch('prospector.core.state_management.redis_crawl_state_manager.redis')
+    def test_is_url_visited_true(self, mock_redis_module, mock_redis):
         """Test checking if URL is visited (true case)."""
-        mock_redis_class.return_value = mock_redis
+        mock_redis_module.Redis.return_value = mock_redis
         mock_redis.sismember.return_value = True
         
         manager = RedisCrawlStateManager()
@@ -246,10 +246,10 @@ class TestRedisCrawlStateManager:
         assert result is True
         mock_redis.sismember.assert_called_once_with("crawl:test_crawl:visited", "https://example.com")
     
-    @patch('prospector.core.state_management.redis_crawl_state_manager.redis.Redis')
-    def test_is_url_visited_false(self, mock_redis_class, mock_redis):
+    @patch('prospector.core.state_management.redis_crawl_state_manager.redis')
+    def test_is_url_visited_false(self, mock_redis_module, mock_redis):
         """Test checking if URL is visited (false case)."""
-        mock_redis_class.return_value = mock_redis
+        mock_redis_module.Redis.return_value = mock_redis
         mock_redis.sismember.return_value = False
         
         manager = RedisCrawlStateManager()
@@ -257,40 +257,40 @@ class TestRedisCrawlStateManager:
         
         assert result is False
     
-    @patch('prospector.core.state_management.redis_crawl_state_manager.redis.Redis')
-    def test_increment_crawled_count(self, mock_redis_class, mock_redis):
+    @patch('prospector.core.state_management.redis_crawl_state_manager.redis')
+    def test_increment_crawled_count(self, mock_redis_module, mock_redis):
         """Test incrementing crawled count."""
-        mock_redis_class.return_value = mock_redis
+        mock_redis_module.Redis.return_value = mock_redis
         manager = RedisCrawlStateManager()
         
         manager.increment_crawled_count("test_crawl")
         
         mock_redis.hincrby.assert_called_once_with("crawl:test_crawl:counters", "crawled", 1)
     
-    @patch('prospector.core.state_management.redis_crawl_state_manager.redis.Redis')
-    def test_increment_processed_count(self, mock_redis_class, mock_redis):
+    @patch('prospector.core.state_management.redis_crawl_state_manager.redis')
+    def test_increment_processed_count(self, mock_redis_module, mock_redis):
         """Test incrementing processed count."""
-        mock_redis_class.return_value = mock_redis
+        mock_redis_module.Redis.return_value = mock_redis
         manager = RedisCrawlStateManager()
         
         manager.increment_processed_count("test_crawl")
         
         mock_redis.hincrby.assert_called_once_with("crawl:test_crawl:counters", "processed", 1)
     
-    @patch('prospector.core.state_management.redis_crawl_state_manager.redis.Redis')
-    def test_increment_error_count(self, mock_redis_class, mock_redis):
+    @patch('prospector.core.state_management.redis_crawl_state_manager.redis')
+    def test_increment_error_count(self, mock_redis_module, mock_redis):
         """Test incrementing error count."""
-        mock_redis_class.return_value = mock_redis
+        mock_redis_module.Redis.return_value = mock_redis
         manager = RedisCrawlStateManager()
         
         manager.increment_error_count("test_crawl")
         
         mock_redis.hincrby.assert_called_once_with("crawl:test_crawl:counters", "errors", 1)
     
-    @patch('prospector.core.state_management.redis_crawl_state_manager.redis.Redis')
-    def test_get_status_counts(self, mock_redis_class, mock_redis):
+    @patch('prospector.core.state_management.redis_crawl_state_manager.redis')
+    def test_get_status_counts(self, mock_redis_module, mock_redis):
         """Test getting status counts."""
-        mock_redis_class.return_value = mock_redis
+        mock_redis_module.Redis.return_value = mock_redis
         mock_redis.hmget.return_value = [b'10', b'5', b'3', b'1']
         
         manager = RedisCrawlStateManager()
@@ -302,10 +302,10 @@ class TestRedisCrawlStateManager:
             "queued", "crawled", "processed", "errors"
         )
     
-    @patch('prospector.core.state_management.redis_crawl_state_manager.redis.Redis')
-    def test_get_status_counts_missing_values(self, mock_redis_class, mock_redis):
+    @patch('prospector.core.state_management.redis_crawl_state_manager.redis')
+    def test_get_status_counts_missing_values(self, mock_redis_module, mock_redis):
         """Test getting status counts with missing values."""
-        mock_redis_class.return_value = mock_redis
+        mock_redis_module.Redis.return_value = mock_redis
         mock_redis.hmget.return_value = [None, b'5', None, b'1']
         
         manager = RedisCrawlStateManager()
@@ -313,10 +313,10 @@ class TestRedisCrawlStateManager:
         
         assert result == (0, 5, 0, 1)
     
-    @patch('prospector.core.state_management.redis_crawl_state_manager.redis.Redis')
-    def test_duplicate_url_handling(self, mock_redis_class, mock_redis):
+    @patch('prospector.core.state_management.redis_crawl_state_manager.redis')
+    def test_duplicate_url_handling(self, mock_redis_module, mock_redis):
         """Test that duplicate URLs are handled correctly."""
-        mock_redis_class.return_value = mock_redis
+        mock_redis_module.Redis.return_value = mock_redis
         manager = RedisCrawlStateManager()
         
         # Add same URL twice with different scores
@@ -329,10 +329,10 @@ class TestRedisCrawlStateManager:
         # Redis sorted sets should handle duplicates by updating the score
         assert mock_redis.zadd.call_count == 2
     
-    @patch('prospector.core.state_management.redis_crawl_state_manager.redis.Redis')
-    def test_redis_connection_error_handling(self, mock_redis_class, mock_redis):
+    @patch('prospector.core.state_management.redis_crawl_state_manager.redis')
+    def test_redis_connection_error_handling(self, mock_redis_module, mock_redis):
         """Test handling of Redis connection errors during operations."""
-        mock_redis_class.return_value = mock_redis
+        mock_redis_module.Redis.return_value = mock_redis
         mock_redis.zadd.side_effect = Exception("Redis connection lost")
         
         manager = RedisCrawlStateManager()
