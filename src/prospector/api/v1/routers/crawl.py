@@ -101,6 +101,8 @@ def stop_crawl(request: StopCrawlRequest, app_request: Request) -> StopCrawlResp
         )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
