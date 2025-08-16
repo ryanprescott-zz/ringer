@@ -4,3 +4,4 @@ __pycache__/
 crawl_data/
 prospector-debug.log
 .DS_Store
+MagicMock/
