@@ -94,6 +94,20 @@ class SearchEngineSettings(BaseSettings):
     }
 
 
+class CrawlStateStorageSettings(BaseSettings):
+    """Settings for crawl state storage."""
+    
+    storage_type: str = "memory"  # "redis", "sqlite", "memory"
+    redis_url: str = "redis://localhost:6379"
+    redis_db: int = 0
+    redis_key_prefix: str = "prospector"
+    sqlite_path: str = "./crawl_state.db"
+    
+    model_config = {
+        "env_prefix": "crawl_state_storage_"
+    }
+
+
 class ProspectorServiceSettings(BaseSettings):
     """Settings for the FastAPI web service."""
     

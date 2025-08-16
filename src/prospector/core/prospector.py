@@ -25,6 +25,7 @@ from .models import (
 from .score_analyzers import ScoreAnalyzer, KeywordScoreAnalyzer, LLMServiceScoreAnalyzer
 from .scrapers import Scraper, PlaywrightScraper  
 from .storage_handlers import CrawlStorageHandler, FsStoreHandler, DhStoreHandler
+from .storage import create_crawl_state_storage, CrawlStateStorage
 from .search_engines import SearchEngineService
 from .settings import ProspectorSettings, HandlerType
 
@@ -61,27 +62,23 @@ class ScoreUrlTuple:
 
 
 class CrawlState:
-    """Thread-safe state management for a single crawl."""
+    """Thread-safe state management for a single crawl with persistent storage."""
     
-    def __init__(self, crawl_spec: CrawlSpec):
+    def __init__(self, crawl_spec: CrawlSpec, storage: CrawlStateStorage):
         """
         Initialize crawl state.
         
         Args:
             crawl_spec: Specification for the crawl
+            storage: Storage backend for persistence
         """
         self.crawl_spec = crawl_spec
-        self.frontier = SortedSet()  # Will contain ScoreUrlTuple objects
-        self.visited_urls: Set[str] = set()
+        self.storage = storage
         self.analyzers: List[ScoreAnalyzer] = []
         self.analyzer_weights: Dict[str, float] = {}
-        self.run_state_history: List[RunState] = []
-        self.lock = Lock()
         
-        # Thread-safe counters for status tracking
-        self.crawled_count = 0  # URLs pulled from frontier
-        self.processed_count = 0  # Successfully processed pages
-        self.error_count = 0  # URLs that failed to process
+        # Create the crawl in storage
+        self.storage.create_crawl(crawl_spec)
     
     @property
     def current_state(self) -> RunStateEnum:
@@ -91,9 +88,7 @@ class CrawlState:
         Returns:
             RunStateEnum: The most recent state from the history
         """
-        if not self.run_state_history:
-            return RunStateEnum.CREATED
-        return self.run_state_history[-1].state
+        return self.storage.get_current_state(self.crawl_spec.id)
     
     def add_state(self, run_state: RunState) -> None:
         """
@@ -102,8 +97,7 @@ class CrawlState:
         Args:
             run_state: The RunState object to add
         """
-        with self.lock:
-            self.run_state_history.append(run_state)
+        self.storage.add_state(self.crawl_spec.id, run_state)
     
     def add_urls_with_scores(self, url_scores: List[tuple]) -> None:
         """
@@ -112,10 +106,7 @@ class CrawlState:
         Args:
             url_scores: List of (score, url) tuples
         """
-        with self.lock:
-            for score, url in url_scores:
-                if url not in self.visited_urls:
-                    self.frontier.add(ScoreUrlTuple(score, url))
+        self.storage.add_urls_with_scores(self.crawl_spec.id, url_scores)
     
     def get_next_url(self) -> str:
         """
@@ -124,14 +115,7 @@ class CrawlState:
         Returns:
             str: Next URL to process, or None if frontier is empty
         """
-        with self.lock:
-            while self.frontier:
-                score_url_tuple = self.frontier.pop(0)  # Get highest scoring URL
-                url = score_url_tuple.url
-                if url not in self.visited_urls:
-                    self.visited_urls.add(url)
-                    return url
-            return None
+        return self.storage.get_next_url(self.crawl_spec.id)
     
     def is_url_allowed(self, url: str) -> bool:
         """
@@ -156,18 +140,15 @@ class CrawlState:
     
     def increment_crawled_count(self) -> None:
         """Thread-safe increment of crawled URL count."""
-        with self.lock:
-            self.crawled_count += 1
+        self.storage.increment_crawled_count(self.crawl_spec.id)
     
     def increment_processed_count(self) -> None:
         """Thread-safe increment of processed page count."""
-        with self.lock:
-            self.processed_count += 1
+        self.storage.increment_processed_count(self.crawl_spec.id)
     
     def increment_error_count(self) -> None:
         """Thread-safe increment of error count."""
-        with self.lock:
-            self.error_count += 1
+        self.storage.increment_error_count(self.crawl_spec.id)
     
     def get_status_counts(self) -> tuple:
         """
@@ -176,8 +157,16 @@ class CrawlState:
         Returns:
             tuple: (crawled_count, processed_count, error_count, frontier_size)
         """
-        with self.lock:
-            return (self.crawled_count, self.processed_count, self.error_count, len(self.frontier))
+        return self.storage.get_status_counts(self.crawl_spec.id)
+    
+    def get_state_history(self) -> List[RunState]:
+        """
+        Get the complete state history.
+        
+        Returns:
+            List[RunState]: Complete history of state changes
+        """
+        return self.storage.get_state_history(self.crawl_spec.id)
 
 
 class Prospector:
@@ -189,6 +178,7 @@ class Prospector:
         self.crawls: Dict[str, CrawlState] = {}
         self.scraper: Scraper = PlaywrightScraper()
         self.search_engine_service = SearchEngineService()
+        self.storage = create_crawl_state_storage()
         
         # Initialize handler based on settings
         if self.settings.handler_type == HandlerType.FILE_SYSTEM:
@@ -222,8 +212,8 @@ class Prospector:
             if crawl_id in self.crawls:
                 raise ValueError(f"Crawl with ID {crawl_id} already exists")
             
-            # Create crawl state
-            crawl_state = CrawlState(crawl_spec)
+            # Create crawl state with persistent storage
+            crawl_state = CrawlState(crawl_spec, self.storage)
             
             # Initialize analyzers
             self._initialize_analyzers(crawl_state, crawl_spec.analyzer_specs)
@@ -271,8 +261,8 @@ class Prospector:
             crawl_state.add_state(started_state)
         
         # Initialize frontier with seed URLs
-        for url in crawl_state.crawl_spec.seeds:
-            crawl_state.frontier.add(ScoreUrlTuple(0.0, url))
+        seed_url_scores = [(0.0, url) for url in crawl_state.crawl_spec.seeds]
+        crawl_state.add_urls_with_scores(seed_url_scores)
         
         # create crawl workers to thread pool
         futures = []
@@ -323,12 +313,15 @@ class Prospector:
             # Get thread-safe snapshot of counts
             crawled_count, processed_count, error_count, frontier_size = crawl_state.get_status_counts()
             
+            # Get state history from storage
+            state_history = crawl_state.get_state_history()
+            
             # Return as dictionary to avoid model conflicts
             return {
                 "crawl_id": crawl_id,
                 "crawl_name": crawl_state.crawl_spec.name,
                 "current_state": crawl_state.current_state.value,
-                "state_history": [state.model_dump() for state in crawl_state.run_state_history],
+                "state_history": [state.model_dump() for state in state_history],
                 "crawled_count": crawled_count,
                 "processed_count": processed_count,
                 "error_count": error_count,
@@ -380,6 +373,9 @@ class Prospector:
             crawl_state = self.crawls[crawl_id]
             if crawl_state.current_state == RunStateEnum.RUNNING:
                 raise RuntimeError(f"Cannot delete running crawl {crawl_id}")
+            
+            # Delete from persistent storage
+            self.storage.delete_crawl(crawl_id)
             
             del self.crawls[crawl_id]
 

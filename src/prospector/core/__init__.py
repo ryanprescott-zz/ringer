@@ -32,6 +32,12 @@ from .storage_handlers import (
     FsStoreHandler,
     DhStoreHandler,
 )
+from .storage import (
+    CrawlStateStorage,
+    MemoryCrawlStateStorage,
+    RedisCrawlStateStorage,
+    create_crawl_state_storage
+)
 from .utils import ScoreAnalyzerInfoUtil
 
 __version__ = "1.0.0"
@@ -52,6 +58,10 @@ __all__ = [
     "CrawlStorageHandler",
     "FsStoreHandler",
     "DhStoreHandler",
+    "CrawlStateStorage",
+    "MemoryCrawlStateStorage",
+    "RedisCrawlStateStorage",
+    "create_crawl_state_storage",
     "StoreCrawlRecordRequest",
     "PromptInput",
     "TopicListInput",
