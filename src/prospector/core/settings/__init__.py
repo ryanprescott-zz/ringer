@@ -2,23 +2,23 @@ from .settings import (
     HandlerType,
     ProspectorSettings,
     PlaywrightScraperSettings,
-    FsStoreHandlerSettings,
-    DhStoreHandlerSettings,
+    FsCrawlResultsManagerSettings,
+    DhCrawlResultsManagerSettings,
     LLMServiceScoreAnalyzerSettings,
     SearchEngineSettings,
     ProspectorServiceSettings,
-    CrawlStateStorageSettings
+    CrawlStateManagerSettings
 )
 
 __version__ = "1.0.0"
 __all__ = [
     "ProspectorSettings",
     "PlaywrightScraperSettings",
-    "FsStoreHandlerSettings",
-    "DhStoreHandlerSettings",
+    "FsCrawlResultsManagerSettings",
+    "DhCrawlResultsManagerSettings",
     "LLMServiceScoreAnalyzerSettings",
     "SearchEngineSettings",
     "ProspectorServiceSettings",
-    "CrawlStateStorageSettings",
+    "CrawlStateManagerSettings",
     "HandlerType",
 ]
