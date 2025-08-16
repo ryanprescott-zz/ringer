@@ -45,7 +45,7 @@ class TestPlaywrightScraper:
         assert result.links == ["https://example.com/link"]
         
         # Verify Playwright calls
-        mock_page.goto.assert_called_once_with("https://example.com", timeout=30000)
+        mock_page.goto.assert_called_once_with("https://example.com", timeout=60000)
         mock_browser.close.assert_called_once()
     
     @patch('prospector.core.scrapers.playwright_scraper.sync_playwright')
