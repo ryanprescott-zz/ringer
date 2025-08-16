@@ -346,26 +346,33 @@ class TestCrawlStatusEndpoint:
     
     def test_get_crawl_status_success(self, client, mock_prospector, sample_crawl_state):
         """Test successful crawl status retrieval."""
-        from prospector.core.models import CrawlStatus, RunState, RunStateEnum
+        from prospector.core.models import RunState, RunStateEnum
         from datetime import datetime
         
         test_crawl_id = "test_crawl_123"
-        test_status = CrawlStatus(
-            crawl_id=test_crawl_id,
-            crawl_name="test_crawl",
-            current_state="RUNNING",
-            state_history=[
-                RunState(state=RunStateEnum.CREATED, timestamp=datetime.now()), 
-                RunState(state=RunStateEnum.RUNNING, timestamp=datetime.now())
-            ],
-            crawled_count=10,
-            processed_count=8,
-            error_count=2,
-            frontier_size=5
-        )
         
-        # Mock the get_crawl_status method to return our test status
-        mock_prospector.get_crawl_status.return_value = test_status
+        # Mock the get_crawl_status method to return a dictionary (as the actual implementation does)
+        test_status_dict = {
+            "crawl_id": test_crawl_id,
+            "crawl_name": "test_crawl",
+            "current_state": "RUNNING",
+            "state_history": [
+                {
+                    "state": "CREATED",
+                    "timestamp": datetime.now().isoformat()
+                },
+                {
+                    "state": "RUNNING", 
+                    "timestamp": datetime.now().isoformat()
+                }
+            ],
+            "crawled_count": 10,
+            "processed_count": 8,
+            "error_count": 2,
+            "frontier_size": 5
+        }
+        
+        mock_prospector.get_crawl_status.return_value = test_status_dict
         # Also add the crawl to the mock's crawls dictionary to avoid any internal checks
         mock_prospector.crawls = {test_crawl_id: sample_crawl_state}
         
