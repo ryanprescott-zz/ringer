@@ -27,16 +27,16 @@ from .score_analyzers import (
     LLMServiceScoreAnalyzer
 )
 from .scrapers import Scraper, PlaywrightScraper
-from .storage_handlers import (
-    CrawlStorageHandler,
-    FsStoreHandler,
-    DhStoreHandler,
+from .results_management import (
+    CrawlResultsManager,
+    FsCrawlResultsManager,
+    DhCrawlResultsManager,
 )
-from .storage import (
-    CrawlStateStorage,
-    MemoryCrawlStateStorage,
-    RedisCrawlStateStorage,
-    create_crawl_state_storage
+from .state_management import (
+    CrawlStateManager,
+    MemoryCrawlStateManager,
+    RedisCrawlStateManager,
+    create_crawl_state_manager
 )
 from .utils import ScoreAnalyzerInfoUtil
 
@@ -55,13 +55,13 @@ __all__ = [
     "KeywordScoreAnalyzer",
     "Scraper",
     "PlaywrightScraper",
-    "CrawlStorageHandler",
-    "FsStoreHandler",
-    "DhStoreHandler",
-    "CrawlStateStorage",
-    "MemoryCrawlStateStorage",
-    "RedisCrawlStateStorage",
-    "create_crawl_state_storage",
+    "CrawlResultsManager",
+    "FsCrawlResultsManager",
+    "DhCrawlResultsManager",
+    "CrawlStateManager",
+    "MemoryCrawlStateManager",
+    "RedisCrawlStateManager",
+    "create_crawl_state_manager",
     "StoreCrawlRecordRequest",
     "PromptInput",
     "TopicListInput",
