@@ -791,10 +791,10 @@ class TestAnalyzersEndpoint:
         assert "analyzers" in data
         analyzers = data["analyzers"]
         
-        # Should have at least KeywordScoreAnalyzer and LLMServiceScoreAnalyzer
+        # Should have at least KeywordScoreAnalyzer and DhLlmScoreAnalyzer
         analyzer_names = [analyzer["name"] for analyzer in analyzers]
         assert "KeywordScoreAnalyzer" in analyzer_names
-        assert "LLMServiceScoreAnalyzer" in analyzer_names
+        assert "DhLlmScoreAnalyzer" in analyzer_names
         
         # Check structure of analyzer info
         for analyzer in analyzers:
@@ -837,16 +837,16 @@ class TestAnalyzersEndpoint:
         assert "List[WeightedKeyword]" in keywords_field["type"]
     
     def test_get_analyzer_info_llm_analyzer_fields(self, client):
-        """Test that LLMServiceScoreAnalyzer has expected fields."""
+        """Test that DhLlmScoreAnalyzer has expected fields."""
         response = client.get("/api/v1/analyzers/info")
         
         assert response.status_code == 200
         data = response.json()
         
-        # Find LLMServiceScoreAnalyzer
+        # Find DhLlmScoreAnalyzer
         llm_analyzer = None
         for analyzer in data["analyzers"]:
-            if analyzer["name"] == "LLMServiceScoreAnalyzer":
+            if analyzer["name"] == "DhLlmScoreAnalyzer":
                 llm_analyzer = analyzer
                 break
         

@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 from prospector.core.models import (
     KeywordScoringSpec,
-    LLMScoringSpec,
+    DhLlmScoringSpec,
     PromptInput,
     TopicListInput,
     WeightedKeyword,
@@ -91,30 +91,30 @@ class TestKeywordScoringSpec:
             )
 
 
-class TestLLMScoringSpec:
-    """Tests for LLMScoringSpec model."""
+class TestDhLlmScoringSpec:
+    """Tests for DhLlmScoringSpec model."""
     
     def test_valid_llm_scoring_spec_with_prompt(self):
         """Test creating valid LLM scoring spec with prompt."""
-        spec = LLMScoringSpec(
-            name="LLMServiceScoreAnalyzer",
+        spec = DhLlmScoringSpec(
+            name="DhLlmScoreAnalyzer",
             composite_weight=0.7,
             scoring_input=PromptInput(prompt="Score this content:")
         )
         
-        assert spec.name == "LLMServiceScoreAnalyzer"
+        assert spec.name == "DhLlmScoreAnalyzer"
         assert spec.composite_weight == 0.7
         assert isinstance(spec.scoring_input, PromptInput)
     
     def test_valid_llm_scoring_spec_with_topics(self):
         """Test creating valid LLM scoring spec with topics."""
-        spec = LLMScoringSpec(
-            name="LLMServiceScoreAnalyzer",
+        spec = DhLlmScoringSpec(
+            name="DhLlmScoreAnalyzer",
             composite_weight=0.9,
             scoring_input=TopicListInput(topics=["python", "programming"])
         )
         
-        assert spec.name == "LLMServiceScoreAnalyzer"
+        assert spec.name == "DhLlmScoreAnalyzer"
         assert spec.composite_weight == 0.9
         assert isinstance(spec.scoring_input, TopicListInput)
 

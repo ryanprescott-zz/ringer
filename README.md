@@ -106,9 +106,9 @@ class Scraper(ABC):
   - Configurable keyword weights
   - Normalized 0-1 scoring range
 
-#### LLMServiceScoreAnalyzer
+#### DhLlmScoreAnalyzer
 - **Purpose**: Leverage AI/LLM services for sophisticated content evaluation
-- **Integration**: HTTP POST requests to external LLM services
+- **Integration**: HTTP POST requests to DH LLM service
 - **Features**:
   - Configurable prompts and output formats
   - Connection pooling for performance
@@ -302,7 +302,7 @@ prospector.delete(crawl_id)
 ### Multi-Analyzer Crawling (Keywords + LLM)
 
 ```python
-from prospector import LLMServiceScoreAnalyzer
+from prospector import DhLlmScoreAnalyzer
 
 # Combine keyword and LLM analysis
 keyword_spec = AnalyzerSpec(
@@ -312,7 +312,7 @@ keyword_spec = AnalyzerSpec(
 )
 
 llm_spec = AnalyzerSpec(
-    name="LLMServiceScoreAnalyzer", 
+    name="DhLlmScoreAnalyzer", 
     composite_weight=0.6,
     params=None  # Uses configured LLM service
 )

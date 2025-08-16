@@ -14,7 +14,7 @@ from sortedcontainers import SortedSet
 
 from .models import (
     CrawlSpec,
-    LLMScoringSpec,
+    DhLlmScoringSpec,
     KeywordScoringSpec,
     CrawlRecord,
     AnalyzerSpec,
@@ -22,7 +22,7 @@ from .models import (
     RunState,
     SearchEngineSeed
 )
-from .score_analyzers import ScoreAnalyzer, KeywordScoreAnalyzer, LLMServiceScoreAnalyzer
+from .score_analyzers import ScoreAnalyzer, KeywordScoreAnalyzer, DhLlmScoreAnalyzer
 from .scrapers import Scraper, PlaywrightScraper  
 from .results_managers import CrawlResultsManager, FsCrawlResultsManager, DhCrawlResultsManager
 from .state_managers import create_crawl_state_manager, CrawlStateManager
@@ -533,8 +533,8 @@ class Prospector:
         for spec in analyzer_specs:
             if spec.name == "KeywordScoreAnalyzer":
                 analyzer = KeywordScoreAnalyzer(spec)
-            elif spec.name == "LLMServiceScoreAnalyzer":
-                analyzer = LLMServiceScoreAnalyzer(spec)
+            elif spec.name == "DhLlmScoreAnalyzer":
+                analyzer = DhLlmScoreAnalyzer(spec)
             else:
                 raise ValueError(f"Unknown analyzer type: {spec.name}")
             

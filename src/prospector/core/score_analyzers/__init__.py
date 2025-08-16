@@ -2,11 +2,11 @@
 
 from .score_analyzer import ScoreAnalyzer
 from .keyword_score_analyzer import KeywordScoreAnalyzer
-from .llm_service_score_analyzer import LLMServiceScoreAnalyzer
+from .dh_llm_score_analyzer import DhLlmScoreAnalyzer
 
 __version__ = "1.0.0"
 __all__ = [
     "ScoreAnalyzer",
     "KeywordScoreAnalyzer",
-    "LLMServiceScoreAnalyzer"
+    "DhLlmScoreAnalyzer"
 ]

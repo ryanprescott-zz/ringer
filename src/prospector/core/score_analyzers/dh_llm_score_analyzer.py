@@ -1,37 +1,37 @@
-"""LLMServiceScoreAnalyzer - A score analyzer that uses an external LLM service for content scoring."""
+"""DhLlmScoreAnalyzer - A score analyzer that uses the DH LLM service for content scoring."""
 
 import json
 import logging
 import requests
 
 from prospector.core.models import (
-    LLMScoringSpec,
+    DhLlmScoringSpec,
     PromptInput,
     TopicListInput,
     LLMGenerationInput,
     FieldMap,
     LLMGenerationRequest
 )
-from prospector.core.settings import LLMServiceScoreAnalyzerSettings
+from prospector.core.settings import DhLlmScoreAnalyzerSettings
 from .score_analyzer import ScoreAnalyzer
 
 logger = logging.getLogger(__name__)
 
 
-class LLMServiceScoreAnalyzer(ScoreAnalyzer):
-    """Score analyzer that uses an external LLM service for content scoring."""
+class DhLlmScoreAnalyzer(ScoreAnalyzer):
+    """Score analyzer that uses the DH LLM service for content scoring."""
     
-    def __init__(self, spec: LLMScoringSpec):
+    def __init__(self, spec: DhLlmScoringSpec):
         """
-        Initialize the LLM service score analyzer.
+        Initialize the score analyzer.
         
         Args:
-            spec: LLMScoringSpec containing LLM inputs (prompt or topics)
+            spec: DhLlmScoringSpec containing LLM inputs (prompt or topics)
             
         Raises:
             ValueError: If keywords list is empty
         """
-        self.settings = LLMServiceScoreAnalyzerSettings()
+        self.settings = DhLlmScoreAnalyzerSettings()
         # Create a requests session for connection pooling
         self.session = requests.Session()
         self.session.headers.update({
@@ -49,10 +49,10 @@ class LLMServiceScoreAnalyzer(ScoreAnalyzer):
 
         logger.info(f"Scoring prompt: {prompt_str}")
 
-        # Create the generation input for the LLM service
+        # Create the generation input for the DH LLM service
         self._generation_input = LLMGenerationInput(
             prompt=prompt_str,
-            output_format=FieldMap(name_to_type=self.settings.llm_output_format)
+            output_format=FieldMap(name_to_type=self.settings.output_format)
         )
     
     def _build_default_prompt(self, topics: list[str]) -> str:
@@ -67,23 +67,23 @@ class LLMServiceScoreAnalyzer(ScoreAnalyzer):
         """
         
         topics_str = ', '.join(topics)
-        return f"{self.settings.llm_default_prompt_template} {topics_str}"
+        return f"{self.settings.default_prompt_template} {topics_str}"
 
     def score(self, content: str) -> float:
         """
-        Score content using an external LLM service.
+        Score content using the DH LLM service.
         
-        Makes an HTTP POST request to the configured LLM service with the text
+        Makes an HTTP POST request to the configured service with the text
         content and prompt. Returns the score provided by the service.
         
         Args:
             content (str): Content to score
             
         Returns:
-            float: Score between 0 and 1 from the LLM service
+            float: Score between 0 and 1 from the service
             
         Raises:
-            TypeError: If content is not LLMScoreServiceInput
+            TypeError: If content is not DhLlmScoreServiceInput
         """
         if not isinstance(content, str):
             raise TypeError("Content must be a string")
@@ -97,9 +97,9 @@ class LLMServiceScoreAnalyzer(ScoreAnalyzer):
             
             # Make the HTTP POST request
             response = self.session.post(
-                self.settings.llm_service_url,
+                self.settings.service_url,
                 json=request_data.model_dump(),
-                timeout=self.settings.llm_request_timeout,
+                timeout=self.settings.request_timeout,
             )
             
             # Check for HTTP errors

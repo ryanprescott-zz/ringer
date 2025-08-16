@@ -4,7 +4,7 @@ from .settings import (
     PlaywrightScraperSettings,
     FsCrawlResultsManagerSettings,
     DhCrawlResultsManagerSettings,
-    LLMServiceScoreAnalyzerSettings,
+    DhLlmScoreAnalyzerSettings,
     SearchEngineSettings,
     ProspectorServiceSettings,
     CrawlStateManagerSettings
@@ -16,7 +16,7 @@ __all__ = [
     "PlaywrightScraperSettings",
     "FsCrawlResultsManagerSettings",
     "DhCrawlResultsManagerSettings",
-    "LLMServiceScoreAnalyzerSettings",
+    "DhLlmScoreAnalyzerSettings",
     "SearchEngineSettings",
     "ProspectorServiceSettings",
     "CrawlStateManagerSettings",

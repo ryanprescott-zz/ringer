@@ -108,7 +108,7 @@ class KeywordScoringSpec(AnalyzerSpec):
             raise ValueError("Keywords list cannot be empty")
         return value
 
-class LLMScoringSpec(AnalyzerSpec):
+class DhLlmScoringSpec(AnalyzerSpec):
     """Input for LLM service score analyzer."""
 
     scoring_input: PromptInput | TopicListInput = Field(..., description="Scoring input - either prompt or topics")
@@ -135,7 +135,7 @@ class CrawlSpec(BaseModel):
     
     name: str = Field(..., description="Name of the crawl")
     seeds: List[str] = Field(..., description="List of seed URLs for the crawl")
-    analyzer_specs: List[KeywordScoringSpec|LLMScoringSpec] = Field(..., description="Analyzers to use")
+    analyzer_specs: List[KeywordScoringSpec|DhLlmScoringSpec] = Field(..., description="Analyzers to use")
     worker_count: int = Field(default=1, description="Number of workers to use")
     domain_blacklist: Optional[List[str]] = Field(
         default=None, description="Domains to exclude from crawling"

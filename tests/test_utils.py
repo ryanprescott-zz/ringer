@@ -17,7 +17,7 @@ class TestScoreAnalyzerInfoUtil:
         # Check analyzer names
         analyzer_names = [info.name for info in analyzer_infos]
         assert "KeywordScoreAnalyzer" in analyzer_names
-        assert "LLMServiceScoreAnalyzer" in analyzer_names
+        assert "DhLlmScoreAnalyzer" in analyzer_names
     
     def test_keyword_analyzer_info(self):
         """Test KeywordScoreAnalyzer information."""
@@ -42,13 +42,13 @@ class TestScoreAnalyzerInfoUtil:
         assert keywords_field.required
     
     def test_llm_analyzer_info(self):
-        """Test LLMServiceScoreAnalyzer information."""
+        """Test DhLlmScoreAnalyzer information."""
         analyzer_infos = ScoreAnalyzerInfoUtil.get_analyzer_info_list()
         
-        llm_info = next(info for info in analyzer_infos if info.name == "LLMServiceScoreAnalyzer")
+        llm_info = next(info for info in analyzer_infos if info.name == "DhLlmScoreAnalyzer")
         
         # Check basic info
-        assert llm_info.name == "LLMServiceScoreAnalyzer"
+        assert llm_info.name == "DhLlmScoreAnalyzer"
         assert llm_info.description is not None
         assert len(llm_info.description) > 0
         

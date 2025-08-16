@@ -5,8 +5,8 @@ from typing import List, Dict, Any, get_origin, get_args
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo
 
-from ..score_analyzers import KeywordScoreAnalyzer, LLMServiceScoreAnalyzer
-from ..models import KeywordScoringSpec, LLMScoringSpec, PromptInput, TopicListInput
+from ..score_analyzers import KeywordScoreAnalyzer, DhLlmScoreAnalyzer
+from ..models import KeywordScoringSpec, DhLlmScoringSpec, PromptInput, TopicListInput
 
 
 class FieldDescriptor:
@@ -38,9 +38,9 @@ class ScoreAnalyzerInfoUtil:
             "class": KeywordScoreAnalyzer,
             "spec_class": KeywordScoringSpec
         },
-        "LLMServiceScoreAnalyzer": {
-            "class": LLMServiceScoreAnalyzer,
-            "spec_class": LLMScoringSpec
+        "DhLlmScoreAnalyzer": {
+            "class": DhLlmScoreAnalyzer,
+            "spec_class": DhLlmScoringSpec
         }
     }
     

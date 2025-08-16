@@ -15,7 +15,7 @@ from prospector.core import (
 )
 from prospector.core.models import (
     KeywordScoringSpec,
-    LLMScoringSpec,
+    DhLlmScoringSpec,
     TopicListInput,
 )
 
@@ -209,8 +209,8 @@ class TestProspector:
     
     def test_create_crawl_with_llm_analyzer(self, prospector, sample_analyzer_spec):
         """Test creating a crawl with LLM analyzer."""
-        llm_spec = LLMScoringSpec(
-            name="LLMServiceScoreAnalyzer",
+        llm_spec = DhLlmScoringSpec(
+            name="DhLlmScoreAnalyzer",
             composite_weight=0.5,
             scoring_input=TopicListInput(topics=["test", "example"])
         )
@@ -228,7 +228,7 @@ class TestProspector:
         assert run_state.state == RunStateEnum.CREATED
         crawl_state = prospector.crawls[crawl_id]
         assert len(crawl_state.analyzers) == 2
-        assert "LLMServiceScoreAnalyzer" in crawl_state.analyzer_weights
+        assert "DhLlmScoreAnalyzer" in crawl_state.analyzer_weights
     
     def test_start_crawl(self, prospector, sample_crawl_spec, mock_scraper, mock_handler):
         """Test starting a crawl."""

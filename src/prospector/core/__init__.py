@@ -11,7 +11,7 @@ from .models import (
     CrawlRecord,
     PromptInput,
     TopicListInput,
-    LLMScoringSpec,
+    DhLlmScoringSpec,
     FieldMap,
     LLMGenerationInput,
     LLMGenerationRequest,
@@ -24,7 +24,7 @@ from .models import (
 from .score_analyzers import (
     ScoreAnalyzer,
     KeywordScoreAnalyzer,
-    LLMServiceScoreAnalyzer
+    DhLlmScoreAnalyzer
 )
 from .scrapers import Scraper, PlaywrightScraper
 from .results_managers import (
@@ -65,11 +65,11 @@ __all__ = [
     "StoreCrawlRecordRequest",
     "PromptInput",
     "TopicListInput",
-    "LLMScoringSpec",
+    "DhLlmScoringSpec",
     "FieldMap",
     "LLMGenerationInput",
     "LLMGenerationRequest",
-    "LLMServiceScoreAnalyzer",
+    "DhLlmScoreAnalyzer",
     "RunStateEnum",
     "RunState",
     "CrawlStatus",
