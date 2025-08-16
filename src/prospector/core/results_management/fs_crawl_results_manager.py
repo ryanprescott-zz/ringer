@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 
 from prospector.core.models import CrawlRecord, CrawlSpec
-from prospector.core.settings import FsStoreHandlerSettings
+from prospector.core.settings import FsCrawlResultsManagerSettings
 from .crawl_results_manager import CrawlResultsManager
 
 
@@ -17,7 +17,7 @@ class FsCrawlResultsManager(CrawlResultsManager):
     
     def __init__(self):
         """Initialize the file system handler with settings."""
-        self.settings = FsStoreHandlerSettings()
+        self.settings = FsCrawlResultsManagerSettings()
         
         # Ensure the base directory exists
         self.base_dir = Path(self.settings.crawl_data_dir)

@@ -9,7 +9,7 @@ from prospector.core.models import (
     CrawlSpec,
     StoreCrawlRecordRequest,
 )
-from prospector.core.settings import DhStoreHandlerSettings
+from prospector.core.settings import DhCrawlResultsManagerSettings
 from .crawl_results_manager import CrawlResultsManager
 
 
@@ -20,7 +20,7 @@ class DhCrawlResultsManager(CrawlResultsManager):
     
     def __init__(self):
         """Initialize the storage handler with settings and session."""
-        self.settings = DhStoreHandlerSettings()
+        self.settings = DhCrawlResultsManagerSettings()
         # Create a requests session for connection pooling
         self.session = requests.Session()
         self.session.headers.update({
