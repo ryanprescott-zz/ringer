@@ -110,3 +110,9 @@ class CrawlStatusResponse(BaseModel):
     """Response model for crawl status."""
     
     status: CrawlStatus
+
+
+class CrawlStatusListResponse(BaseModel):
+    """Response model for list of crawl statuses."""
+    
+    crawls: List[CrawlStatus]
