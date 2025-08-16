@@ -257,7 +257,7 @@ class TestStopCrawlEndpoint:
     
     def test_stop_crawl_already_stopped(self, client, mock_prospector):
         """Test stopping already stopped crawl returns 400."""
-        mock_prospector.stop.side_effect = RuntimeError("Crawl test_crawl is already stopped")
+        mock_prospector.stop.side_effect = RuntimeError("Crawl test_crawl is not running")
         
         # Set the prospector in app state
         app.state.prospector = mock_prospector
@@ -268,7 +268,7 @@ class TestStopCrawlEndpoint:
         )
         
         assert response.status_code == 400
-        assert "Crawl test_crawl is already stopped" in response.json()["detail"]
+        assert "Crawl test_crawl is not running" in response.json()["detail"]
     
     def test_stop_crawl_internal_error(self, client, mock_prospector):
         """Test internal server error during crawl stop."""

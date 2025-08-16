@@ -351,7 +351,7 @@ class Prospector:
             current_state = crawl_state.current_state
             
             if current_state != RunStateEnum.RUNNING:
-                raise RuntimeError(f"Crawl {crawl_id} is already stopped")
+                raise RuntimeError(f"Crawl {crawl_id} is not running")
             
             stopped_state = RunState(state=RunStateEnum.STOPPED)
             crawl_state.add_state(stopped_state)
