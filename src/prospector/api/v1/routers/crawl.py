@@ -2,6 +2,7 @@
 
 from datetime import datetime
 from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import JSONResponse
 from prospector.api.v1.models import (
     CreateCrawlRequest, CreateCrawlResponse,
     StartCrawlRequest, StartCrawlResponse,
@@ -267,5 +268,41 @@ def get_crawl_status(crawl_id: str, app_request: Request) -> CrawlStatusResponse
         
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+@router.get("/{crawl_id}/spec/download")
+def download_crawl_spec(crawl_id: str, app_request: Request) -> JSONResponse:
+    """
+    Download the CrawlSpec for a crawl as a JSON file.
+    
+    Args:
+        crawl_id: ID of the crawl to download spec for
+        app_request: FastAPI request object to access application state
+        
+    Returns:
+        JSONResponse: Response containing crawl spec as downloadable JSON
+        
+    Raises:
+        HTTPException: If crawl does not exist
+    """
+    try:
+        prospector = app_request.app.state.prospector
+        crawl_info_dict = prospector.get_crawl_info(crawl_id)
+        
+        # Extract just the crawl spec
+        crawl_spec_dict = crawl_info_dict["crawl_spec"]
+        
+        # Set headers to trigger download
+        headers = {
+            "Content-Disposition": f"attachment; filename=crawl_spec_{crawl_id}.json",
+            "Content-Type": "application/json"
+        }
+        
+        return JSONResponse(content=crawl_spec_dict, headers=headers)
+        
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail="The requested crawl does not exist")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
