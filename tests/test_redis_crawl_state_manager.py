@@ -41,6 +41,7 @@ def sample_crawl_spec():
         analyzer_specs=[
             {
                 "type": "keyword",
+                "name": "test_keyword_analyzer",
                 "keywords": [
                     {"keyword": "test", "weight": 1.0}
                 ]
