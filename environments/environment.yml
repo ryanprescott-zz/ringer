@@ -4,6 +4,8 @@ channels:
 dependencies:
   - python=3.12
   - pip:
+    - aiohttp
+    - beautifulsoup4
     - fastapi
     - httpx
     - playwright
@@ -11,6 +13,7 @@ dependencies:
     - pydantic-settings
     - pytest
     - pyyaml
+    - redis
     - requests
     - sortedcontainers
     - tenacity
