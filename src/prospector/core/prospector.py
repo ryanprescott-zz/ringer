@@ -24,7 +24,7 @@ from .models import (
 )
 from .score_analyzers import ScoreAnalyzer, KeywordScoreAnalyzer, LLMServiceScoreAnalyzer
 from .scrapers import Scraper, PlaywrightScraper  
-from .results_management import CrawlResultsManager, FsCrawlResultsManager, DhCrawlResultsManager
+from .results_managers import CrawlResultsManager, FsCrawlResultsManager, DhCrawlResultsManager
 from .state_managers import create_crawl_state_manager, CrawlStateManager
 from .search_engines import SearchEngineService
 from .settings import ProspectorSettings, HandlerType

@@ -27,7 +27,7 @@ from .score_analyzers import (
     LLMServiceScoreAnalyzer
 )
 from .scrapers import Scraper, PlaywrightScraper
-from .results_management import (
+from .results_managers import (
     CrawlResultsManager,
     FsCrawlResultsManager,
     DhCrawlResultsManager,

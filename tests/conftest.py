@@ -158,7 +158,7 @@ def prospector():
     """Prospector instance for testing with temporary directory."""
     with tempfile.TemporaryDirectory() as temp_dir:
         # Patch the FsCrawlResultsManager settings to use temp directory
-        with patch('prospector.core.results_management.fs_crawl_results_manager.FsCrawlResultsManagerSettings') as mock_settings:
+        with patch('prospector.core.results_managers.fs_crawl_results_manager.FsCrawlResultsManagerSettings') as mock_settings:
             mock_settings.return_value.crawl_data_dir = temp_dir
             prospector_instance = Prospector()
             yield prospector_instance
