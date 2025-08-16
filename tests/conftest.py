@@ -160,13 +160,17 @@ def prospector():
         # Patch the FsCrawlResultsManager settings to use temp directory
         with patch('prospector.core.results_managers.fs_crawl_results_manager.FsCrawlResultsManagerSettings') as mock_settings:
             mock_settings.return_value.crawl_data_dir = temp_dir
-            prospector_instance = Prospector()
-            yield prospector_instance
-            # Cleanup prospector after test
-            try:
-                prospector_instance.shutdown()
-            except Exception:
-                pass  # Ignore shutdown errors in tests
+            # Also patch the results manager to return a consistent storage ID
+            with patch('prospector.core.results_managers.fs_crawl_results_manager.uuid.uuid4') as mock_uuid:
+                mock_uuid.return_value = Mock()
+                mock_uuid.return_value.__str__ = Mock(return_value="test-storage-id-123")
+                prospector_instance = Prospector()
+                yield prospector_instance
+                # Cleanup prospector after test
+                try:
+                    prospector_instance.shutdown()
+                except Exception:
+                    pass  # Ignore shutdown errors in tests
 
 
 @pytest.fixture
@@ -188,6 +192,7 @@ def mock_scraper():
 def mock_results_manager():
     """Mock crawl results_manager for testing."""
     results_manager = Mock()
+    results_manager.create_crawl.return_value = "test-storage-id-123"
     return results_manager
 
 @pytest.fixture
@@ -210,5 +215,6 @@ def sample_crawl_state(sample_crawl_spec):
     from prospector.core.models import RunState, RunStateEnum
     from prospector.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
     manager = MemoryCrawlStateManager()
-    crawl_state = CrawlState(sample_crawl_spec, manager)
+    storage_id = "test-storage-id-123"
+    crawl_state = CrawlState(sample_crawl_spec, manager, storage_id)
     return crawl_state

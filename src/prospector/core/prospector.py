@@ -64,16 +64,18 @@ class ScoreUrlTuple:
 class CrawlState:
     """Thread-safe state management for a single crawl with persistent storage."""
     
-    def __init__(self, crawl_spec: CrawlSpec, manager: CrawlStateManager):
+    def __init__(self, crawl_spec: CrawlSpec, manager: CrawlStateManager, storage_id: str):
         """
         Initialize crawl state.
         
         Args:
             crawl_spec: Specification for the crawl
             manager: State manager backend for persistence
+            storage_id: Storage ID for the crawl results
         """
         self.crawl_spec = crawl_spec
         self.manager = manager
+        self.storage_id = storage_id
         self.analyzers: List[ScoreAnalyzer] = []
         self.analyzer_weights: Dict[str, float] = {}
         
@@ -205,17 +207,17 @@ class Prospector:
             if crawl_id in self.crawls:
                 raise ValueError(f"Crawl with ID {crawl_id} already exists")
             
+            # Create crawl in results manager and get storage ID
+            storage_id = self.results_manager.create_crawl(crawl_spec)
+            
             # Create crawl state with persistent storage
-            crawl_state = CrawlState(crawl_spec, self.state_manager)
+            crawl_state = CrawlState(crawl_spec, self.state_manager, storage_id)
             
             # Initialize analyzers
             self._initialize_analyzers(crawl_state, crawl_spec.analyzer_specs)
             
             # Store crawl state
             self.crawls[crawl_id] = crawl_state
-
-            # Create crawl in results manager
-            self.results_manager.create_crawl(crawl_spec)
             
         # Get the created state from storage (should have been added during CrawlState init)
         created_state = RunState(state=RunStateEnum.CREATED)
@@ -507,7 +509,7 @@ class Prospector:
             del self.crawls[crawl_id]
 
             # Delete from results manager
-            self.results_manager.delete_crawl(crawl_state.crawl_spec.id)
+            self.results_manager.delete_crawl(crawl_state.storage_id)
         
         logger.info(f"Deleted crawl {crawl_id}")
     
@@ -591,7 +593,7 @@ class Prospector:
             # Handle the crawl record
             self.results_manager.store_record(
                 crawl_record,
-                crawl_state.crawl_spec.id,
+                crawl_state.storage_id,
             )
             
             # Increment processed count on successful processing

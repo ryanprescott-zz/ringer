@@ -2,6 +2,7 @@
 
 import logging
 import requests
+import uuid
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 from prospector.core.models import (
@@ -28,31 +29,37 @@ class DhCrawlResultsManager(CrawlResultsManager):
         })
 
 
-    def create_crawl(self, crawl_spec: CrawlSpec) -> None:
+    def create_crawl(self, crawl_spec: CrawlSpec) -> str:
         """
         Create a new crawl with the given spec by calling the DH service.
         
         Args:
             crawl_spec: Specification of the crawl to create.
+            
+        Returns:
+            str: Storage ID for the created crawl
         """
-
+        # Generate a UUID4 storage ID
+        storage_id = str(uuid.uuid4())
+        
         raise NotImplementedError(
             "Create functionality is not implemented for DhCrawlResultsManager. "
         )
-        # TODO send HTTP post to dh create endpoint.
+        # TODO send HTTP post to dh create endpoint using the storage_id.
+        # return storage_id
 
     
-    def store_record(self, crawl_record: CrawlRecord, crawl_id: str)-> None:
+    def store_record(self, crawl_record: CrawlRecord, storage_id: str)-> None:
         """
         Store a crawl record to the DH service.
         
         Args:
             crawl_record: The crawl record to process.
-            crawl_id: ID of the crawl
+            storage_id: Storage ID for the crawl
         """
 
         try:
-            self._send_record_with_retry(crawl_record, crawl_id)
+            self._send_record_with_retry(crawl_record, storage_id)
         except Exception as e:
             logger.error(
                 f"Failed to send crawl record after all retries for {crawl_record.url}: {e}. "
@@ -60,12 +67,12 @@ class DhCrawlResultsManager(CrawlResultsManager):
             )
         
     
-    def delete_crawl(self, crawl_id: str) -> None:
+    def delete_crawl(self, storage_id: str) -> None:
         """
-        Delete a crawl by crawl ID.
+        Delete a crawl by storage ID.
         
         Args:
-            crawl_id: the ID of the crawl to delete.
+            storage_id: the storage ID of the crawl to delete.
         """
         
         raise NotImplementedError(
@@ -73,14 +80,13 @@ class DhCrawlResultsManager(CrawlResultsManager):
         )
         # TODO implement deletion logic by calling the DH service.
     
-    def _send_record_with_retry(self, crawl_record: CrawlRecord, crawl_id: str) -> None:
+    def _send_record_with_retry(self, crawl_record: CrawlRecord, storage_id: str) -> None:
         """
         Send a crawl record with retry logic.
         
         Args:
             crawl_record: The crawl record to send
-            crawl_id: ID of the crawl
-            crawl_datetime: Datetime string of the crawl
+            storage_id: Storage ID for the crawl
             
         Raises:
             requests.exceptions.RequestException: For HTTP-related errors
@@ -96,7 +102,7 @@ class DhCrawlResultsManager(CrawlResultsManager):
             # Create the request payload
             request_data = StoreCrawlRecordRequest(
                 record=crawl_record,
-                crawl_id=crawl_id
+                crawl_id=storage_id
             )
             
             try:

@@ -3,6 +3,7 @@
 import json
 import logging
 import os
+import uuid
 from pathlib import Path
 
 from prospector.core.models import CrawlRecord, CrawlSpec
@@ -25,14 +26,20 @@ class FsCrawlResultsManager(CrawlResultsManager):
         
         logger.info(f"Initialized FsCrawlResultsManager with base directory: {self.base_dir}")
     
-    def create_crawl(self, crawl_spec: CrawlSpec) -> None:
+    def create_crawl(self, crawl_spec: CrawlSpec) -> str:
         """
         Create a new crawl directory structure.
         
         Args:
             crawl_spec: Specification for the crawl to create
+            
+        Returns:
+            str: Storage ID for the created crawl
         """
-        crawl_dir = self.base_dir / crawl_spec.id
+        # Generate a UUID4 storage ID
+        storage_id = str(uuid.uuid4())
+        
+        crawl_dir = self.base_dir / storage_id
         crawl_dir.mkdir(parents=True, exist_ok=True)
         
         # Store the crawl spec
@@ -40,18 +47,19 @@ class FsCrawlResultsManager(CrawlResultsManager):
         with open(spec_file, 'w', encoding='utf-8') as f:
             json.dump(crawl_spec.model_dump(), f, indent=2, default=str)
         
-        logger.info(f"Created crawl directory: {crawl_dir}")
+        logger.info(f"Created crawl directory: {crawl_dir} with storage ID: {storage_id}")
+        return storage_id
     
-    def store_record(self, crawl_record: CrawlRecord, crawl_id: str) -> None:
+    def store_record(self, crawl_record: CrawlRecord, storage_id: str) -> None:
         """
         Store a crawl record as a JSON file.
         
         Args:
             crawl_record: The crawl record to store
-            crawl_id: ID of the crawl
+            storage_id: Storage ID for the crawl
         """
         try:
-            crawl_dir = self.base_dir / crawl_id
+            crawl_dir = self.base_dir / storage_id
             crawl_dir.mkdir(parents=True, exist_ok=True)
             
             # Use the record's ID as the filename
@@ -67,15 +75,15 @@ class FsCrawlResultsManager(CrawlResultsManager):
             logger.error(f"Failed to store crawl record for {crawl_record.url}: {e}")
             raise
     
-    def delete_crawl(self, crawl_id: str) -> None:
+    def delete_crawl(self, storage_id: str) -> None:
         """
         Delete a crawl directory and all its contents.
         
         Args:
-            crawl_id: ID of the crawl to delete
+            storage_id: Storage ID of the crawl to delete
         """
         try:
-            crawl_dir = self.base_dir / crawl_id
+            crawl_dir = self.base_dir / storage_id
             
             if crawl_dir.exists():
                 # Remove all files in the directory
@@ -90,5 +98,5 @@ class FsCrawlResultsManager(CrawlResultsManager):
                 logger.warning(f"Crawl directory does not exist: {crawl_dir}")
                 
         except Exception as e:
-            logger.error(f"Failed to delete crawl directory for {crawl_id}: {e}")
+            logger.error(f"Failed to delete crawl directory for {storage_id}: {e}")
             raise
