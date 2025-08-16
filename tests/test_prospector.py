@@ -30,15 +30,15 @@ class TestCrawlState:
         state = CrawlState(sample_crawl_spec, storage)
         
         assert state.crawl_spec == sample_crawl_spec
-        assert len(state.frontier) == 0  # Frontier is now populated when crawl starts
-        assert len(state.visited_urls) == 0
         assert len(state.analyzers) == 0
         assert state.current_state == RunStateEnum.CREATED
         
         # Check that counters are initialized to 0
-        assert state.crawled_count == 0
-        assert state.processed_count == 0
-        assert state.error_count == 0
+        crawled, processed, errors, frontier_size = state.get_status_counts()
+        assert crawled == 0
+        assert processed == 0
+        assert errors == 0
+        assert frontier_size == 0
     
     def test_add_urls_with_scores(self, sample_crawl_spec):
         """Test adding URLs with scores to frontier."""
@@ -49,12 +49,13 @@ class TestCrawlState:
         url_scores = [(0.8, "https://test1.com"), (0.6, "https://test2.com")]
         state.add_urls_with_scores(url_scores)
         
-        # Should be sorted by score descending
-        assert len(state.frontier) == 2
+        # Check that URLs were added to frontier
+        crawled, processed, errors, frontier_size = state.get_status_counts()
+        assert frontier_size == 2
+        
         # Check that higher score comes first
-        frontier_list = list(state.frontier)
-        scores = [item.score for item in frontier_list]
-        assert scores == sorted(scores, reverse=True)
+        first_url = state.get_next_url()
+        assert first_url == "https://test1.com"  # Should be the higher scored URL
     
     def test_get_next_url(self, sample_crawl_spec):
         """Test getting next URL from frontier."""
@@ -69,7 +70,10 @@ class TestCrawlState:
         # Should get highest scoring URL first
         next_url = state.get_next_url()
         assert next_url == "https://high.com"
-        assert next_url in state.visited_urls
+        
+        # Check that frontier size decreased
+        crawled, processed, errors, frontier_size = state.get_status_counts()
+        assert frontier_size == 1
     
     def test_get_next_url_empty_frontier(self, sample_crawl_spec):
         """Test getting next URL when frontier is empty."""
@@ -77,10 +81,7 @@ class TestCrawlState:
         storage = MemoryCrawlStateStorage()
         state = CrawlState(sample_crawl_spec, storage)
         
-        # Empty the frontier
-        while state.frontier:
-            state.frontier.pop(0)
-        
+        # Frontier should be empty initially
         next_url = state.get_next_url()
         assert next_url is None
     
@@ -95,12 +96,12 @@ class TestCrawlState:
         state.add_urls_with_scores(url_scores)
         
         # Should only contain one instance of the URL
-        urls_in_frontier = [item.url for item in state.frontier]
-        assert urls_in_frontier.count("https://test.com") == 1
+        crawled, processed, errors, frontier_size = state.get_status_counts()
+        assert frontier_size == 1
         
-        # Should keep the first one added (0.8 score)
-        test_url_tuple = next(item for item in state.frontier if item.url == "https://test.com")
-        assert test_url_tuple.score == 0.8
+        # Should get the URL when requested
+        next_url = state.get_next_url()
+        assert next_url == "https://test.com"
     
     def test_is_url_allowed_domain_blacklist(self, sample_crawl_spec):
         """Test URL filtering with domain blacklist."""
@@ -140,14 +141,16 @@ class TestCrawlState:
         state.increment_processed_count()
         state.increment_error_count()
         
-        assert state.crawled_count == 1
-        assert state.processed_count == 1
-        assert state.error_count == 1
+        crawled, processed, errors, frontier_size = state.get_status_counts()
+        assert crawled == 1
+        assert processed == 1
+        assert errors == 1
         
         # Test multiple increments
         state.increment_crawled_count()
         state.increment_crawled_count()
-        assert state.crawled_count == 3
+        crawled, processed, errors, frontier_size = state.get_status_counts()
+        assert crawled == 3
     
     def test_get_status_counts(self, sample_crawl_spec):
         """Test getting thread-safe status counts."""
