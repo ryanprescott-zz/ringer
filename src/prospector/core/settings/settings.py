@@ -49,20 +49,17 @@ class LLMServiceScoreAnalyzerSettings(BaseSettings):
     }
 
 
-class FsStoreHandlerSettings(BaseSettings):
-    """Settings for Filesystem data storage handlng of crawl records."""
+class FsCrawlResultsManagerSettings(BaseSettings):
+    """Settings for Filesystem data storage handling of crawl records."""
     
     # Crawl result storage directory
-    output_directory: str = "./crawl_data"
-
-    # Record storage directory
-    record_directory: str = "records"
+    crawl_data_dir: str = "./crawl_data"
 
     model_config = {
-        "env_prefix": "fs_store_handler_"
+        "env_prefix": "fs_crawl_results_manager_"
     }
 
-class DhStoreHandlerSettings(BaseSettings):
+class DhCrawlResultsManagerSettings(BaseSettings):
     """Settings for service call storage of crawl records."""
 
     # Service handler settings
@@ -72,7 +69,7 @@ class DhStoreHandlerSettings(BaseSettings):
     service_retry_exponential_base: int = 2
 
     model_config = {
-        "env_prefix": "dh_store_handler_"
+        "env_prefix": "dh_crawl_results_manager_"
     }
 
 
@@ -94,8 +91,8 @@ class SearchEngineSettings(BaseSettings):
     }
 
 
-class CrawlStateStorageSettings(BaseSettings):
-    """Settings for crawl state storage."""
+class CrawlStateManagerSettings(BaseSettings):
+    """Settings for crawl state management."""
     
     storage_type: str = "memory"  # "redis", "sqlite", "memory"
     redis_url: str = "redis://localhost:6379"
@@ -104,7 +101,7 @@ class CrawlStateStorageSettings(BaseSettings):
     sqlite_path: str = "./crawl_state.db"
     
     model_config = {
-        "env_prefix": "crawl_state_storage_"
+        "env_prefix": "crawl_state_manager_"
     }
 
 
