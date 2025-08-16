@@ -18,11 +18,11 @@ class TestDhCrawlResultsManager:
     """Tests for DhCrawlResultsManager class."""
     
     def test_init(self):
-        """Test service handler initialization."""
-        handler = DhCrawlResultsManager()
-        assert handler.settings is not None
-        assert handler.session is not None
-        assert handler.session.headers['Content-Type'] == 'application/json'
+        """Test service manager initialization."""
+        manager = DhCrawlResultsManager()
+        assert manager.settings is not None
+        assert manager.session is not None
+        assert manager.session.headers['Content-Type'] == 'application/json'
     
     @patch('prospector.core.results_management.dh_crawl_results_manager.requests.Session.post')
     def test_store_record_success(self, mock_post, sample_crawl_record):
@@ -33,18 +33,18 @@ class TestDhCrawlResultsManager:
         mock_response.text = "Success"
         mock_post.return_value = mock_response
         
-        handler = DhCrawlResultsManager()
+        manager = DhCrawlResultsManager()
         
         # Should not raise any exception
-        handler.store_record(sample_crawl_record, "test_crawl_id")
+        manager.store_record(sample_crawl_record, "test_crawl_id")
         
         # Verify request was made
         mock_post.assert_called_once()
         call_args = mock_post.call_args
         
         # Verify URL and timeout
-        assert call_args[0][0] == handler.settings.service_url
-        assert call_args[1]['timeout'] == handler.settings.service_timeout_sec
+        assert call_args[0][0] == manager.settings.service_url
+        assert call_args[1]['timeout'] == manager.settings.service_timeout_sec
         
         # Verify request payload structure
         request_data = call_args[1]['json']
@@ -61,10 +61,10 @@ class TestDhCrawlResultsManager:
         mock_response.text = "Internal Server Error"
         mock_post.return_value = mock_response
         
-        handler = DhCrawlResultsManager()
+        manager = DhCrawlResultsManager()
         
         # Should not raise exception, just log and discard
-        handler.store_record(sample_crawl_record, "test_crawl_id")
+        manager.store_record(sample_crawl_record, "test_crawl_id")
         
         # Should have made multiple attempts (3 retries + 1 initial = 4 total)
         assert mock_post.call_count >= 3
@@ -77,10 +77,10 @@ class TestDhCrawlResultsManager:
         # Mock timeout exception
         mock_post.side_effect = requests.exceptions.Timeout("Request timeout")
         
-        handler = DhCrawlResultsManager()
+        manager = DhCrawlResultsManager()
         
         # Should not raise exception, just log and discard
-        handler.store_record(sample_crawl_record, "test_crawl_id")
+        manager.store_record(sample_crawl_record, "test_crawl_id")
         
         # Should have made multiple attempts
         assert mock_post.call_count >= 3
@@ -93,10 +93,10 @@ class TestDhCrawlResultsManager:
         # Mock connection error
         mock_post.side_effect = requests.exceptions.ConnectionError("Connection failed")
         
-        handler = DhCrawlResultsManager()
+        manager = DhCrawlResultsManager()
         
         # Should not raise exception, just log and discard
-        handler.store_record(sample_crawl_record, "test_crawl_id")
+        manager.store_record(sample_crawl_record, "test_crawl_id")
         
         # Should have made multiple attempts
         assert mock_post.call_count >= 3
@@ -115,10 +115,10 @@ class TestDhCrawlResultsManager:
         
         mock_post.side_effect = [mock_response_fail, mock_response_success]
         
-        handler = DhCrawlResultsManager()
+        manager = DhCrawlResultsManager()
         
         # Should succeed after retry
-        handler.store_record(sample_crawl_record, "test_crawl_id")
+        manager.store_record(sample_crawl_record, "test_crawl_id")
         
         # Should have made 2 calls
         assert mock_post.call_count == 2
@@ -129,23 +129,23 @@ class TestFsCrawlResultsManager:
     """Tests for FsCrawlResultsManager class."""
     
     def test_init(self):
-        """Test handler initialization."""
-        handler = FsCrawlResultsManager()
-        assert handler.settings is not None
+        """Test manager initialization."""
+        manager = FsCrawlResultsManager()
+        assert manager.settings is not None
     
     def test_store_record_success(self, sample_crawl_record, sample_crawl_spec):
         """Test successful record handling."""
         with tempfile.TemporaryDirectory() as temp_dir:
             # Patch the settings to use temp directory
             with patch.object(FsCrawlResultsManager, '__init__', lambda x: None):
-                handler = FsCrawlResultsManager()
-                handler.settings = type('Settings', (), {
+                manager = FsCrawlResultsManager()
+                manager.settings = type('Settings', (), {
                     'crawl_data_dir': temp_dir
                 })()
                 
                 # First create the crawl
-                handler.create_crawl(sample_crawl_spec)
-                handler.store_record(sample_crawl_record, sample_crawl_spec.id)
+                manager.create_crawl(sample_crawl_spec)
+                manager.store_record(sample_crawl_record, sample_crawl_spec.id)
                 
                 # Check that directory was created
                 expected_dir = Path(temp_dir) / sample_crawl_spec.id
@@ -169,14 +169,14 @@ class TestFsCrawlResultsManager:
         """Test that directories are created properly."""
         with tempfile.TemporaryDirectory() as temp_dir:
             with patch.object(FsCrawlResultsManager, '__init__', lambda x: None):
-                handler = FsCrawlResultsManager()
-                handler.settings = type('Settings', (), {
+                manager = FsCrawlResultsManager()
+                manager.settings = type('Settings', (), {
                     'crawl_data_dir': temp_dir
                 })()
                 
                 # Create crawl and handle multiple records for same crawl
-                handler.create_crawl(sample_crawl_spec)
-                handler.store_record(sample_crawl_record, sample_crawl_spec.id)
+                manager.create_crawl(sample_crawl_spec)
+                manager.store_record(sample_crawl_record, sample_crawl_spec.id)
                 
                 record2 = CrawlRecord(
                     url="https://example2.com",
@@ -186,7 +186,7 @@ class TestFsCrawlResultsManager:
                     scores={},
                     composite_score=0.0
                 )
-                handler.store_record(record2, sample_crawl_spec.id)
+                manager.store_record(record2, sample_crawl_spec.id)
                 
                 # Should create same directory structure
                 expected_dir = Path(temp_dir) / sample_crawl_spec.id
@@ -199,10 +199,10 @@ class TestFsCrawlResultsManager:
         """Test handling of file write errors."""
         # Use a non-existent directory that can't be created
         with patch.object(FsCrawlResultsManager, '__init__', lambda x: None):
-            handler = FsCrawlResultsManager()
-            handler.settings = type('Settings', (), {
+            manager = FsCrawlResultsManager()
+            manager.settings = type('Settings', (), {
                 'crawl_data_dir': '/invalid/path'
             })()
             
             with pytest.raises(Exception):
-                handler.store_record(sample_crawl_record, "test_crawl_id")
+                manager.store_record(sample_crawl_record, "test_crawl_id")

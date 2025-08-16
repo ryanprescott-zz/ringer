@@ -3,7 +3,7 @@
 from .crawl_state_manager import CrawlStateManager
 from .memory_crawl_state_manager import MemoryCrawlStateManager
 from .redis_crawl_state_manager import RedisCrawlStateManager
-from ..settings import CrawlStateStorageSettings
+from ..settings import CrawlStateManagerSettings
 
 
 def create_crawl_state_manager() -> CrawlStateManager:
@@ -13,7 +13,7 @@ def create_crawl_state_manager() -> CrawlStateManager:
     Returns:
         CrawlStateManager: Manager instance based on configuration
     """
-    settings = CrawlStateStorageSettings()
+    settings = CrawlStateManagerSettings()
     
     if settings.storage_type == "redis":
         return RedisCrawlStateManager()
