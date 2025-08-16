@@ -157,8 +157,8 @@ def keyword_analyzer(sample_weighted_keywords):
 def prospector():
     """Prospector instance for testing with temporary directory."""
     with tempfile.TemporaryDirectory() as temp_dir:
-        # Patch the FsStoreHandler settings to use temp directory
-        with patch('prospector.core.storage_handlers.fs_store_handler.FsStoreHandlerSettings') as mock_settings:
+        # Patch the FsCrawlResultsManager settings to use temp directory
+        with patch('prospector.core.results_management.fs_crawl_results_manager.FsStoreHandlerSettings') as mock_settings:
             mock_settings.return_value.crawl_data_dir = temp_dir
             prospector_instance = Prospector()
             yield prospector_instance

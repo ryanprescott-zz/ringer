@@ -24,7 +24,7 @@ from .models import (
 )
 from .score_analyzers import ScoreAnalyzer, KeywordScoreAnalyzer, LLMServiceScoreAnalyzer
 from .scrapers import Scraper, PlaywrightScraper  
-from .storage_handlers import CrawlStorageHandler, FsStoreHandler, DhStoreHandler
+from .results_management import CrawlResultsManager, FsCrawlResultsManager, DhCrawlResultsManager
 from .state_management import create_crawl_state_manager, CrawlStateManager
 from .search_engines import SearchEngineService
 from .settings import ProspectorSettings, HandlerType
@@ -182,9 +182,9 @@ class Prospector:
         
         # Initialize handler based on settings
         if self.settings.handler_type == HandlerType.FILE_SYSTEM:
-            self.handler: CrawlStorageHandler = FsStoreHandler()
+            self.handler: CrawlResultsManager = FsCrawlResultsManager()
         elif self.settings.handler_type == HandlerType.DH:
-            self.handler: CrawlStorageHandler = DhStoreHandler()
+            self.handler: CrawlResultsManager = DhCrawlResultsManager()
         else:
             raise ValueError(f"Unknown handler type: {self.settings.handler_type}")
         
