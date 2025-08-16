@@ -21,14 +21,15 @@ class RedisCrawlStateManager(CrawlStateManager):
     def __init__(self):
         self.settings = CrawlStateManagerSettings()
         try:
-            self.redis = redis.from_url(
-                self.settings.redis_url,
-                db=self.settings.redis_db,
+            self.redis = redis.Redis(
+                host=getattr(self.settings, 'redis_host', 'localhost'),
+                port=getattr(self.settings, 'redis_port', 6379),
+                db=getattr(self.settings, 'redis_db', 0),
                 decode_responses=True
             )
             # Test connection
             self.redis.ping()
-            logger.info(f"Connected to Redis at {self.settings.redis_url}")
+            logger.info(f"Connected to Redis")
         except ImportError:
             raise ImportError("Redis package not installed. Install with: pip install redis")
         except Exception as e:
@@ -36,70 +37,55 @@ class RedisCrawlStateManager(CrawlStateManager):
     
     def _key(self, crawl_id: str, suffix: str) -> str:
         """Generate Redis key with prefix."""
-        return f"{self.settings.redis_key_prefix}:crawl:{crawl_id}:{suffix}"
+        return f"crawl:{crawl_id}:{suffix}"
     
     def create_crawl(self, crawl_spec: CrawlSpec) -> None:
         """Create a new crawl in Redis storage."""
         crawl_id = crawl_spec.id
         
-        # Store crawl spec as JSON
+        # Store crawl spec
         spec_key = self._key(crawl_id, "spec")
-        self.redis.set(spec_key, crawl_spec.model_dump_json())
+        self.redis.hset(spec_key, "spec", json.dumps(crawl_spec.model_dump(), default=str))
         
         # Initialize counters
         counters_key = self._key(crawl_id, "counters")
-        self.redis.hset(counters_key, mapping={
-            "crawled_count": 0,
-            "processed_count": 0,
-            "error_count": 0
-        })
-        
-        # Initialize empty collections
-        frontier_key = self._key(crawl_id, "frontier")
-        visited_key = self._key(crawl_id, "visited")
-        states_key = self._key(crawl_id, "states")
-        
-        # Ensure keys exist (Redis will create them when first used)
-        self.redis.zadd(frontier_key, {}, nx=True)  # Empty sorted set
-        self.redis.sadd(visited_key, "")  # Empty set with dummy value
-        self.redis.srem(visited_key, "")  # Remove dummy value
-        self.redis.lpush(states_key, "")  # Empty list with dummy value
-        self.redis.lpop(states_key)  # Remove dummy value
+        self.redis.hset(counters_key, "queued", 0)
+        self.redis.hset(counters_key, "crawled", 0)
+        self.redis.hset(counters_key, "processed", 0)
+        self.redis.hset(counters_key, "errors", 0)
     
     def delete_crawl(self, crawl_id: str) -> None:
         """Delete a crawl from Redis storage."""
-        keys_to_delete = [
-            self._key(crawl_id, "spec"),
-            self._key(crawl_id, "frontier"),
-            self._key(crawl_id, "visited"),
-            self._key(crawl_id, "states"),
-            self._key(crawl_id, "counters")
-        ]
-        self.redis.delete(*keys_to_delete)
+        pattern = f"crawl:{crawl_id}:*"
+        keys = self.redis.keys(pattern)
+        if keys:
+            self.redis.delete(*keys)
     
     def add_state(self, crawl_id: str, run_state: RunState) -> None:
         """Add a new state to the crawl's history."""
-        states_key = self._key(crawl_id, "states")
-        state_json = run_state.model_dump_json()
-        self.redis.rpush(states_key, state_json)
+        states_key = self._key(crawl_id, "state")
+        state_json = json.dumps(run_state.model_dump(), default=str)
+        self.redis.lpush(states_key, state_json)
     
     def get_current_state(self, crawl_id: str) -> RunStateEnum:
         """Get the current run state of the crawl."""
-        states_key = self._key(crawl_id, "states")
-        latest_state_json = self.redis.lindex(states_key, -1)
-        
-        if latest_state_json:
-            state_data = json.loads(latest_state_json)
-            return RunStateEnum(state_data['state'])
+        states_key = self._key(crawl_id, "state")
+        if self.redis.llen(states_key) > 0:
+            latest_state_json = self.redis.lindex(states_key, 0)
+            if latest_state_json:
+                state_data = json.loads(latest_state_json)
+                return RunStateEnum(state_data['state'])
         return RunStateEnum.CREATED
     
     def get_state_history(self, crawl_id: str) -> List[RunState]:
         """Get the complete state history."""
-        states_key = self._key(crawl_id, "states")
+        states_key = self._key(crawl_id, "state")
         state_jsons = self.redis.lrange(states_key, 0, -1)
         
         states = []
         for state_json in state_jsons:
+            if isinstance(state_json, bytes):
+                state_json = state_json.decode('utf-8')
             state_data = json.loads(state_json)
             # Parse timestamp string back to datetime
             if isinstance(state_data['timestamp'], str):
@@ -109,52 +95,29 @@ class RedisCrawlStateManager(CrawlStateManager):
     
     def add_urls_with_scores(self, crawl_id: str, url_scores: List[Tuple[float, str]]) -> None:
         """Add URLs with their scores to the frontier."""
-        frontier_key = self._key(crawl_id, "frontier")
-        visited_key = self._key(crawl_id, "visited")
+        urls_key = self._key(crawl_id, "urls")
+        counters_key = self._key(crawl_id, "counters")
         
-        # Use Lua script for atomic operation
-        lua_script = """
-        local frontier_key = KEYS[1]
-        local visited_key = KEYS[2]
-        local url_scores = cjson.decode(ARGV[1])
+        # Convert to Redis zadd format: {url: score}
+        url_score_dict = {url: score for score, url in url_scores}
+        self.redis.zadd(urls_key, url_score_dict)
         
-        for i, item in ipairs(url_scores) do
-            local score = item[1]
-            local url = item[2]
-            
-            -- Only add if not visited
-            if redis.call('SISMEMBER', visited_key, url) == 0 then
-                redis.call('ZADD', frontier_key, score, url)
-            end
-        end
-        """
-        
-        url_scores_json = json.dumps(url_scores)
-        self.redis.eval(lua_script, 2, frontier_key, visited_key, url_scores_json)
+        # Update queued counter
+        self.redis.hincrby(counters_key, "queued", len(url_scores))
     
     def get_next_url(self, crawl_id: str) -> Optional[str]:
         """Get the next URL to process from the frontier."""
-        frontier_key = self._key(crawl_id, "frontier")
+        urls_key = self._key(crawl_id, "urls")
         visited_key = self._key(crawl_id, "visited")
         
-        # Use Lua script for atomic pop-and-mark-visited
-        lua_script = """
-        local frontier_key = KEYS[1]
-        local visited_key = KEYS[2]
-        
-        -- Get highest scoring URL (ZPOPMAX returns score and member)
-        local result = redis.call('ZPOPMAX', frontier_key)
-        if #result > 0 then
-            local url = result[1]
-            -- Add to visited set
-            redis.call('SADD', visited_key, url)
+        # Get highest scoring URL
+        result = self.redis.zpopmax(urls_key)
+        if result:
+            url = result[0][0]  # zpopmax returns [(member, score)]
+            # Mark as visited
+            self.redis.sadd(visited_key, url)
             return url
-        end
-        return nil
-        """
-        
-        result = self.redis.eval(lua_script, 2, frontier_key, visited_key)
-        return result if result else None
+        return None
     
     def is_url_visited(self, crawl_id: str, url: str) -> bool:
         """Check if a URL has been visited."""
@@ -164,35 +127,31 @@ class RedisCrawlStateManager(CrawlStateManager):
     def increment_crawled_count(self, crawl_id: str) -> None:
         """Increment the crawled URL count."""
         counters_key = self._key(crawl_id, "counters")
-        self.redis.hincrby(counters_key, "crawled_count", 1)
+        self.redis.hincrby(counters_key, "crawled", 1)
     
     def increment_processed_count(self, crawl_id: str) -> None:
         """Increment the processed page count."""
         counters_key = self._key(crawl_id, "counters")
-        self.redis.hincrby(counters_key, "processed_count", 1)
+        self.redis.hincrby(counters_key, "processed", 1)
     
     def increment_error_count(self, crawl_id: str) -> None:
         """Increment the error count."""
         counters_key = self._key(crawl_id, "counters")
-        self.redis.hincrby(counters_key, "error_count", 1)
+        self.redis.hincrby(counters_key, "errors", 1)
     
     def get_status_counts(self, crawl_id: str) -> Tuple[int, int, int, int]:
         """Get thread-safe snapshot of status counts."""
         counters_key = self._key(crawl_id, "counters")
-        frontier_key = self._key(crawl_id, "frontier")
         
-        # Get all counters and frontier size atomically
-        pipeline = self.redis.pipeline()
-        pipeline.hgetall(counters_key)
-        pipeline.zcard(frontier_key)
-        results = pipeline.execute()
+        # Get all counter values
+        values = self.redis.hmget(counters_key, "queued", "crawled", "processed", "errors")
         
-        counters = results[0]
-        frontier_size = results[1]
+        # Convert bytes to int, handling None values
+        def safe_int(val):
+            if val is None:
+                return 0
+            if isinstance(val, bytes):
+                return int(val.decode('utf-8'))
+            return int(val)
         
-        return (
-            int(counters.get('crawled_count', 0)),
-            int(counters.get('processed_count', 0)),
-            int(counters.get('error_count', 0)),
-            frontier_size
-        )
+        return tuple(safe_int(val) for val in values)
