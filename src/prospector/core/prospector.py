@@ -25,7 +25,7 @@ from .models import (
 from .score_analyzers import ScoreAnalyzer, KeywordScoreAnalyzer, LLMServiceScoreAnalyzer
 from .scrapers import Scraper, PlaywrightScraper  
 from .storage_handlers import CrawlStorageHandler, FsStoreHandler, DhStoreHandler
-from .storage import create_crawl_state_storage, CrawlStateStorage
+from .state_management import create_crawl_state_manager, CrawlStateManager
 from .search_engines import SearchEngineService
 from .settings import ProspectorSettings, HandlerType
 
@@ -64,21 +64,21 @@ class ScoreUrlTuple:
 class CrawlState:
     """Thread-safe state management for a single crawl with persistent storage."""
     
-    def __init__(self, crawl_spec: CrawlSpec, storage: CrawlStateStorage):
+    def __init__(self, crawl_spec: CrawlSpec, manager: CrawlStateManager):
         """
         Initialize crawl state.
         
         Args:
             crawl_spec: Specification for the crawl
-            storage: Storage backend for persistence
+            manager: State manager backend for persistence
         """
         self.crawl_spec = crawl_spec
-        self.storage = storage
+        self.manager = manager
         self.analyzers: List[ScoreAnalyzer] = []
         self.analyzer_weights: Dict[str, float] = {}
         
         # Create the crawl in storage
-        self.storage.create_crawl(crawl_spec)
+        self.manager.create_crawl(crawl_spec)
     
     @property
     def current_state(self) -> RunStateEnum:
@@ -88,7 +88,7 @@ class CrawlState:
         Returns:
             RunStateEnum: The most recent state from the history
         """
-        return self.storage.get_current_state(self.crawl_spec.id)
+        return self.manager.get_current_state(self.crawl_spec.id)
     
     def add_state(self, run_state: RunState) -> None:
         """
@@ -97,7 +97,7 @@ class CrawlState:
         Args:
             run_state: The RunState object to add
         """
-        self.storage.add_state(self.crawl_spec.id, run_state)
+        self.manager.add_state(self.crawl_spec.id, run_state)
     
     def add_urls_with_scores(self, url_scores: List[tuple]) -> None:
         """
@@ -106,7 +106,7 @@ class CrawlState:
         Args:
             url_scores: List of (score, url) tuples
         """
-        self.storage.add_urls_with_scores(self.crawl_spec.id, url_scores)
+        self.manager.add_urls_with_scores(self.crawl_spec.id, url_scores)
     
     def get_next_url(self) -> str:
         """
@@ -115,7 +115,7 @@ class CrawlState:
         Returns:
             str: Next URL to process, or None if frontier is empty
         """
-        return self.storage.get_next_url(self.crawl_spec.id)
+        return self.manager.get_next_url(self.crawl_spec.id)
     
     def is_url_allowed(self, url: str) -> bool:
         """
@@ -140,15 +140,15 @@ class CrawlState:
     
     def increment_crawled_count(self) -> None:
         """Thread-safe increment of crawled URL count."""
-        self.storage.increment_crawled_count(self.crawl_spec.id)
+        self.manager.increment_crawled_count(self.crawl_spec.id)
     
     def increment_processed_count(self) -> None:
         """Thread-safe increment of processed page count."""
-        self.storage.increment_processed_count(self.crawl_spec.id)
+        self.manager.increment_processed_count(self.crawl_spec.id)
     
     def increment_error_count(self) -> None:
         """Thread-safe increment of error count."""
-        self.storage.increment_error_count(self.crawl_spec.id)
+        self.manager.increment_error_count(self.crawl_spec.id)
     
     def get_status_counts(self) -> tuple:
         """
@@ -157,7 +157,7 @@ class CrawlState:
         Returns:
             tuple: (crawled_count, processed_count, error_count, frontier_size)
         """
-        return self.storage.get_status_counts(self.crawl_spec.id)
+        return self.manager.get_status_counts(self.crawl_spec.id)
     
     def get_state_history(self) -> List[RunState]:
         """
@@ -166,7 +166,7 @@ class CrawlState:
         Returns:
             List[RunState]: Complete history of state changes
         """
-        return self.storage.get_state_history(self.crawl_spec.id)
+        return self.manager.get_state_history(self.crawl_spec.id)
 
 
 class Prospector:
@@ -178,7 +178,7 @@ class Prospector:
         self.crawls: Dict[str, CrawlState] = {}
         self.scraper: Scraper = PlaywrightScraper()
         self.search_engine_service = SearchEngineService()
-        self.storage = create_crawl_state_storage()
+        self.storage = create_crawl_state_manager()
         
         # Initialize handler based on settings
         if self.settings.handler_type == HandlerType.FILE_SYSTEM:
