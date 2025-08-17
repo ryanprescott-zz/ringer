@@ -64,7 +64,7 @@ class TestDhCrawlResultsManager:
         manager = DhCrawlResultsManager()
         
         # Should not raise exception, just log and discard
-        manager.store_record(sample_crawl_record, "test_crawl_id")
+        manager.store_record(sample_crawl_record, "test_storage_id")
         
         # Should have made multiple attempts (3 retries + 1 initial = 4 total)
         assert mock_post.call_count >= 3
@@ -80,7 +80,7 @@ class TestDhCrawlResultsManager:
         manager = DhCrawlResultsManager()
         
         # Should not raise exception, just log and discard
-        manager.store_record(sample_crawl_record, "test_crawl_id")
+        manager.store_record(sample_crawl_record, "test_storage_id")
         
         # Should have made multiple attempts
         assert mock_post.call_count >= 3
@@ -96,7 +96,7 @@ class TestDhCrawlResultsManager:
         manager = DhCrawlResultsManager()
         
         # Should not raise exception, just log and discard
-        manager.store_record(sample_crawl_record, "test_crawl_id")
+        manager.store_record(sample_crawl_record, "test_storage_id")
         
         # Should have made multiple attempts
         assert mock_post.call_count >= 3
@@ -118,7 +118,7 @@ class TestDhCrawlResultsManager:
         manager = DhCrawlResultsManager()
         
         # Should succeed after retry
-        manager.store_record(sample_crawl_record, "test_crawl_id")
+        manager.store_record(sample_crawl_record, "test_storage_id")
         
         # Should have made 2 calls
         assert mock_post.call_count == 2
@@ -144,12 +144,12 @@ class TestFsCrawlResultsManager:
                 })()
                 manager.base_dir = Path(temp_dir)
                 
-                # First create the crawl
-                manager.create_crawl(sample_crawl_spec)
-                manager.store_record(sample_crawl_record, sample_crawl_spec.id)
+                # First create the crawl and get storage ID
+                storage_id = manager.create_crawl(sample_crawl_spec)
+                manager.store_record(sample_crawl_record, storage_id)
                 
-                # Check that directory was created
-                expected_dir = Path(temp_dir) / sample_crawl_spec.id
+                # Check that directory was created with storage ID
+                expected_dir = Path(temp_dir) / storage_id
                 assert expected_dir.exists()
                 
                 # Check that file was created
@@ -177,8 +177,8 @@ class TestFsCrawlResultsManager:
                 manager.base_dir = Path(temp_dir)
                 
                 # Create crawl and handle multiple records for same crawl
-                manager.create_crawl(sample_crawl_spec)
-                manager.store_record(sample_crawl_record, sample_crawl_spec.id)
+                storage_id = manager.create_crawl(sample_crawl_spec)
+                manager.store_record(sample_crawl_record, storage_id)
                 
                 record2 = CrawlRecord(
                     url="https://example2.com",
@@ -188,10 +188,10 @@ class TestFsCrawlResultsManager:
                     scores={},
                     composite_score=0.0
                 )
-                manager.store_record(record2, sample_crawl_spec.id)
+                manager.store_record(record2, storage_id)
                 
                 # Should create same directory structure
-                expected_dir = Path(temp_dir) / sample_crawl_spec.id
+                expected_dir = Path(temp_dir) / storage_id
                 files = list(expected_dir.glob("*.json"))
                 # Should have crawl_spec.json + 2 record files
                 assert len(files) == 3
@@ -208,4 +208,4 @@ class TestFsCrawlResultsManager:
             manager.base_dir = Path('/invalid/path')
             
             with pytest.raises(Exception):
-                manager.store_record(sample_crawl_record, "test_crawl_id")
+                manager.store_record(sample_crawl_record, "test_storage_id")
