@@ -27,9 +27,11 @@ class TestCrawlState:
         """Test CrawlState initialization."""
         from prospector.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
         manager = MemoryCrawlStateManager()
-        state = CrawlState(sample_crawl_spec, manager)
+        storage_id = "test-storage-id-123"
+        state = CrawlState(sample_crawl_spec, manager, storage_id)
         
         assert state.crawl_spec == sample_crawl_spec
+        assert state.storage_id == storage_id
         assert len(state.analyzers) == 0
         assert state.current_state == RunStateEnum.CREATED
         
@@ -44,7 +46,8 @@ class TestCrawlState:
         """Test adding URLs with scores to frontier."""
         from prospector.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
         manager = MemoryCrawlStateManager()
-        state = CrawlState(sample_crawl_spec, manager)
+        storage_id = "test-storage-id-123"
+        state = CrawlState(sample_crawl_spec, manager, storage_id)
         
         url_scores = [(0.8, "https://test1.com"), (0.6, "https://test2.com")]
         state.add_urls_with_scores(url_scores)
@@ -61,7 +64,8 @@ class TestCrawlState:
         """Test getting next URL from frontier."""
         from prospector.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
         manager = MemoryCrawlStateManager()
-        state = CrawlState(sample_crawl_spec, manager)
+        storage_id = "test-storage-id-123"
+        state = CrawlState(sample_crawl_spec, manager, storage_id)
         
         # Add some URLs with different scores
         url_scores = [(0.8, "https://high.com"), (0.2, "https://low.com")]
@@ -79,7 +83,8 @@ class TestCrawlState:
         """Test getting next URL when frontier is empty."""
         from prospector.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
         manager = MemoryCrawlStateManager()
-        state = CrawlState(sample_crawl_spec, manager)
+        storage_id = "test-storage-id-123"
+        state = CrawlState(sample_crawl_spec, manager, storage_id)
         
         # Frontier should be empty initially
         next_url = state.get_next_url()
@@ -89,7 +94,8 @@ class TestCrawlState:
         """Test that frontier prevents duplicate URLs."""
         from prospector.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
         manager = MemoryCrawlStateManager()
-        state = CrawlState(sample_crawl_spec, manager)
+        storage_id = "test-storage-id-123"
+        state = CrawlState(sample_crawl_spec, manager, storage_id)
         
         # Add same URL with different scores
         url_scores = [(0.8, "https://test.com"), (0.6, "https://test.com")]
@@ -107,7 +113,8 @@ class TestCrawlState:
         """Test URL filtering with domain blacklist."""
         from prospector.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
         manager = MemoryCrawlStateManager()
-        state = CrawlState(sample_crawl_spec, manager)
+        storage_id = "test-storage-id-123"
+        state = CrawlState(sample_crawl_spec, manager, storage_id)
         
         # Should allow URLs not in blacklist
         assert state.is_url_allowed("https://example.com/page")
@@ -125,7 +132,8 @@ class TestCrawlState:
             domain_blacklist=None
         )
         manager = MemoryCrawlStateManager()
-        state = CrawlState(spec, manager)
+        storage_id = "test-storage-id-123"
+        state = CrawlState(spec, manager, storage_id)
         
         # Should allow all URLs when no blacklist
         assert state.is_url_allowed("https://any-domain.com/page")
@@ -134,7 +142,8 @@ class TestCrawlState:
         """Test thread-safe counter increment methods."""
         from prospector.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
         manager = MemoryCrawlStateManager()
-        state = CrawlState(sample_crawl_spec, manager)
+        storage_id = "test-storage-id-123"
+        state = CrawlState(sample_crawl_spec, manager, storage_id)
         
         # Test increment methods
         state.increment_crawled_count()
@@ -156,7 +165,8 @@ class TestCrawlState:
         """Test getting thread-safe status counts."""
         from prospector.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
         manager = MemoryCrawlStateManager()
-        state = CrawlState(sample_crawl_spec, manager)
+        storage_id = "test-storage-id-123"
+        state = CrawlState(sample_crawl_spec, manager, storage_id)
         
         # Add some URLs to frontier
         state.add_urls_with_scores([(0.8, "https://test1.com"), (0.6, "https://test2.com")])
