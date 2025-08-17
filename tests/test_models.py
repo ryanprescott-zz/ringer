@@ -12,6 +12,7 @@ from prospector.core.models import (
     PromptInput,
     TopicListInput,
     WeightedKeyword,
+    WeightedRegex,
     AnalyzerSpec,
     CrawlSpec,
     CrawlRecord,
