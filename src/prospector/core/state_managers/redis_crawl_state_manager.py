@@ -42,17 +42,34 @@ class RedisCrawlStateManager(CrawlStateManager):
     def create_crawl(self, crawl_spec: CrawlSpec) -> None:
         """Create a new crawl in Redis storage."""
         crawl_id = crawl_spec.id
+        logger.debug(f"Creating crawl {crawl_id} in Redis storage")
         
-        # Store crawl spec
-        spec_key = self._key(crawl_id, "spec")
-        self.redis.hset(spec_key, "spec", json.dumps(crawl_spec.model_dump(), default=str))
-        
-        # Initialize counters
-        counters_key = self._key(crawl_id, "counters")
-        self.redis.hset(counters_key, "queued", 0)
-        self.redis.hset(counters_key, "crawled", 0)
-        self.redis.hset(counters_key, "processed", 0)
-        self.redis.hset(counters_key, "errors", 0)
+        try:
+            # Store crawl spec
+            spec_key = self._key(crawl_id, "spec")
+            try:
+                self.redis.hset(spec_key, "spec", json.dumps(crawl_spec.model_dump(), default=str))
+                logger.debug(f"Stored crawl spec for {crawl_id} in Redis")
+            except Exception as e:
+                logger.error(f"Failed to store crawl spec for {crawl_id} in Redis: {e}")
+                raise
+            
+            # Initialize counters
+            counters_key = self._key(crawl_id, "counters")
+            try:
+                self.redis.hset(counters_key, "queued", 0)
+                self.redis.hset(counters_key, "crawled", 0)
+                self.redis.hset(counters_key, "processed", 0)
+                self.redis.hset(counters_key, "errors", 0)
+                logger.debug(f"Initialized counters for crawl {crawl_id} in Redis")
+            except Exception as e:
+                logger.error(f"Failed to initialize counters for {crawl_id} in Redis: {e}")
+                raise
+                
+            logger.debug(f"Successfully created crawl {crawl_id} in Redis storage")
+        except Exception as e:
+            logger.error(f"Failed to create crawl {crawl_id} in Redis storage: {e}")
+            raise
     
     def delete_crawl(self, crawl_id: str) -> None:
         """Delete a crawl from Redis storage."""
@@ -95,15 +112,31 @@ class RedisCrawlStateManager(CrawlStateManager):
     
     def add_urls_with_scores(self, crawl_id: str, url_scores: List[Tuple[float, str]]) -> None:
         """Add URLs with their scores to the frontier."""
-        urls_key = self._key(crawl_id, "urls")
-        counters_key = self._key(crawl_id, "counters")
-        
-        # Convert to Redis zadd format: {url: score}
-        url_score_dict = {url: score for score, url in url_scores}
-        self.redis.zadd(urls_key, url_score_dict)
-        
-        # Update queued counter
-        self.redis.hincrby(counters_key, "queued", len(url_scores))
+        try:
+            urls_key = self._key(crawl_id, "urls")
+            counters_key = self._key(crawl_id, "counters")
+            
+            # Convert to Redis zadd format: {url: score}
+            url_score_dict = {url: score for score, url in url_scores}
+            
+            try:
+                added_count = self.redis.zadd(urls_key, url_score_dict)
+                logger.debug(f"Added {added_count} URLs to Redis frontier for crawl {crawl_id}")
+            except Exception as e:
+                logger.error(f"Failed to add URLs to Redis frontier for crawl {crawl_id}: {e}")
+                raise
+            
+            # Update queued counter
+            try:
+                self.redis.hincrby(counters_key, "queued", len(url_scores))
+                logger.debug(f"Updated queued counter for crawl {crawl_id}")
+            except Exception as e:
+                logger.error(f"Failed to update queued counter for crawl {crawl_id}: {e}")
+                raise
+                
+        except Exception as e:
+            logger.error(f"Failed to add URLs with scores for crawl {crawl_id}: {e}")
+            raise
     
     def get_next_url(self, crawl_id: str) -> Optional[str]:
         """Get the next URL to process from the frontier."""

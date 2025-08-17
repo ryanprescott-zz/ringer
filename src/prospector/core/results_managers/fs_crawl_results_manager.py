@@ -38,17 +38,38 @@ class FsCrawlResultsManager(CrawlResultsManager):
         """
         # Generate a UUID4 storage ID
         storage_id = str(uuid.uuid4())
+        logger.debug(f"Creating crawl directory for storage ID: {storage_id}")
         
-        crawl_dir = self.base_dir / storage_id
-        crawl_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Store the crawl spec
-        spec_file = crawl_dir / "crawl_spec.json"
-        with open(spec_file, 'w', encoding='utf-8') as f:
-            json.dump(crawl_spec.model_dump(), f, indent=2, default=str)
-        
-        logger.info(f"Created crawl directory: {crawl_dir} with storage ID: {storage_id}")
-        return storage_id
+        try:
+            crawl_dir = self.base_dir / storage_id
+            try:
+                crawl_dir.mkdir(parents=True, exist_ok=True)
+                logger.debug(f"Created crawl directory: {crawl_dir}")
+            except Exception as e:
+                logger.error(f"Failed to create crawl directory {crawl_dir}: {e}")
+                raise
+            
+            # Store the crawl spec
+            spec_file = crawl_dir / "crawl_spec.json"
+            try:
+                with open(spec_file, 'w', encoding='utf-8') as f:
+                    json.dump(crawl_spec.model_dump(), f, indent=2, default=str)
+                logger.debug(f"Stored crawl spec to: {spec_file}")
+            except Exception as e:
+                logger.error(f"Failed to store crawl spec to {spec_file}: {e}")
+                # Cleanup directory if spec storage fails
+                try:
+                    shutil.rmtree(crawl_dir)
+                except Exception as cleanup_error:
+                    logger.error(f"Failed to cleanup directory after spec storage failure: {cleanup_error}")
+                raise
+            
+            logger.info(f"Successfully created crawl directory: {crawl_dir} with storage ID: {storage_id}")
+            return storage_id
+            
+        except Exception as e:
+            logger.error(f"Failed to create crawl for storage ID {storage_id}: {e}")
+            raise
     
     def store_record(self, crawl_record: CrawlRecord, storage_id: str) -> None:
         """

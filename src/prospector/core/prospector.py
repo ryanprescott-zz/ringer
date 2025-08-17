@@ -202,28 +202,62 @@ class Prospector:
             ValueError: If crawl with same ID already exists or invalid analyzer specs
         """
         crawl_id = crawl_spec.id
+        logger.info(f"Creating crawl {crawl_spec.name} with ID {crawl_id}")
     
-        with self.crawls_lock:
-            if crawl_id in self.crawls:
-                raise ValueError(f"Crawl with ID {crawl_id} already exists")
+        try:
+            with self.crawls_lock:
+                if crawl_id in self.crawls:
+                    error_msg = f"Crawl with ID {crawl_id} already exists"
+                    logger.error(error_msg)
+                    raise ValueError(error_msg)
+                
+                # Create crawl in results manager and get storage ID
+                try:
+                    storage_id = self.results_manager.create_crawl(crawl_spec)
+                    logger.debug(f"Created storage for crawl {crawl_id} with storage ID {storage_id}")
+                except Exception as e:
+                    logger.error(f"Failed to create storage for crawl {crawl_id}: {e}")
+                    raise
+                
+                # Create crawl state with persistent storage
+                try:
+                    crawl_state = CrawlState(crawl_spec, self.state_manager, storage_id)
+                    logger.debug(f"Created crawl state for crawl {crawl_id}")
+                except Exception as e:
+                    logger.error(f"Failed to create crawl state for crawl {crawl_id}: {e}")
+                    # Cleanup storage if state creation fails
+                    try:
+                        self.results_manager.delete_crawl(storage_id)
+                    except Exception as cleanup_error:
+                        logger.error(f"Failed to cleanup storage after state creation failure: {cleanup_error}")
+                    raise
+                
+                # Initialize analyzers
+                try:
+                    self._initialize_analyzers(crawl_state, crawl_spec.analyzer_specs)
+                    logger.debug(f"Initialized {len(crawl_spec.analyzer_specs)} analyzers for crawl {crawl_id}")
+                except Exception as e:
+                    logger.error(f"Failed to initialize analyzers for crawl {crawl_id}: {e}")
+                    # Cleanup storage and state if analyzer initialization fails
+                    try:
+                        self.state_manager.delete_crawl(crawl_id)
+                        self.results_manager.delete_crawl(storage_id)
+                    except Exception as cleanup_error:
+                        logger.error(f"Failed to cleanup after analyzer initialization failure: {cleanup_error}")
+                    raise
+                
+                # Store crawl state
+                self.crawls[crawl_id] = crawl_state
+                
+            # Get the created state from storage (should have been added during CrawlState init)
+            created_state = RunState(state=RunStateEnum.CREATED)
             
-            # Create crawl in results manager and get storage ID
-            storage_id = self.results_manager.create_crawl(crawl_spec)
+            logger.info(f"Successfully created crawl {crawl_spec.name} with ID {crawl_id}")
+            return (crawl_id, created_state)
             
-            # Create crawl state with persistent storage
-            crawl_state = CrawlState(crawl_spec, self.state_manager, storage_id)
-            
-            # Initialize analyzers
-            self._initialize_analyzers(crawl_state, crawl_spec.analyzer_specs)
-            
-            # Store crawl state
-            self.crawls[crawl_id] = crawl_state
-            
-        # Get the created state from storage (should have been added during CrawlState init)
-        created_state = RunState(state=RunStateEnum.CREATED)
-        
-        logger.info(f"Created crawl {crawl_spec.name} with ID {crawl_id}")
-        return (crawl_id, created_state)
+        except Exception as e:
+            logger.error(f"Failed to create crawl {crawl_spec.name}: {e}")
+            raise
     
 
     def start(self, crawl_id: str) -> tuple:
@@ -240,32 +274,57 @@ class Prospector:
             ValueError: If crawl ID not found
             RuntimeError: If crawl is already running
         """
+        logger.info(f"Starting crawl {crawl_id}")
         started_state = None
         crawl_state = None
         
-        with self.crawls_lock:
-            if crawl_id not in self.crawls:
-                raise ValueError(f"Crawl {crawl_id} not found")
+        try:
+            with self.crawls_lock:
+                if crawl_id not in self.crawls:
+                    error_msg = f"Crawl {crawl_id} not found"
+                    logger.error(error_msg)
+                    raise ValueError(error_msg)
+                
+                crawl_state = self.crawls[crawl_id]
+                if crawl_state.current_state == RunStateEnum.RUNNING:
+                    error_msg = f"Crawl {crawl_id} is already running"
+                    logger.error(error_msg)
+                    raise RuntimeError(error_msg)
+                
+                started_state = RunState(state=RunStateEnum.RUNNING)
+                try:
+                    crawl_state.add_state(started_state)
+                    logger.debug(f"Updated crawl {crawl_id} state to RUNNING")
+                except Exception as e:
+                    logger.error(f"Failed to update state for crawl {crawl_id}: {e}")
+                    raise
             
-            crawl_state = self.crawls[crawl_id]
-            if crawl_state.current_state == RunStateEnum.RUNNING:
-                raise RuntimeError(f"Crawl {crawl_id} is already running")
+            # Initialize frontier with seed URLs
+            try:
+                seed_url_scores = [(0.0, url) for url in crawl_state.crawl_spec.seeds]
+                crawl_state.add_urls_with_scores(seed_url_scores)
+                logger.debug(f"Added {len(seed_url_scores)} seed URLs to frontier for crawl {crawl_id}")
+            except Exception as e:
+                logger.error(f"Failed to initialize frontier for crawl {crawl_id}: {e}")
+                raise
             
-            started_state = RunState(state=RunStateEnum.RUNNING)
-            crawl_state.add_state(started_state)
-        
-        # Initialize frontier with seed URLs
-        seed_url_scores = [(0.0, url) for url in crawl_state.crawl_spec.seeds]
-        crawl_state.add_urls_with_scores(seed_url_scores)
-        
-        # create crawl workers to thread pool
-        futures = []
-        for _ in range(crawl_state.crawl_spec.worker_count):
-            future = self.executor.submit(self._crawl_worker, crawl_id)
-            futures.append(future)
-        
-        logger.info(f"Started crawl {crawl_id} with {len(futures)} workers and {len(crawl_state.crawl_spec.seeds)} seed URLs")
-        return (crawl_id, started_state)
+            # create crawl workers to thread pool
+            try:
+                futures = []
+                for worker_id in range(crawl_state.crawl_spec.worker_count):
+                    future = self.executor.submit(self._crawl_worker, crawl_id)
+                    futures.append(future)
+                    logger.debug(f"Started worker {worker_id} for crawl {crawl_id}")
+            except Exception as e:
+                logger.error(f"Failed to start workers for crawl {crawl_id}: {e}")
+                raise
+            
+            logger.info(f"Successfully started crawl {crawl_id} with {len(futures)} workers and {len(crawl_state.crawl_spec.seeds)} seed URLs")
+            return (crawl_id, started_state)
+            
+        except Exception as e:
+            logger.error(f"Failed to start crawl {crawl_id}: {e}")
+            raise
     
     async def collect_seed_urls_from_search_engines(self, search_engine_seeds: List[SearchEngineSeed]) -> List[str]:
         """
@@ -525,16 +584,30 @@ class Prospector:
         Raises:
             ValueError: If unknown analyzer type or invalid parameters
         """
-        for spec in analyzer_specs:
-            if spec.name == "KeywordScoreAnalyzer":
-                analyzer = KeywordScoreAnalyzer(spec)
-            elif spec.name == "DhLlmScoreAnalyzer":
-                analyzer = DhLlmScoreAnalyzer(spec)
-            else:
-                raise ValueError(f"Unknown analyzer type: {spec.name}")
-            
-            crawl_state.analyzers.append(analyzer)
-            crawl_state.analyzer_weights[spec.name] = spec.composite_weight
+        logger.debug(f"Initializing {len(analyzer_specs)} analyzers")
+        
+        for i, spec in enumerate(analyzer_specs):
+            try:
+                logger.debug(f"Initializing analyzer {i+1}/{len(analyzer_specs)}: {spec.name}")
+                
+                if spec.name == "KeywordScoreAnalyzer":
+                    analyzer = KeywordScoreAnalyzer(spec)
+                elif spec.name == "DhLlmScoreAnalyzer":
+                    analyzer = DhLlmScoreAnalyzer(spec)
+                else:
+                    error_msg = f"Unknown analyzer type: {spec.name}"
+                    logger.error(error_msg)
+                    raise ValueError(error_msg)
+                
+                crawl_state.analyzers.append(analyzer)
+                crawl_state.analyzer_weights[spec.name] = spec.composite_weight
+                logger.debug(f"Successfully initialized analyzer {spec.name} with weight {spec.composite_weight}")
+                
+            except Exception as e:
+                logger.error(f"Failed to initialize analyzer {spec.name}: {e}")
+                raise
+        
+        logger.info(f"Successfully initialized all {len(analyzer_specs)} analyzers")
     
     def _crawl_worker(self, crawl_id: str) -> None:
         """
@@ -543,25 +616,48 @@ class Prospector:
         Args:
             crawl_id: ID of the crawl to process
         """
-        crawl_state = self.crawls[crawl_id]
+        logger.debug(f"Starting crawl worker for crawl {crawl_id}")
+        
+        try:
+            crawl_state = self.crawls[crawl_id]
+        except KeyError:
+            logger.error(f"Crawl {crawl_id} not found in worker")
+            return
         
         while crawl_state.current_state == RunStateEnum.RUNNING:
-            url = crawl_state.get_next_url()
-            if url is None:
-                # No more URLs to process
-                time.sleep(1)
-                continue
-            
-            # Increment crawled count when URL is pulled from frontier
-            crawl_state.increment_crawled_count()
-            
             try:
-                self._process_url(crawl_state, url)
+                url = crawl_state.get_next_url()
+                if url is None:
+                    # No more URLs to process
+                    time.sleep(1)
+                    continue
+                
+                logger.debug(f"Worker processing URL: {url}")
+                
+                # Increment crawled count when URL is pulled from frontier
+                try:
+                    crawl_state.increment_crawled_count()
+                except Exception as e:
+                    logger.error(f"Failed to increment crawled count for crawl {crawl_id}: {e}")
+                
+                try:
+                    self._process_url(crawl_state, url)
+                    logger.debug(f"Successfully processed URL: {url}")
+                except Exception as e:
+                    logger.error(f"Error processing URL {url} in crawl {crawl_id}: {e}")
+                    # Increment error count when URL processing fails
+                    try:
+                        crawl_state.increment_error_count()
+                    except Exception as count_error:
+                        logger.error(f"Failed to increment error count for crawl {crawl_id}: {count_error}")
+                    continue
+                    
             except Exception as e:
-                logger.error(f"Error processing URL {url}: {e}")
-                # Increment error count when URL processing fails
-                crawl_state.increment_error_count()
+                logger.error(f"Unexpected error in crawl worker for crawl {crawl_id}: {e}")
+                time.sleep(1)  # Prevent tight error loop
                 continue
+        
+        logger.debug(f"Crawl worker for crawl {crawl_id} stopped")
     
     def _process_url(self, crawl_state: CrawlState, url: str) -> None:
         """
@@ -573,33 +669,62 @@ class Prospector:
         """
         # Check if URL is allowed
         if not crawl_state.is_url_allowed(url):
-            logger.debug(f"URL filtered out: {url}")
+            logger.debug(f"URL filtered out by domain blacklist: {url}")
             return
         
         try:
             # Scrape the page
-            crawl_record = self.scraper.scrape(url)
+            try:
+                crawl_record = self.scraper.scrape(url)
+                logger.debug(f"Successfully scraped URL: {url}")
+            except Exception as e:
+                logger.error(f"Failed to scrape URL {url}: {e}")
+                raise
             
             # Score the content
-            self._score_content(crawl_state, crawl_record)
+            try:
+                self._score_content(crawl_state, crawl_record)
+                logger.debug(f"Scored content for URL {url} with composite score {crawl_record.composite_score}")
+            except Exception as e:
+                logger.error(f"Failed to score content for URL {url}: {e}")
+                raise
             
             # Filter and score discovered links
-            scored_links = self._score_links(crawl_state, crawl_record.links)
+            try:
+                scored_links = self._score_links(crawl_state, crawl_record.links)
+                logger.debug(f"Found {len(scored_links)} valid links on URL {url}")
+            except Exception as e:
+                logger.error(f"Failed to score links for URL {url}: {e}")
+                # Continue processing even if link scoring fails
+                scored_links = []
             
             # Add scored links to frontier
             if scored_links:
-                crawl_state.add_urls_with_scores(scored_links)
+                try:
+                    crawl_state.add_urls_with_scores(scored_links)
+                    logger.debug(f"Added {len(scored_links)} links to frontier from URL {url}")
+                except Exception as e:
+                    logger.error(f"Failed to add links to frontier from URL {url}: {e}")
+                    # Continue processing even if frontier update fails
             
             # Handle the crawl record
-            self.results_manager.store_record(
-                crawl_record,
-                crawl_state.storage_id,
-            )
+            try:
+                self.results_manager.store_record(
+                    crawl_record,
+                    crawl_state.storage_id,
+                )
+                logger.debug(f"Stored crawl record for URL {url}")
+            except Exception as e:
+                logger.error(f"Failed to store crawl record for URL {url}: {e}")
+                raise
             
             # Increment processed count on successful processing
-            crawl_state.increment_processed_count()
+            try:
+                crawl_state.increment_processed_count()
+            except Exception as e:
+                logger.error(f"Failed to increment processed count for crawl {crawl_state.crawl_spec.id}: {e}")
             
-            logger.debug(f"Processed URL {url} with score {crawl_record.composite_score}")
+            logger.debug(f"Successfully processed URL {url} with score {crawl_record.composite_score}")
             
         except Exception as e:
             logger.error(f"Failed to process URL {url}: {e}")

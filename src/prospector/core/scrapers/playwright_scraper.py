@@ -34,42 +34,78 @@ class PlaywrightScraper(Scraper):
         Raises:
             Exception: If scraping fails due to network, timeout, or parsing errors
         """
+        logger.debug(f"Starting to scrape URL: {url}")
         browser = None
+        
         try:
             with sync_playwright() as p:
-                browser = p.chromium.launch(headless=True)
+                try:
+                    browser = p.chromium.launch(headless=True)
+                    logger.debug(f"Launched browser for URL: {url}")
+                except Exception as e:
+                    logger.error(f"Failed to launch browser for URL {url}: {e}")
+                    raise
+                
                 try:
                     context = browser.new_context(
                         user_agent=self.settings.user_agent,
                     )
                     page = context.new_page()
+                    logger.debug(f"Created browser context and page for URL: {url}")
                     
                     # Navigate to the page with timeout
-                    page.goto(url, timeout=self.settings.timeout * 1000)
+                    try:
+                        page.goto(url, timeout=self.settings.timeout * 1000)
+                        logger.debug(f"Successfully navigated to URL: {url}")
+                    except Exception as e:
+                        logger.error(f"Failed to navigate to URL {url}: {e}")
+                        raise
                     
                     # Wait for the page to load if JavaScript is enabled
                     if self.settings.javascript_enabled:
-                        page.wait_for_load_state("networkidle")
+                        try:
+                            page.wait_for_load_state("networkidle")
+                            logger.debug(f"Waited for network idle for URL: {url}")
+                        except Exception as e:
+                            logger.warning(f"Failed to wait for network idle for URL {url}: {e}")
+                            # Continue processing even if network idle fails
                     
                     # Extract page source
-                    page_source = page.content()
+                    try:
+                        page_source = page.content()
+                        logger.debug(f"Extracted page source for URL: {url} ({len(page_source)} chars)")
+                    except Exception as e:
+                        logger.error(f"Failed to extract page source for URL {url}: {e}")
+                        raise
                     
                     # Extract text content
-                    extracted_content = page.evaluate("""
-                        () => {
-                            // Remove script and style elements
-                            const scripts = document.querySelectorAll('script, style');
-                            scripts.forEach(el => el.remove());
-                            
-                            // Get text content
-                            return document.body ? document.body.innerText : '';
-                        }
-                    """)
+                    try:
+                        extracted_content = page.evaluate("""
+                            () => {
+                                // Remove script and style elements
+                                const scripts = document.querySelectorAll('script, style');
+                                scripts.forEach(el => el.remove());
+                                
+                                // Get text content
+                                return document.body ? document.body.innerText : '';
+                            }
+                        """)
+                        logger.debug(f"Extracted text content for URL: {url} ({len(extracted_content)} chars)")
+                    except Exception as e:
+                        logger.error(f"Failed to extract text content for URL {url}: {e}")
+                        # Use empty string if text extraction fails
+                        extracted_content = ""
                     
                     # Extract links
-                    links = self._extract_links(page, url)
+                    try:
+                        links = self._extract_links(page, url)
+                        logger.debug(f"Extracted {len(links)} links from URL: {url}")
+                    except Exception as e:
+                        logger.error(f"Failed to extract links from URL {url}: {e}")
+                        # Use empty list if link extraction fails
+                        links = []
                     
-                    return CrawlRecord(
+                    crawl_record = CrawlRecord(
                         url=url,
                         page_source=page_source,
                         extracted_content=extracted_content,
@@ -78,16 +114,25 @@ class PlaywrightScraper(Scraper):
                         composite_score=0.0  # Will be calculated later
                     )
                     
+                    logger.debug(f"Successfully created crawl record for URL: {url}")
+                    return crawl_record
+                    
                 finally:
                     # Always close browser, even on errors
                     if browser:
-                        browser.close()
+                        try:
+                            browser.close()
+                            logger.debug(f"Closed browser for URL: {url}")
+                        except Exception as e:
+                            logger.error(f"Failed to close browser for URL {url}: {e}")
                 
         except PlaywrightTimeoutError as e:
-            logger.error(f"Timeout scraping URL {url}: {e}")
+            error_msg = f"Timeout scraping URL {url} after {self.settings.timeout}s: {e}"
+            logger.error(error_msg)
             raise Exception(f"Timeout scraping {url}")
         except Exception as e:
-            logger.error(f"Error scraping URL {url}: {e}")
+            error_msg = f"Error scraping URL {url}: {e}"
+            logger.error(error_msg)
             raise Exception(f"Failed to scrape {url}: {str(e)}")
     
     def _extract_links(self, page, base_url: str) -> List[str]:

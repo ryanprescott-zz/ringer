@@ -41,10 +41,11 @@ class DhCrawlResultsManager(CrawlResultsManager):
         """
         # Generate a UUID4 storage ID
         storage_id = str(uuid.uuid4())
+        logger.debug(f"Creating crawl with storage ID: {storage_id}")
         
-        raise NotImplementedError(
-            "Create functionality is not implemented for DhCrawlResultsManager. "
-        )
+        error_msg = "Create functionality is not implemented for DhCrawlResultsManager"
+        logger.error(f"{error_msg} for storage ID {storage_id}")
+        raise NotImplementedError(error_msg)
         # TODO send HTTP post to dh create endpoint using the storage_id.
         # return storage_id
 
@@ -74,10 +75,11 @@ class DhCrawlResultsManager(CrawlResultsManager):
         Args:
             storage_id: the storage ID of the crawl to delete.
         """
+        logger.debug(f"Attempting to delete crawl with storage ID: {storage_id}")
         
-        raise NotImplementedError(
-            "Delete functionality is not implemented for DhCrawlResultsManager. "
-        )
+        error_msg = "Delete functionality is not implemented for DhCrawlResultsManager"
+        logger.error(f"{error_msg} for storage ID {storage_id}")
+        raise NotImplementedError(error_msg)
         # TODO implement deletion logic by calling the DH service.
     
     def _send_record_with_retry(self, crawl_record: CrawlRecord, storage_id: str) -> None:

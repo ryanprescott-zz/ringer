@@ -46,20 +46,29 @@ class MemoryCrawlStateManager(CrawlStateManager):
     
     def create_crawl(self, crawl_spec: CrawlSpec) -> None:
         """Create a new crawl in memory storage."""
-        with self._lock:
-            crawl_id = crawl_spec.id
-            if crawl_id in self._crawls:
-                raise ValueError(f"Crawl {crawl_id} already exists")
-            
-            self._crawls[crawl_id] = {
-                'spec': crawl_spec,
-                'state_history': [RunState(state=RunStateEnum.CREATED)],
-                'frontier': SortedSet(),
-                'visited_urls': set(),
-                'crawled_count': 0,
-                'processed_count': 0,
-                'error_count': 0,
-            }
+        crawl_id = crawl_spec.id
+        logger.debug(f"Creating crawl {crawl_id} in memory storage")
+        
+        try:
+            with self._lock:
+                if crawl_id in self._crawls:
+                    error_msg = f"Crawl {crawl_id} already exists in memory storage"
+                    logger.error(error_msg)
+                    raise ValueError(error_msg)
+                
+                self._crawls[crawl_id] = {
+                    'spec': crawl_spec,
+                    'state_history': [RunState(state=RunStateEnum.CREATED)],
+                    'frontier': SortedSet(),
+                    'visited_urls': set(),
+                    'crawled_count': 0,
+                    'processed_count': 0,
+                    'error_count': 0,
+                }
+                logger.debug(f"Successfully created crawl {crawl_id} in memory storage")
+        except Exception as e:
+            logger.error(f"Failed to create crawl {crawl_id} in memory storage: {e}")
+            raise
     
     def delete_crawl(self, crawl_id: str) -> None:
         """Delete a crawl from memory storage."""
@@ -94,17 +103,31 @@ class MemoryCrawlStateManager(CrawlStateManager):
     
     def add_urls_with_scores(self, crawl_id: str, url_scores: List[Tuple[float, str]]) -> None:
         """Add URLs with their scores to the frontier."""
-        with self._lock:
-            if crawl_id not in self._crawls:
-                raise ValueError(f"Crawl {crawl_id} not found")
-            
-            frontier = self._crawls[crawl_id]['frontier']
-            visited_urls = self._crawls[crawl_id]['visited_urls']
-            
-            for score, url in url_scores:
-                if url not in visited_urls:
-                    score_url_tuple = ScoreUrlTuple(score, url)
-                    frontier.add(score_url_tuple)
+        try:
+            with self._lock:
+                if crawl_id not in self._crawls:
+                    error_msg = f"Crawl {crawl_id} not found in memory storage"
+                    logger.error(error_msg)
+                    raise ValueError(error_msg)
+                
+                frontier = self._crawls[crawl_id]['frontier']
+                visited_urls = self._crawls[crawl_id]['visited_urls']
+                
+                added_count = 0
+                for score, url in url_scores:
+                    if url not in visited_urls:
+                        try:
+                            score_url_tuple = ScoreUrlTuple(score, url)
+                            frontier.add(score_url_tuple)
+                            added_count += 1
+                        except Exception as e:
+                            logger.error(f"Failed to add URL {url} to frontier for crawl {crawl_id}: {e}")
+                            continue
+                
+                logger.debug(f"Added {added_count}/{len(url_scores)} URLs to frontier for crawl {crawl_id}")
+        except Exception as e:
+            logger.error(f"Failed to add URLs to frontier for crawl {crawl_id}: {e}")
+            raise
     
     def get_next_url(self, crawl_id: str) -> Optional[str]:
         """Get the next URL to process from the frontier."""

@@ -28,12 +28,17 @@ class KeywordScoreAnalyzer(ScoreAnalyzer):
         
         # Pre-compile regex patterns for efficiency
         self.compiled_regexes = []
-        for weighted_regex in self.regexes:
+        for i, weighted_regex in enumerate(self.regexes):
             try:
                 compiled_pattern = re.compile(weighted_regex.regex, weighted_regex.flags)
                 self.compiled_regexes.append((compiled_pattern, weighted_regex.weight))
+                logger.debug(f"Successfully compiled regex pattern {i+1}/{len(self.regexes)}: {weighted_regex.regex}")
             except re.error as e:
-                raise ValueError(f"Invalid regex pattern '{weighted_regex.regex}': {e}")
+                error_msg = f"Invalid regex pattern '{weighted_regex.regex}': {e}"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+        
+        logger.debug(f"Initialized KeywordScoreAnalyzer with {len(self.keywords)} keywords and {len(self.regexes)} regexes")
     
     def score(self, content: str) -> float:
         """
