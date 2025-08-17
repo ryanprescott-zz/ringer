@@ -29,13 +29,14 @@ class TestKeywordScoreAnalyzer:
         analyzer = KeywordScoreAnalyzer(spec)
         assert analyzer.keywords == sample_weighted_keywords
     
-    def test_init_empty_keywords(self):
-        """Test initialization with empty keywords list raises error."""
-        with pytest.raises(ValueError, match="Keywords list cannot be empty"):
+    def test_init_empty_keywords_and_regexes(self):
+        """Test initialization with empty keywords and regexes lists raises error."""
+        with pytest.raises(ValueError, match="At least one keyword or regex must be provided"):
             spec = KeywordScoringSpec(
                 name="KeywordScoreAnalyzer",
                 composite_weight=1.0,
-                keywords=[]
+                keywords=[],
+                regexes=[]
             )
     
     def test_score_with_string_content(self, keyword_analyzer):
@@ -104,15 +105,95 @@ class TestKeywordScoreAnalyzer:
         content = "This content has no relevant terms"
         score = keyword_analyzer.score(content)
         
-        # Should still be > 0 due to sigmoid normalization but very low
-        assert 0.0 <= score < 0.6  # Sigmoid of 0 is ~0.5, so should be less
+        # Should be 0.0 since no matches and log(1+0) normalized gives 0
+        assert score == 0.0
     
-    def test_score_sigmoid_normalization(self, keyword_analyzer):
-        """Test that scores are properly normalized using sigmoid."""
+    def test_score_log_normalization(self, keyword_analyzer):
+        """Test that scores are properly normalized using logarithmic scaling."""
         # Very high keyword density should still be <= 1.0
         content = " ".join(["python programming code"] * 100)
         score = keyword_analyzer.score(content)
         
+        assert 0.0 <= score <= 1.0
+    
+    def test_init_with_regexes(self):
+        """Test initialization with regexes."""
+        from prospector.core.models import WeightedRegex
+        import re
+        
+        regexes = [
+            WeightedRegex(regex=r"\d+", weight=1.0),
+            WeightedRegex(regex=r"test", weight=2.0, flags=re.IGNORECASE)
+        ]
+        
+        spec = KeywordScoringSpec(
+            name="KeywordScoreAnalyzer",
+            composite_weight=1.0,
+            regexes=regexes
+        )
+        analyzer = KeywordScoreAnalyzer(spec)
+        
+        assert analyzer.regexes == regexes
+        assert len(analyzer.compiled_regexes) == 2
+    
+    def test_init_with_invalid_regex(self):
+        """Test initialization with invalid regex pattern."""
+        from prospector.core.models import WeightedRegex
+        
+        regexes = [WeightedRegex(regex=r"[invalid", weight=1.0)]  # Invalid regex
+        
+        spec = KeywordScoringSpec(
+            name="KeywordScoreAnalyzer",
+            composite_weight=1.0,
+            regexes=regexes
+        )
+        
+        with pytest.raises(ValueError, match="Invalid regex pattern"):
+            KeywordScoreAnalyzer(spec)
+    
+    def test_score_with_regex_matches(self):
+        """Test scoring with regex matches."""
+        from prospector.core.models import WeightedRegex
+        import re
+        
+        regexes = [
+            WeightedRegex(regex=r"\d+", weight=2.0),  # Match numbers
+            WeightedRegex(regex=r"test", weight=1.0, flags=re.IGNORECASE)  # Match "test" case-insensitive
+        ]
+        
+        spec = KeywordScoringSpec(
+            name="KeywordScoreAnalyzer",
+            composite_weight=1.0,
+            regexes=regexes
+        )
+        analyzer = KeywordScoreAnalyzer(spec)
+        
+        content = "This is a TEST with numbers 123 and 456"
+        score = analyzer.score(content)
+        
+        assert score > 0.0
+        assert isinstance(score, float)
+        assert 0.0 <= score <= 1.0
+    
+    def test_score_mixed_keywords_and_regexes(self, sample_weighted_keywords):
+        """Test scoring with both keywords and regexes."""
+        from prospector.core.models import WeightedRegex
+        
+        regexes = [WeightedRegex(regex=r"\d+", weight=1.0)]
+        
+        spec = KeywordScoringSpec(
+            name="KeywordScoreAnalyzer",
+            composite_weight=1.0,
+            keywords=sample_weighted_keywords,
+            regexes=regexes
+        )
+        analyzer = KeywordScoreAnalyzer(spec)
+        
+        content = "This is python programming code with numbers 123"
+        score = analyzer.score(content)
+        
+        assert score > 0.0
+        assert isinstance(score, float)
         assert 0.0 <= score <= 1.0
 
 

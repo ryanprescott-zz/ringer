@@ -35,6 +35,33 @@ class TestWeightedKeyword:
             WeightedKeyword(weight=1.0)
 
 
+class TestWeightedRegex:
+    """Tests for WeightedRegex model."""
+    
+    def test_valid_regex(self):
+        """Test creating a valid weighted regex."""
+        regex = WeightedRegex(regex=r"\d+", weight=2.0)
+        
+        assert regex.regex == r"\d+"
+        assert regex.weight == 2.0
+        assert regex.flags == 0  # default value
+    
+    def test_regex_with_flags(self):
+        """Test creating a weighted regex with flags."""
+        import re
+        regex = WeightedRegex(regex=r"test", weight=1.0, flags=re.IGNORECASE)
+        
+        assert regex.regex == r"test"
+        assert regex.weight == 1.0
+        assert regex.flags == re.IGNORECASE
+    
+    def test_regex_validation(self):
+        """Test regex field validation."""
+        # Should require regex field
+        with pytest.raises(ValueError):
+            WeightedRegex(weight=1.0)
+
+
 class TestPromptInput:
     """Tests for PromptInput model."""
     
@@ -80,14 +107,55 @@ class TestKeywordScoringSpec:
         assert spec.name == "KeywordScoreAnalyzer"
         assert spec.composite_weight == 0.8
         assert spec.keywords == sample_weighted_keywords
+        assert spec.regexes == []  # default empty list
     
-    def test_empty_keywords_validation(self):
-        """Test empty keywords validation."""
-        with pytest.raises(ValueError, match="Keywords list cannot be empty"):
+    def test_valid_keyword_scoring_spec_with_regexes(self):
+        """Test creating valid keyword scoring spec with regexes."""
+        from prospector.core.models import WeightedRegex
+        import re
+        
+        regexes = [
+            WeightedRegex(regex=r"\d+", weight=1.0),
+            WeightedRegex(regex=r"test", weight=2.0, flags=re.IGNORECASE)
+        ]
+        
+        spec = KeywordScoringSpec(
+            name="KeywordScoreAnalyzer",
+            composite_weight=0.8,
+            regexes=regexes
+        )
+        
+        assert spec.name == "KeywordScoreAnalyzer"
+        assert spec.composite_weight == 0.8
+        assert spec.keywords == []  # default empty list
+        assert spec.regexes == regexes
+    
+    def test_valid_keyword_scoring_spec_mixed(self, sample_weighted_keywords):
+        """Test creating valid keyword scoring spec with both keywords and regexes."""
+        from prospector.core.models import WeightedRegex
+        
+        regexes = [WeightedRegex(regex=r"\d+", weight=1.5)]
+        
+        spec = KeywordScoringSpec(
+            name="KeywordScoreAnalyzer",
+            composite_weight=0.8,
+            keywords=sample_weighted_keywords,
+            regexes=regexes
+        )
+        
+        assert spec.name == "KeywordScoreAnalyzer"
+        assert spec.composite_weight == 0.8
+        assert spec.keywords == sample_weighted_keywords
+        assert spec.regexes == regexes
+    
+    def test_empty_keywords_and_regexes_validation(self):
+        """Test empty keywords and regexes validation."""
+        with pytest.raises(ValueError, match="At least one keyword or regex must be provided"):
             KeywordScoringSpec(
                 name="KeywordScoreAnalyzer",
                 composite_weight=1.0,
-                keywords=[]
+                keywords=[],
+                regexes=[]
             )
 
 

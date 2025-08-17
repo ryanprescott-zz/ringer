@@ -39,7 +39,12 @@ class TestScoreAnalyzerInfoUtil:
         # Check keywords field details
         keywords_field = next(field for field in keyword_info.spec_fields if field.name == "keywords")
         assert "List[WeightedKeyword]" in keywords_field.type_str
-        assert keywords_field.required
+        assert not keywords_field.required  # keywords is now optional with default=[]
+        
+        # Check regexes field details
+        regexes_field = next(field for field in keyword_info.spec_fields if field.name == "regexes")
+        assert "List[WeightedRegex]" in regexes_field.type_str
+        assert not regexes_field.required  # regexes is now optional with default=[]
     
     def test_llm_analyzer_info(self):
         """Test DhLlmScoreAnalyzer information."""
@@ -73,7 +78,7 @@ class TestScoreAnalyzerInfoUtil:
         # Should extract first line of docstring
         assert description is not None
         assert len(description) > 0
-        assert "Score analyzer that scores text based on keyword matches." in description
+        assert "Score analyzer that scores text based on keyword and regex matches." in description
     
     def test_get_field_type_string_union(self):
         """Test getting field type string for union types."""
