@@ -32,6 +32,13 @@ class WeightedKeyword(BaseModel):
     keyword: str = Field(..., description="The keyword to search for")
     weight: float = Field(..., description="Weight for this keyword in scoring")
 
+class WeightedRegex(BaseModel):
+    """A regular expression with an associated weight for scoring."""
+    
+    regex: str = Field(..., description="The regular expression pattern to search for")
+    weight: float = Field(..., description="Weight for this regex in scoring")
+    flags: int = Field(default=0, description="Regex flags (e.g., re.IGNORECASE)")
+
 class PromptInput(BaseModel):
     """Input for a prompt to the LLM service."""
     
@@ -96,17 +103,17 @@ class AnalyzerSpec(BaseModel):
     composite_weight: float = Field(..., description="Weight in composite scoring")
 
 class KeywordScoringSpec(AnalyzerSpec):
-    """Specification for keyword-based scoxring."""
+    """Specification for keyword-based scoring."""
     
-    keywords: List[WeightedKeyword] = Field(..., description="List of weighted keywords to score against")
+    keywords: List[WeightedKeyword] = Field(default=[], description="List of weighted keywords to score against")
+    regexes: List[WeightedRegex] = Field(default=[], description="List of weighted regular expressions to score against")
 
-    @field_validator('keywords')
-    @classmethod
-    def check_keywords_not_empty(cls, value: List[WeightedKeyword]) -> List[WeightedKeyword]:
-        """Ensure the keywords list is not empty."""
-        if not value:
-            raise ValueError("Keywords list cannot be empty")
-        return value
+    @model_validator(mode='after')
+    def check_not_empty(self):
+        """Ensure at least one keyword or regex is provided."""
+        if not self.keywords and not self.regexes:
+            raise ValueError("At least one keyword or regex must be provided")
+        return self
 
 class DhLlmScoringSpec(AnalyzerSpec):
     """Input for LLM service score analyzer."""
