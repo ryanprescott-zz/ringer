@@ -1,9 +1,13 @@
+import logging
 import math
 import re
 from typing import List
 
 from prospector.core.models import KeywordScoringSpec, WeightedKeyword, WeightedRegex
 from .score_analyzer import ScoreAnalyzer
+
+
+logger = logging.getLogger(__name__)
 
 
 class KeywordScoreAnalyzer(ScoreAnalyzer):

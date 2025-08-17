@@ -1,11 +1,15 @@
 """In-memory implementation of crawl state management."""
 
+import logging
 import threading
 from typing import Dict, List, Optional, Tuple
 from sortedcontainers import SortedSet
 
 from .crawl_state_manager import CrawlStateManager
 from ..models import CrawlSpec, RunState, RunStateEnum
+
+
+logger = logging.getLogger(__name__)
 
 
 class ScoreUrlTuple:
