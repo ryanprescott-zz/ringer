@@ -149,15 +149,19 @@ class TestFsCrawlResultsManager:
                 manager.store_record(sample_crawl_record, storage_id)
                 
                 # Check that directory was created with storage ID
-                expected_dir = Path(temp_dir) / storage_id
-                assert expected_dir.exists()
+                expected_spec_dir = Path(temp_dir) / storage_id
+                assert expected_spec_dir.exists()
                 
                 # Check that file was created
-                files = list(expected_dir.glob("*.json"))
-                assert len(files) >= 1  # crawl_spec.json + record file
+                files = list(expected_spec_dir.glob("*.json"))
+                assert len(files) == 1  # crawl_spec.json
                 
+                # Check that records directory was created with storage ID
+                expected_records_dir = Path(temp_dir) / storage_id / "records"
+                assert expected_records_dir.exists()
+
                 # Find the record file (not crawl_spec.json)
-                record_files = [f for f in files if f.name != "crawl_spec.json"]
+                record_files = list(expected_records_dir.glob("*.json"))
                 assert len(record_files) == 1
                 
                 # Check file content
@@ -191,11 +195,16 @@ class TestFsCrawlResultsManager:
                 manager.store_record(record2, storage_id)
                 
                 # Should create same directory structure
-                expected_dir = Path(temp_dir) / storage_id
-                files = list(expected_dir.glob("*.json"))
-                # Should have crawl_spec.json + 2 record files
-                assert len(files) == 3
-    
+                expected_spec_dir = Path(temp_dir) / storage_id
+                files = list(expected_spec_dir.glob("*.json"))
+                # Should have 1 file: spec JSON
+                assert len(files) == 1
+
+                expected_records_dir = Path(temp_dir) / storage_id / "records"
+                files = list(expected_records_dir.glob("*.json"))
+                # Should have 2 record files
+                assert len(files) == 2
+
     
     def test_store_record_file_write_error(self, sample_crawl_record):
         """Test handling of file write errors."""

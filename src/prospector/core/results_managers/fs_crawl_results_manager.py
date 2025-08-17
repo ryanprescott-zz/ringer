@@ -2,8 +2,8 @@
 
 import json
 import logging
-import os
 import uuid
+import shutil
 from pathlib import Path
 
 from prospector.core.models import CrawlRecord, CrawlSpec
@@ -59,7 +59,7 @@ class FsCrawlResultsManager(CrawlResultsManager):
             storage_id: Storage ID for the crawl
         """
         try:
-            crawl_dir = self.base_dir / storage_id
+            crawl_dir = self.base_dir / storage_id / "records"
             crawl_dir.mkdir(parents=True, exist_ok=True)
             
             # Use the record's ID as the filename
@@ -86,17 +86,10 @@ class FsCrawlResultsManager(CrawlResultsManager):
             crawl_dir = self.base_dir / storage_id
             
             if crawl_dir.exists():
-                # Remove all files in the directory
-                for file_path in crawl_dir.iterdir():
-                    if file_path.is_file():
-                        file_path.unlink()
-                
-                # Remove the directory
-                crawl_dir.rmdir()
+                shutil.rmtree(crawl_dir)
                 logger.info(f"Deleted crawl directory: {crawl_dir}")
             else:
                 logger.warning(f"Crawl directory does not exist: {crawl_dir}")
-                
         except Exception as e:
             logger.error(f"Failed to delete crawl directory for {storage_id}: {e}")
             raise
