@@ -36,7 +36,7 @@ class TestDhCrawlResultsManager:
         manager = DhCrawlResultsManager()
         
         # Should not raise any exception
-        manager.store_record(sample_crawl_record, "test_crawl_id")
+        manager.store_record(sample_crawl_record, "test_storage_id")
         
         # Verify request was made
         mock_post.assert_called_once()
@@ -50,7 +50,7 @@ class TestDhCrawlResultsManager:
         request_data = call_args[1]['json']
         assert 'record' in request_data
         assert 'crawl_id' in request_data
-        assert request_data['crawl_id'] == "test_crawl_id"
+        assert request_data['crawl_id'] == "test_storage_id"
     
     @patch('prospector.core.results_managers.dh_crawl_results_manager.requests.Session.post')
     def test_store_record_http_error_after_retries(self, mock_post, sample_crawl_record):
