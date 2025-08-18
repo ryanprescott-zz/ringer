@@ -184,27 +184,27 @@ export const AnalyzersTab: React.FC<AnalyzersTabProps> = ({
 
       {/* Analyzer Configuration */}
       <div className="col-span-3">
-        {/* Composite Weight */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Composite Weight
-          </label>
-          <input
-            type="number"
-            value={currentAnalyzer.composite_weight}
-            onChange={(e) => handleCompositeWeightChange(
-              currentAnalyzer.name,
-              parseFloat(e.target.value) || 0
-            )}
-            disabled={!isNewCrawl}
-            step="0.1"
-            className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-prospector-blue disabled:bg-gray-100"
-          />
-        </div>
-
         {selectedAnalyzer === 'Term Matching' && (
           <div>
-            <h4 className="text-md font-medium mb-4">Terms</h4>
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="text-lg font-medium">Terms</h4>
+              <div className="flex items-center space-x-3">
+                <label className="text-lg font-medium text-gray-700">
+                  Composite Weight
+                </label>
+                <input
+                  type="number"
+                  value={currentAnalyzer.composite_weight}
+                  onChange={(e) => handleCompositeWeightChange(
+                    currentAnalyzer.name,
+                    parseFloat(e.target.value) || 0
+                  )}
+                  disabled={!isNewCrawl}
+                  step="0.1"
+                  className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-prospector-blue disabled:bg-gray-100"
+                />
+              </div>
+            </div>
             
             {/* Terms Table */}
             <div className="border border-gray-300 rounded-md mb-4">
@@ -272,52 +272,58 @@ export const AnalyzersTab: React.FC<AnalyzersTabProps> = ({
 
             {/* Add Term Controls */}
             {isNewCrawl && (
-              <div className="grid grid-cols-5 gap-3 items-end">
-                <div>
-                  <select
-                    value={newTerm.type}
-                    onChange={(e) => setNewTerm({ ...newTerm, type: e.target.value as 'Keyword' | 'Regex' })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-prospector-blue"
-                  >
-                    <option value="Keyword">Keyword</option>
-                    <option value="Regex">Regex</option>
-                  </select>
-                </div>
-                <div>
-                  <input
-                    type="text"
-                    value={newTerm.term}
-                    onChange={(e) => setNewTerm({ ...newTerm, term: e.target.value })}
-                    placeholder="Enter term..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-prospector-blue"
-                  />
-                </div>
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={newTerm.matchCase}
-                    onChange={(e) => setNewTerm({ ...newTerm, matchCase: e.target.checked })}
-                    className="rounded"
-                  />
-                </div>
-                <div>
-                  <input
-                    type="number"
-                    value={newTerm.weight}
-                    onChange={(e) => setNewTerm({ ...newTerm, weight: parseFloat(e.target.value) || 0 })}
-                    step="0.1"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-prospector-blue"
-                  />
-                </div>
-                <div>
-                  <button
-                    onClick={handleAddTerm}
-                    disabled={!newTerm.term.trim()}
-                    className="px-4 py-2 bg-prospector-blue text-white rounded hover:bg-prospector-dark-blue disabled:opacity-50"
-                  >
-                    Add
-                  </button>
-                </div>
+              <div className="border border-gray-300 rounded-md p-3 bg-gray-50">
+                <table className="w-full">
+                  <tbody>
+                    <tr>
+                      <td className="px-4 py-2 w-20">
+                        <select
+                          value={newTerm.type}
+                          onChange={(e) => setNewTerm({ ...newTerm, type: e.target.value as 'Keyword' | 'Regex' })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-prospector-blue"
+                        >
+                          <option value="Keyword">Keyword</option>
+                          <option value="Regex">Regex</option>
+                        </select>
+                      </td>
+                      <td className="px-4 py-2">
+                        <input
+                          type="text"
+                          value={newTerm.term}
+                          onChange={(e) => setNewTerm({ ...newTerm, term: e.target.value })}
+                          placeholder="Enter term..."
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-prospector-blue"
+                        />
+                      </td>
+                      <td className="px-4 py-2 text-center w-24">
+                        <input
+                          type="checkbox"
+                          checked={newTerm.matchCase}
+                          onChange={(e) => setNewTerm({ ...newTerm, matchCase: e.target.checked })}
+                          className="rounded"
+                        />
+                      </td>
+                      <td className="px-4 py-2 w-24">
+                        <input
+                          type="number"
+                          value={newTerm.weight}
+                          onChange={(e) => setNewTerm({ ...newTerm, weight: parseFloat(e.target.value) || 0 })}
+                          step="0.1"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-prospector-blue"
+                        />
+                      </td>
+                      <td className="px-4 py-2 w-20">
+                        <button
+                          onClick={handleAddTerm}
+                          disabled={!newTerm.term.trim()}
+                          className="px-4 py-2 bg-prospector-blue text-white rounded hover:bg-prospector-dark-blue disabled:opacity-50"
+                        >
+                          Add
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
@@ -325,11 +331,29 @@ export const AnalyzersTab: React.FC<AnalyzersTabProps> = ({
 
         {selectedAnalyzer === 'DH LLM Prompt' && (
           <div className="space-y-6">
+            {/* Composite Weight */}
+            <div className="flex items-center justify-between">
+              <h4 className="text-lg font-medium">Prompt</h4>
+              <div className="flex items-center space-x-3">
+                <label className="text-lg font-medium text-gray-700">
+                  Composite Weight
+                </label>
+                <input
+                  type="number"
+                  value={currentAnalyzer.composite_weight}
+                  onChange={(e) => handleCompositeWeightChange(
+                    currentAnalyzer.name,
+                    parseFloat(e.target.value) || 0
+                  )}
+                  disabled={!isNewCrawl}
+                  step="0.1"
+                  className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-prospector-blue disabled:bg-gray-100"
+                />
+              </div>
+            </div>
+            
             {/* Prompt */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Prompt
-              </label>
               <textarea
                 value={currentAnalyzer.scoring_input?.prompt || ''}
                 onChange={(e) => handlePromptChange(e.target.value)}

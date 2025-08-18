@@ -105,41 +105,41 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Worker Count
-            </label>
-            <input
-              type="number"
-              value={crawlSpec?.worker_count || 1}
-              onChange={(e) => handleWorkerCountChange(parseInt(e.target.value) || 1)}
-              disabled={!isNewCrawl}
-              min="1"
-              max="16"
-              className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-prospector-blue disabled:bg-gray-100"
-            />
+          <div className="flex items-end space-x-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Worker Count
+              </label>
+              <input
+                type="number"
+                value={crawlSpec?.worker_count || 1}
+                onChange={(e) => handleWorkerCountChange(parseInt(e.target.value) || 1)}
+                disabled={!isNewCrawl}
+                min="1"
+                max="16"
+                className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-prospector-blue disabled:bg-gray-100"
+              />
+            </div>
+            
+            {isNewCrawl && (
+              <button
+                onClick={handleSubmitCrawl}
+                disabled={loading}
+                className="px-4 py-2 bg-prospector-blue text-white rounded hover:bg-prospector-dark-blue disabled:opacity-50"
+              >
+                {loading ? 'Creating...' : 'Create Crawl'}
+              </button>
+            )}
+            
+            {selectedCrawl && (
+              <button
+                onClick={handleExportParams}
+                className="px-4 py-2 bg-prospector-blue text-white rounded hover:bg-prospector-dark-blue"
+              >
+                Export Params
+              </button>
+            )}
           </div>
-        </div>
-
-        <div className="ml-6 space-y-3">
-          {isNewCrawl && (
-            <button
-              onClick={handleSubmitCrawl}
-              disabled={loading}
-              className="px-4 py-2 bg-prospector-blue text-white rounded hover:bg-prospector-dark-blue disabled:opacity-50"
-            >
-              {loading ? 'Submitting...' : 'Submit Crawl'}
-            </button>
-          )}
-          
-          {selectedCrawl && (
-            <button
-              onClick={handleExportParams}
-              className="px-4 py-2 bg-prospector-blue text-white rounded hover:bg-prospector-dark-blue"
-            >
-              Export Params
-            </button>
-          )}
         </div>
       </div>
     </div>
