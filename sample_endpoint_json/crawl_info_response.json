@@ -1,0 +1,108 @@
+{
+  "crawls": [
+    {
+      "crawl_spec": {
+        "name": "test_crawl_2",
+        "seeds": [
+          "https://en.wikipedia.org/wiki/Dog"
+        ],
+        "analyzer_specs": [
+          {
+            "name": "KeywordScoreAnalyzer",
+            "composite_weight": 5,
+            "keywords": [],
+            "regexes": [
+              {
+                "regex": "\\b(dog|canine)\\b.{1,100}\\bbreed\\b",
+                "weight": 10,
+                "flags": 0
+              }
+            ]
+          },
+          {
+            "name": "DhLlmScoreAnalyzer",
+            "composite_weight": 10,
+            "scoring_input": {
+              "prompt": "Score the text on a scale from 0 to 1.0 based on how much it has to do with dogs. A score of 1.0 indicates that the text is primarily about dogs."
+            }
+          }
+        ],
+        "worker_count": 1,
+        "domain_blacklist": []
+      },
+      "crawl_status": {
+        "crawl_id": "3d4a6fe817fc0b4c100157eb408c60ef",
+        "crawl_name": "test_crawl_2",
+        "current_state": "CREATED",
+        "state_history": [
+          {
+            "state": "CREATED",
+            "timestamp": "2025-08-17T23:30:07.518920"
+          }
+        ],
+        "crawled_count": 0,
+        "processed_count": 0,
+        "error_count": 0,
+        "frontier_size": 0
+      }
+    },
+    {
+      "crawl_spec": {
+        "name": "test_crawl_1",
+        "seeds": [
+          "https://en.wikipedia.org/wiki/Dog",
+          "https://www.petfinder.com/dogs-and-puppies/breeds/"
+        ],
+        "analyzer_specs": [
+          {
+            "name": "KeywordScoreAnalyzer",
+            "composite_weight": 10,
+            "keywords": [
+              {
+                "keyword": "dog",
+                "weight": 5
+              },
+              {
+                "keyword": "canine",
+                "weight": 5
+              }
+            ],
+            "regexes": [
+              {
+                "regex": "\\b(dog|canine)\\b.{1,100}\\bbreed\\b",
+                "weight": 8,
+                "flags": 0
+              }
+            ]
+          },
+          {
+            "name": "DhLlmScoreAnalyzer",
+            "composite_weight": 20,
+            "scoring_input": {
+              "prompt": "Score the text on a scale from 0 to 1.0 based on how much it has to do with dogs. A score of 1.0 indicates that the text is primarily about dogs."
+            }
+          }
+        ],
+        "worker_count": 1,
+        "domain_blacklist": [
+          "http://www.example.com"
+        ]
+      },
+      "crawl_status": {
+        "crawl_id": "42c05227bb001f15c145c3f67d7ac543",
+        "crawl_name": "test_crawl_1",
+        "current_state": "CREATED",
+        "state_history": [
+          {
+            "state": "CREATED",
+            "timestamp": "2025-08-17T23:26:33.413049"
+          }
+        ],
+        "crawled_count": 0,
+        "processed_count": 0,
+        "error_count": 0,
+        "frontier_size": 0
+      }
+    }
+  ]
+}

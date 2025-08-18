@@ -1,0 +1,33 @@
+{
+  "crawl_spec": {
+    "name": "test_crawl_1",
+    "seeds": [
+      "https://en.wikipedia.org/wiki/Dog",
+      "https://www.petfinder.com/dogs-and-puppies/breeds/"
+    ],
+    "analyzer_specs": [
+      {
+        "name": "KeywordScoreAnalyzer",
+        "composite_weight": 10.0,
+        "keywords": [
+          {"keyword": "dog", "weight": 5.0},
+          {"keyword": "canine", "weight": 5.0}
+        ],
+        "regexes": [
+          {"regex": "\\b(dog|canine)\\b.{1,100}\\bbreed\\b", "weight": 8.0}
+        ]
+      },
+      {
+        "name": "DhLlmScoreAnalyzer",
+        "composite_weight": 20.0,
+        "scoring_input": {
+          "prompt": "Score the text on a scale from 0 to 1.0 based on how much it has to do with dogs. A score of 1.0 indicates that the text is primarily about dogs."
+        }
+      }
+    ],
+    "worker_count": 1,
+    "domain_blacklist": [
+      "http://www.example.com"
+    ]
+  }
+}
