@@ -207,33 +207,33 @@ export const AnalyzersTab: React.FC<AnalyzersTabProps> = ({
             </div>
             
             {/* Terms Table */}
-            <div className="border border-gray-300 rounded-md mb-4">
+            <div className="border border-gray-300 mb-4">
               <table className="w-full">
-                <thead className="bg-gray-200">
+                <thead className="bg-table-header">
                   <tr>
-                    <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Type</th>
-                    <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Term</th>
-                    <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Match Case</th>
-                    <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Weight</th>
+                    <th className="px-4 py-2 text-left text-sm font-medium text-black border-r border-gray-300">Type</th>
+                    <th className="px-4 py-2 text-left text-sm font-medium text-black border-r border-gray-300">Term</th>
+                    <th className="px-4 py-2 text-left text-sm font-medium text-black border-r border-gray-300">Match Case</th>
+                    <th className="px-4 py-2 text-left text-sm font-medium text-black border-r border-gray-300">Weight</th>
                     {isNewCrawl && (
-                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Actions</th>
+                      <th className="px-4 py-2 text-left text-sm font-medium text-black">Actions</th>
                     )}
                   </tr>
                 </thead>
                 <tbody>
                   {(currentAnalyzer.keywords || []).map((keyword, index) => (
-                    <tr key={`keyword-${index}`} className="border-t border-gray-200">
-                      <td className="px-4 py-2 text-sm">Keyword</td>
-                      <td className="px-4 py-2 text-sm">{keyword.keyword}</td>
-                      <td className="px-4 py-2 text-sm">
+                    <tr key={`keyword-${index}`} className="border-t border-gray-300">
+                      <td className="px-4 py-2 text-sm border-r border-gray-300">Keyword</td>
+                      <td className="px-4 py-2 text-sm border-r border-gray-300">{keyword.keyword}</td>
+                      <td className="px-4 py-2 text-sm text-center border-r border-gray-300">
                         <input type="checkbox" disabled className="rounded" />
                       </td>
-                      <td className="px-4 py-2 text-sm">{keyword.weight}</td>
+                      <td className="px-4 py-2 text-sm border-r border-gray-300">{keyword.weight}</td>
                       {isNewCrawl && (
-                        <td className="px-4 py-2">
+                        <td className="px-4 py-2 text-center">
                           <button
                             onClick={() => handleRemoveTerm('keyword', index)}
-                            className="w-6 h-6 bg-red-600 text-white rounded-full flex items-center justify-center hover:bg-red-700"
+                            className="w-6 h-6 bg-red-600 text-white rounded-full flex items-center justify-center hover:bg-red-700 text-xs"
                           >
                             ⊖
                           </button>
@@ -242,10 +242,10 @@ export const AnalyzersTab: React.FC<AnalyzersTabProps> = ({
                     </tr>
                   ))}
                   {(currentAnalyzer.regexes || []).map((regex, index) => (
-                    <tr key={`regex-${index}`} className="border-t border-gray-200">
-                      <td className="px-4 py-2 text-sm">Regex</td>
-                      <td className="px-4 py-2 text-sm">{regex.regex}</td>
-                      <td className="px-4 py-2 text-sm">
+                    <tr key={`regex-${index}`} className="border-t border-gray-300">
+                      <td className="px-4 py-2 text-sm border-r border-gray-300">Regex</td>
+                      <td className="px-4 py-2 text-sm border-r border-gray-300">{regex.regex}</td>
+                      <td className="px-4 py-2 text-sm text-center border-r border-gray-300">
                         <input
                           type="checkbox"
                           checked={regex.flags !== 2}
@@ -253,12 +253,12 @@ export const AnalyzersTab: React.FC<AnalyzersTabProps> = ({
                           className="rounded"
                         />
                       </td>
-                      <td className="px-4 py-2 text-sm">{regex.weight}</td>
+                      <td className="px-4 py-2 text-sm border-r border-gray-300">{regex.weight}</td>
                       {isNewCrawl && (
-                        <td className="px-4 py-2">
+                        <td className="px-4 py-2 text-center">
                           <button
                             onClick={() => handleRemoveTerm('regex', index)}
-                            className="w-6 h-6 bg-red-600 text-white rounded-full flex items-center justify-center hover:bg-red-700"
+                            className="w-6 h-6 bg-red-600 text-white rounded-full flex items-center justify-center hover:bg-red-700 text-xs"
                           >
                             ⊖
                           </button>
@@ -272,30 +272,30 @@ export const AnalyzersTab: React.FC<AnalyzersTabProps> = ({
 
             {/* Add Term Controls */}
             {isNewCrawl && (
-              <div className="border border-gray-300 rounded-md p-3 bg-gray-50">
+              <div className="border border-gray-300 bg-gray-50">
                 <table className="w-full">
                   <tbody>
-                    <tr>
-                      <td className="px-4 py-2 w-20">
+                    <tr className="border-t border-gray-300">
+                      <td className="px-4 py-2 border-r border-gray-300">
                         <select
                           value={newTerm.type}
                           onChange={(e) => setNewTerm({ ...newTerm, type: e.target.value as 'Keyword' | 'Regex' })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-prospector-blue"
+                          className="w-full px-2 py-1 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-ringer-blue"
                         >
                           <option value="Keyword">Keyword</option>
                           <option value="Regex">Regex</option>
                         </select>
                       </td>
-                      <td className="px-4 py-2">
+                      <td className="px-4 py-2 border-r border-gray-300">
                         <input
                           type="text"
                           value={newTerm.term}
                           onChange={(e) => setNewTerm({ ...newTerm, term: e.target.value })}
                           placeholder="Enter term..."
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-prospector-blue"
+                          className="w-full px-2 py-1 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-ringer-blue"
                         />
                       </td>
-                      <td className="px-4 py-2 text-center w-24">
+                      <td className="px-4 py-2 text-center border-r border-gray-300">
                         <input
                           type="checkbox"
                           checked={newTerm.matchCase}
@@ -303,20 +303,20 @@ export const AnalyzersTab: React.FC<AnalyzersTabProps> = ({
                           className="rounded"
                         />
                       </td>
-                      <td className="px-4 py-2 w-24">
+                      <td className="px-4 py-2 border-r border-gray-300">
                         <input
                           type="number"
                           value={newTerm.weight}
                           onChange={(e) => setNewTerm({ ...newTerm, weight: parseFloat(e.target.value) || 0 })}
                           step="0.1"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-prospector-blue"
+                          className="w-full px-2 py-1 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-ringer-blue"
                         />
                       </td>
-                      <td className="px-4 py-2 w-20">
+                      <td className="px-4 py-2 text-center">
                         <button
                           onClick={handleAddTerm}
                           disabled={!newTerm.term.trim()}
-                          className="px-4 py-2 bg-prospector-blue text-white rounded hover:bg-prospector-dark-blue disabled:opacity-50"
+                          className="px-3 py-1 bg-ringer-blue text-white hover:bg-ringer-dark-blue disabled:opacity-50"
                         >
                           Add
                         </button>
@@ -367,27 +367,27 @@ export const AnalyzersTab: React.FC<AnalyzersTabProps> = ({
             {/* Output Format */}
             <div>
               <h4 className="text-md font-medium mb-3">Output Format</h4>
-              <div className="border border-gray-300 rounded-md">
+              <div className="border border-gray-300">
                 <table className="w-full">
-                  <thead className="bg-gray-200">
+                  <thead className="bg-table-header">
                     <tr>
-                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Name</th>
-                      <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Type</th>
+                      <th className="px-4 py-2 text-left text-sm font-medium text-black border-r border-gray-300">Name</th>
+                      <th className="px-4 py-2 text-left text-sm font-medium text-black border-r border-gray-300">Type</th>
                       {isNewCrawl && (
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Actions</th>
+                        <th className="px-4 py-2 text-left text-sm font-medium text-black">Actions</th>
                       )}
                     </tr>
                   </thead>
                   <tbody>
                     {Object.entries(currentAnalyzer.field_map || {}).map(([name, type]) => (
-                      <tr key={name} className="border-t border-gray-200">
-                        <td className="px-4 py-2 text-sm">{name}</td>
-                        <td className="px-4 py-2 text-sm">{type}</td>
+                      <tr key={name} className="border-t border-gray-300">
+                        <td className="px-4 py-2 text-sm border-r border-gray-300">{name}</td>
+                        <td className="px-4 py-2 text-sm border-r border-gray-300">{type}</td>
                         {isNewCrawl && (
-                          <td className="px-4 py-2">
+                          <td className="px-4 py-2 text-center">
                             <button
                               onClick={() => handleRemoveOutputField(name)}
-                              className="w-6 h-6 bg-red-600 text-white rounded-full flex items-center justify-center hover:bg-red-700"
+                              className="w-6 h-6 bg-red-600 text-white rounded-full flex items-center justify-center hover:bg-red-700 text-xs"
                             >
                               ⊖
                             </button>
@@ -401,37 +401,43 @@ export const AnalyzersTab: React.FC<AnalyzersTabProps> = ({
 
               {/* Add Output Field Controls */}
               {isNewCrawl && (
-                <div className="mt-3 grid grid-cols-3 gap-3 items-end">
-                  <div>
-                    <input
-                      type="text"
-                      value={newOutputField.name}
-                      onChange={(e) => setNewOutputField({ ...newOutputField, name: e.target.value })}
-                      placeholder="Field name..."
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-prospector-blue"
-                    />
-                  </div>
-                  <div>
-                    <select
-                      value={newOutputField.type}
-                      onChange={(e) => setNewOutputField({ ...newOutputField, type: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-prospector-blue"
-                    >
-                      <option value="string">string</option>
-                      <option value="float">float</option>
-                      <option value="int">int</option>
-                      <option value="bool">bool</option>
-                    </select>
-                  </div>
-                  <div>
-                    <button
-                      onClick={handleAddOutputField}
-                      disabled={!newOutputField.name.trim()}
-                      className="px-4 py-2 bg-prospector-blue text-white rounded hover:bg-prospector-dark-blue disabled:opacity-50"
-                    >
-                      +
-                    </button>
-                  </div>
+                <div className="border-t border-gray-300 bg-gray-50">
+                  <table className="w-full">
+                    <tbody>
+                      <tr>
+                        <td className="px-4 py-2 border-r border-gray-300">
+                          <input
+                            type="text"
+                            value={newOutputField.name}
+                            onChange={(e) => setNewOutputField({ ...newOutputField, name: e.target.value })}
+                            placeholder="Field name..."
+                            className="w-full px-2 py-1 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-ringer-blue"
+                          />
+                        </td>
+                        <td className="px-4 py-2 border-r border-gray-300">
+                          <select
+                            value={newOutputField.type}
+                            onChange={(e) => setNewOutputField({ ...newOutputField, type: e.target.value })}
+                            className="w-full px-2 py-1 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-ringer-blue"
+                          >
+                            <option value="string">string</option>
+                            <option value="float">float</option>
+                            <option value="int">int</option>
+                            <option value="bool">bool</option>
+                          </select>
+                        </td>
+                        <td className="px-4 py-2 text-center">
+                          <button
+                            onClick={handleAddOutputField}
+                            disabled={!newOutputField.name.trim()}
+                            className="w-6 h-6 bg-ringer-blue text-white rounded-sm flex items-center justify-center hover:bg-ringer-dark-blue disabled:opacity-50 text-sm font-bold"
+                          >
+                            +
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>

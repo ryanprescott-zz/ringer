@@ -72,7 +72,7 @@ export const SourcesTab: React.FC<SourcesTabProps> = ({
           )}
         </div>
 
-        <div className="border border-gray-300 rounded-md">
+        <div className="border border-gray-300">
           {seeds.length === 0 && !isNewCrawl && (
             <div className="p-4 text-gray-500 text-center">
               No source URLs configured
@@ -82,20 +82,20 @@ export const SourcesTab: React.FC<SourcesTabProps> = ({
           {seeds.map((url, index) => (
             <div
               key={index}
-              className="flex items-center p-3 border-b border-gray-200 last:border-b-0"
+              className="flex items-center p-2 border-b border-gray-300 last:border-b-0"
             >
               <input
                 type="url"
                 value={url}
                 onChange={(e) => handleUrlChange(index, e.target.value)}
                 disabled={!isNewCrawl}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-prospector-blue disabled:bg-gray-100"
+                className="flex-1 px-2 py-1 border-0 focus:outline-none disabled:bg-gray-100"
                 placeholder="Enter URL..."
               />
               {isNewCrawl && (
                 <button
                   onClick={() => handleRemoveUrl(index)}
-                  className="ml-3 w-8 h-8 bg-red-600 text-white rounded-full flex items-center justify-center hover:bg-red-700"
+                  className="ml-2 w-6 h-6 bg-red-600 text-white rounded-full flex items-center justify-center hover:bg-red-700 text-xs"
                   title="Remove URL"
                 >
                   ⊖
@@ -105,10 +105,10 @@ export const SourcesTab: React.FC<SourcesTabProps> = ({
           ))}
           
           {isNewCrawl && (
-            <div className="p-3 border-t border-gray-200 flex justify-end">
+            <div className="p-2 border-t border-gray-300 flex justify-end">
               <button
                 onClick={handleAddUrl}
-                className="w-8 h-8 bg-prospector-blue text-white rounded-full flex items-center justify-center hover:bg-prospector-dark-blue"
+                className="w-6 h-6 bg-ringer-blue text-white rounded-sm flex items-center justify-center hover:bg-ringer-dark-blue text-sm font-bold"
                 title="Add URL"
               >
                 +

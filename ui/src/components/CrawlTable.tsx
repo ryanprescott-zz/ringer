@@ -90,41 +90,41 @@ export const CrawlTable: React.FC<CrawlTableProps> = ({
 
   return (
     <>
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="bg-white border border-gray-300 overflow-hidden">
         <table className="min-w-full">
-          <thead className="bg-gray-200">
+          <thead className="bg-table-header">
             <tr>
               <th
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-300"
+                className="px-4 py-2 text-left text-sm font-medium text-black cursor-pointer hover:bg-gray-400"
                 onClick={() => handleSort('name')}
               >
                 Name {getSortIcon('name')}
               </th>
               <th
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-300"
+                className="px-4 py-2 text-left text-sm font-medium text-black cursor-pointer hover:bg-gray-400"
                 onClick={() => handleSort('status')}
               >
                 Status {getSortIcon('status')}
               </th>
               <th
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-300"
+                className="px-4 py-2 text-left text-sm font-medium text-black cursor-pointer hover:bg-gray-400"
                 onClick={() => handleSort('results')}
               >
                 Results Summary {getSortIcon('results')}
               </th>
               <th
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-300"
+                className="px-4 py-2 text-left text-sm font-medium text-black cursor-pointer hover:bg-gray-400"
                 onClick={() => handleSort('created')}
               >
                 Created {getSortIcon('created')}
               </th>
               <th
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-300"
+                className="px-4 py-2 text-left text-sm font-medium text-black cursor-pointer hover:bg-gray-400"
                 onClick={() => handleSort('lastUpdate')}
               >
                 Last Status Change {getSortIcon('lastUpdate')}
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-2 text-left text-sm font-medium text-black">
                 Actions
               </th>
             </tr>
@@ -138,31 +138,31 @@ export const CrawlTable: React.FC<CrawlTableProps> = ({
               return (
                 <tr
                   key={crawl.crawl_status.crawl_id}
-                  className={`cursor-pointer hover:bg-gray-50 ${isSelected ? 'bg-blue-100' : ''}`}
+                  className={`cursor-pointer hover:bg-gray-50 border-b border-gray-300 ${isSelected ? 'bg-table-selected' : ''}`}
                   onClick={() => onSelectCrawl(crawl)}
                 >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-black">
                     {crawl.crawl_spec.name}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      crawl.crawl_status.current_state === 'RUNNING' ? 'bg-green-100 text-green-800' :
-                      crawl.crawl_status.current_state === 'STOPPED' ? 'bg-red-100 text-red-800' :
-                      'bg-gray-100 text-gray-800'
+                  <td className="px-4 py-2 whitespace-nowrap text-sm text-black">
+                    <span className={`font-medium ${
+                      crawl.crawl_status.current_state === 'RUNNING' ? 'text-green-600' :
+                      crawl.crawl_status.current_state === 'STOPPED' ? 'text-red-600' :
+                      'text-black'
                     }`}>
                       {crawl.crawl_status.current_state}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-4 py-2 whitespace-nowrap text-sm text-black">
                     {getResultsSummary(crawl.crawl_status)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-4 py-2 whitespace-nowrap text-sm text-black">
                     {formatDate(crawl.crawl_status.state_history[0]?.timestamp || '')}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-4 py-2 whitespace-nowrap text-sm text-black">
                     {formatDate(lastState?.timestamp || '')}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-4 py-2 whitespace-nowrap text-sm text-black">
                     <div className="flex space-x-2">
                       {crawl.crawl_status.current_state !== 'RUNNING' && (
                         <button
