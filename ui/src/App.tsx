@@ -77,10 +77,7 @@ function App() {
       {/* Header */}
       <div className="bg-prospector-blue text-white px-6 py-4">
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Prospector</h1>
-          <div className="text-right">
-            <div className="text-lg font-semibold">Ringer</div>
-          </div>
+          <h1 className="text-2xl font-bold">Ringer</h1>
         </div>
       </div>
 
