@@ -47,7 +47,7 @@ export const crawlApi = {
 
   // Delete a crawl
   deleteCrawl: async (request: DeleteCrawlRequest): Promise<DeleteCrawlResponse> => {
-    const response = await api.delete('/api/v1/crawl/delete', { data: request });
+    const response = await api.post('/api/v1/crawl/delete', request);
     return response.data;
   },
 

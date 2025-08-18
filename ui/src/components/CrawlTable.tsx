@@ -3,6 +3,7 @@ import { CrawlInfo, SortConfig } from '../types';
 import { sortCrawls } from '../utils/sorting';
 import { ConfirmDialog } from './ConfirmDialog';
 import { crawlApi } from '../services/api';
+import { useToast } from '../hooks/useToast';
 
 interface CrawlTableProps {
   crawls: CrawlInfo[];
@@ -21,7 +22,7 @@ export const CrawlTable: React.FC<CrawlTableProps> = ({
     crawl: null,
   });
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { showSuccess, showError } = useToast();
 
   const sortedCrawls = sortCrawls(crawls, sortConfig);
 
@@ -34,11 +35,11 @@ export const CrawlTable: React.FC<CrawlTableProps> = ({
 
   const handleStartCrawl = async (crawl: CrawlInfo) => {
     setActionLoading(crawl.crawl_status.crawl_id);
-    setError(null);
     try {
       await crawlApi.startCrawl({ crawl_id: crawl.crawl_status.crawl_id });
+      showSuccess('Crawl Started', `Successfully started crawl "${crawl.crawl_spec.name}"`);
     } catch (err) {
-      setError('Failed to start crawl');
+      showError('Start Failed', `Failed to start crawl "${crawl.crawl_spec.name}"`);
     } finally {
       setActionLoading(null);
     }
@@ -46,11 +47,11 @@ export const CrawlTable: React.FC<CrawlTableProps> = ({
 
   const handleStopCrawl = async (crawl: CrawlInfo) => {
     setActionLoading(crawl.crawl_status.crawl_id);
-    setError(null);
     try {
       await crawlApi.stopCrawl({ crawl_id: crawl.crawl_status.crawl_id });
+      showSuccess('Crawl Stopped', `Successfully stopped crawl "${crawl.crawl_spec.name}"`);
     } catch (err) {
-      setError('Failed to stop crawl');
+      showError('Stop Failed', `Failed to stop crawl "${crawl.crawl_spec.name}"`);
     } finally {
       setActionLoading(null);
     }
@@ -60,15 +61,15 @@ export const CrawlTable: React.FC<CrawlTableProps> = ({
     if (!deleteDialog.crawl) return;
     
     setActionLoading(deleteDialog.crawl.crawl_status.crawl_id);
-    setError(null);
     try {
       await crawlApi.deleteCrawl({ crawl_id: deleteDialog.crawl.crawl_status.crawl_id });
+      showSuccess('Crawl Deleted', `Successfully deleted crawl "${deleteDialog.crawl.crawl_spec.name}"`);
       setDeleteDialog({ isOpen: false, crawl: null });
       if (selectedCrawl?.crawl_status.crawl_id === deleteDialog.crawl.crawl_status.crawl_id) {
         onSelectCrawl(null);
       }
     } catch (err) {
-      setError('Failed to delete crawl');
+      showError('Delete Failed', `Failed to delete crawl "${deleteDialog.crawl.crawl_spec.name}"`);
     } finally {
       setActionLoading(null);
     }
@@ -89,12 +90,6 @@ export const CrawlTable: React.FC<CrawlTableProps> = ({
 
   return (
     <>
-      {error && (
-        <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-          {error}
-        </div>
-      )}
-      
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <table className="min-w-full">
           <thead className="bg-gray-200">

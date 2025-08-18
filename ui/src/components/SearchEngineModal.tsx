@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { SearchEngineSeed } from '../types';
 import { crawlApi } from '../services/api';
+import { useToast } from '../hooks/useToast';
 
 interface SearchEngineModalProps {
   isOpen: boolean;
@@ -19,13 +20,12 @@ export const SearchEngineModal: React.FC<SearchEngineModalProps> = ({
   const [results, setResults] = useState<string[]>([]);
   const [selectedUrls, setSelectedUrls] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { showSuccess, showError } = useToast();
 
   const handleRunQuery = async () => {
     if (!query.trim()) return;
 
     setLoading(true);
-    setError(null);
     try {
       const response = await crawlApi.collectSeedUrls({
         search_engine_seeds: [{
@@ -37,8 +37,9 @@ export const SearchEngineModal: React.FC<SearchEngineModalProps> = ({
       
       setResults(response.seed_urls);
       setSelectedUrls(new Set(response.seed_urls)); // Select all by default
+      showSuccess('Search Complete', `Found ${response.seed_urls.length} URLs`);
     } catch (err) {
-      setError('Failed to collect seed URLs');
+      showError('Search Failed', 'Failed to collect seed URLs from search engine');
     } finally {
       setLoading(false);
     }
@@ -55,7 +56,9 @@ export const SearchEngineModal: React.FC<SearchEngineModalProps> = ({
   };
 
   const handleAddSelected = () => {
-    onAddUrls(Array.from(selectedUrls));
+    const urlsToAdd = Array.from(selectedUrls);
+    onAddUrls(urlsToAdd);
+    showSuccess('URLs Added', `Added ${urlsToAdd.length} URLs to source list`);
     handleClose();
   };
 
@@ -63,7 +66,6 @@ export const SearchEngineModal: React.FC<SearchEngineModalProps> = ({
     setQuery('');
     setResults([]);
     setSelectedUrls(new Set());
-    setError(null);
     onClose();
   };
 
@@ -135,12 +137,6 @@ export const SearchEngineModal: React.FC<SearchEngineModalProps> = ({
             </div>
           </div>
         </div>
-
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-            {error}
-          </div>
-        )}
 
         {results.length > 0 && (
           <div>

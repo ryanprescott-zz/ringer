@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { CrawlInfo, CrawlSpec, AnalyzerSpec } from './types';
 import { useCrawlData } from './hooks/useCrawlData';
+import { useToast } from './hooks/useToast';
 import { CrawlTable } from './components/CrawlTable';
 import { TabNavigation } from './components/TabNavigation';
 import { OverviewTab } from './components/OverviewTab';
 import { SourcesTab } from './components/SourcesTab';
 import { AnalyzersTab } from './components/AnalyzersTab';
 import { ResultsTab } from './components/ResultsTab';
+import { ToastContainer } from './components/ToastContainer';
 
 const tabs = [
   { id: 'overview', label: 'Overview' },
@@ -17,6 +19,7 @@ const tabs = [
 
 function App() {
   const { crawls, loading, error } = useCrawlData();
+  const { toasts, removeToast, showError } = useToast();
   const [selectedCrawl, setSelectedCrawl] = useState<CrawlInfo | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [isNewCrawl, setIsNewCrawl] = useState(false);
@@ -27,6 +30,13 @@ function App() {
     worker_count: 1,
     domain_blacklist: [],
   });
+
+  // Show error toast when there's a data loading error
+  React.useEffect(() => {
+    if (error) {
+      showError('Connection Error', error);
+    }
+  }, [error, showError]);
 
   const handleNewCrawl = () => {
     setIsNewCrawl(true);
@@ -85,13 +95,6 @@ function App() {
           </button>
         </div>
 
-        {/* Error Display */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-            {error}
-          </div>
-        )}
-
         {/* Crawl Table */}
         <div className="mb-6">
           <CrawlTable
@@ -140,6 +143,8 @@ function App() {
             </div>
           </div>
         )}
+        
+        <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
       </div>
     </div>
   );

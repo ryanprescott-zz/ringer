@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { CrawlSpec, CrawlInfo } from '../types';
 import { crawlApi } from '../services/api';
+import { useToast } from '../hooks/useToast';
 
 interface OverviewTabProps {
   crawlSpec: CrawlSpec | null;
@@ -19,7 +20,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 }) => {
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { showSuccess, showError } = useToast();
 
   const handleNameChange = (name: string) => {
     if (crawlSpec) {
@@ -27,24 +28,35 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
     }
   };
 
+  const handleWorkerCountChange = (workerCount: number) => {
+    if (crawlSpec) {
+      onCrawlSpecChange({ ...crawlSpec, worker_count: workerCount });
+    }
+  };
+
   const handleSubmitCrawl = async () => {
     if (!crawlSpec || !crawlSpec.name.trim()) {
-      setError('Crawl name is required');
+      showError('Validation Error', 'Crawl name is required');
       return;
     }
 
     if (crawlSpec.seeds.length === 0) {
-      setError('At least one seed URL is required');
+      showError('Validation Error', 'At least one seed URL is required');
+      return;
+    }
+
+    if (crawlSpec.worker_count < 1 || crawlSpec.worker_count > 16) {
+      showError('Validation Error', 'Worker count must be between 1 and 16');
       return;
     }
 
     setLoading(true);
-    setError(null);
     try {
       await crawlApi.createCrawl({ crawl_spec: crawlSpec });
+      showSuccess('Crawl Created', `Successfully created crawl "${crawlSpec.name}"`);
       onCrawlCreated();
     } catch (err) {
-      setError('Failed to create crawl');
+      showError('Creation Failed', 'Failed to create crawl');
     } finally {
       setLoading(false);
     }
@@ -54,20 +66,15 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
     if (selectedCrawl) {
       try {
         await crawlApi.exportCrawlSpec(selectedCrawl.crawl_status.crawl_id);
+        showSuccess('Export Started', 'Crawl specification download started');
       } catch (err) {
-        setError('Failed to export crawl spec');
+        showError('Export Failed', 'Failed to export crawl specification');
       }
     }
   };
 
   return (
     <div className="space-y-6">
-      {error && (
-        <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-          {error}
-        </div>
-      )}
-
       <div className="flex justify-between items-start">
         <div className="flex-1 space-y-4">
           <div>
@@ -92,9 +99,24 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               disabled={!isNewCrawl}
-              rows={8}
+              rows={6}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-prospector-blue disabled:bg-gray-100"
               placeholder="Enter crawl description..."
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Worker Count
+            </label>
+            <input
+              type="number"
+              value={crawlSpec?.worker_count || 1}
+              onChange={(e) => handleWorkerCountChange(parseInt(e.target.value) || 1)}
+              disabled={!isNewCrawl}
+              min="1"
+              max="16"
+              className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-prospector-blue disabled:bg-gray-100"
             />
           </div>
         </div>

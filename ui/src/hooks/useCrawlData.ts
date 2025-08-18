@@ -13,7 +13,7 @@ export const useCrawlData = () => {
       setCrawls(response.crawls);
       setError(null);
     } catch (err) {
-      setError('Failed to fetch crawl data');
+      setError('Failed to connect to Prospector service');
       console.error('Error fetching crawl data:', err);
     } finally {
       setLoading(false);
