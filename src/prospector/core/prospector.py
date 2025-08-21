@@ -1,4 +1,4 @@
-"""Prospector web crawler implementation."""
+"""Ringer web crawler implementation."""
 
 import logging
 import os
@@ -27,7 +27,7 @@ from .scrapers import Scraper, PlaywrightScraper
 from .results_managers import create_crawl_results_manager, CrawlResultsManager
 from .state_managers import create_crawl_state_manager, CrawlStateManager
 from .search_engines import SearchEngineService
-from .settings import ProspectorSettings, ResultsManagerType
+from .settings import RingerSettings, ResultsManagerType
 
 
 logger = logging.getLogger(__name__)
@@ -171,12 +171,12 @@ class CrawlState:
         return self.manager.get_state_history(self.crawl_spec.id)
 
 
-class Prospector:
+class Ringer:
     """Best-first-search web crawler."""
     
     def __init__(self):
-        """Initialize the Prospector with settings and components."""
-        self.settings = ProspectorSettings()
+        """Initialize the Ringer with settings and components."""
+        self.settings = RingerSettings()
         self.crawls: Dict[str, CrawlState] = {}
         self.scraper: Scraper = PlaywrightScraper()
         self.search_engine_service = SearchEngineService()
@@ -789,7 +789,7 @@ class Prospector:
     
     def shutdown(self) -> None:
         """
-        Shutdown the Prospector and cleanup resources.
+        Shutdown the Ringer and cleanup resources.
         """
         # Stop all running crawls
         with self.crawls_lock:
@@ -799,4 +799,4 @@ class Prospector:
         
         # Shutdown thread pool
         self.executor.shutdown(wait=True)
-        logger.info("Prospector shutdown complete")
+        logger.info("Ringer shutdown complete")

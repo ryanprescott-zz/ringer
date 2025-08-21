@@ -1,19 +1,19 @@
-"""Tests for main Prospector class."""
+"""Tests for main Ringer class."""
 
 import pytest
 from unittest.mock import Mock, patch
 import threading
 import time
 
-from prospector.core import (
-    Prospector,
+from ringer.core import (
+    Ringer,
     CrawlState,
     CrawlSpec,
     AnalyzerSpec,
     WeightedKeyword,
     RunStateEnum,
 )
-from prospector.core.models import (
+from ringer.core.models import (
     KeywordScoringSpec,
     DhLlmScoringSpec,
     TopicListInput,
@@ -185,39 +185,39 @@ class TestCrawlState:
         assert frontier_size == 2
 
 
-class TestProspector:
-    """Tests for Prospector class."""
+class TestRinger:
+    """Tests for Ringer class."""
     
     def test_init(self):
-        """Test Prospector initialization."""
-        prospector = Prospector()
+        """Test Ringer initialization."""
+        ringer = Ringer()
         
-        assert len(prospector.crawls) == 0
-        assert prospector.scraper is not None
-        assert prospector.results_manager is not None
-        assert prospector.executor is not None
+        assert len(ringer.crawls) == 0
+        assert ringer.scraper is not None
+        assert ringer.results_manager is not None
+        assert ringer.executor is not None
     
-    def test_create_crawl(self, prospector, sample_crawl_spec):
+    def test_create_crawl(self, ringer, sample_crawl_spec):
         """Test creating a new crawl."""
-        crawl_id, run_state = prospector.create(sample_crawl_spec)
+        crawl_id, run_state = ringer.create(sample_crawl_spec)
         
         assert crawl_id == sample_crawl_spec.id
-        assert crawl_id in prospector.crawls
+        assert crawl_id in ringer.crawls
         assert run_state.state == RunStateEnum.CREATED
         
-        crawl_state = prospector.crawls[crawl_id]
+        crawl_state = ringer.crawls[crawl_id]
         assert crawl_state.crawl_spec == sample_crawl_spec
         assert len(crawl_state.analyzers) == 1
         assert crawl_state.current_state == RunStateEnum.CREATED
     
-    def test_create_duplicate_crawl(self, prospector, sample_crawl_spec):
+    def test_create_duplicate_crawl(self, ringer, sample_crawl_spec):
         """Test creating a crawl with duplicate ID raises error."""
-        crawl_id, run_state = prospector.create(sample_crawl_spec)
+        crawl_id, run_state = ringer.create(sample_crawl_spec)
         
         with pytest.raises(ValueError, match="already exists"):
-            prospector.create(sample_crawl_spec)
+            ringer.create(sample_crawl_spec)
     
-    def test_create_crawl_with_llm_analyzer(self, prospector, sample_analyzer_spec):
+    def test_create_crawl_with_llm_analyzer(self, ringer, sample_analyzer_spec):
         """Test creating a crawl with LLM analyzer."""
         llm_spec = DhLlmScoringSpec(
             name="DhLlmScoreAnalyzer",
@@ -232,110 +232,110 @@ class TestProspector:
             worker_count=1
         )
         
-        crawl_id, run_state = prospector.create(crawl_spec)
+        crawl_id, run_state = ringer.create(crawl_spec)
         
-        assert crawl_id in prospector.crawls
+        assert crawl_id in ringer.crawls
         assert run_state.state == RunStateEnum.CREATED
-        crawl_state = prospector.crawls[crawl_id]
+        crawl_state = ringer.crawls[crawl_id]
         assert len(crawl_state.analyzers) == 2
         assert "DhLlmScoreAnalyzer" in crawl_state.analyzer_weights
     
-    def test_start_crawl(self, prospector, sample_crawl_spec, mock_scraper, mock_results_manager):
+    def test_start_crawl(self, ringer, sample_crawl_spec, mock_scraper, mock_results_manager):
         """Test starting a crawl."""
         # Mock the scraper and results_manager
-        prospector.scraper = mock_scraper
-        prospector.results_manager = mock_results_manager
+        ringer.scraper = mock_scraper
+        ringer.results_manager = mock_results_manager
         
-        crawl_id, create_state = prospector.create(sample_crawl_spec)
-        start_crawl_id, start_state = prospector.start(crawl_id)
+        crawl_id, create_state = ringer.create(sample_crawl_spec)
+        start_crawl_id, start_state = ringer.start(crawl_id)
         
         assert start_crawl_id == crawl_id
         assert start_state.state == RunStateEnum.RUNNING
-        crawl_state = prospector.crawls[crawl_id]
+        crawl_state = ringer.crawls[crawl_id]
         assert crawl_state.current_state == RunStateEnum.RUNNING
     
-    def test_start_nonexistent_crawl(self, prospector):
+    def test_start_nonexistent_crawl(self, ringer):
         """Test starting a non-existent crawl raises error."""
         with pytest.raises(ValueError, match="not found"):
-            prospector.start("nonexistent_id")
+            ringer.start("nonexistent_id")
     
-    def test_start_already_running_crawl(self, prospector, sample_crawl_spec):
+    def test_start_already_running_crawl(self, ringer, sample_crawl_spec):
         """Test starting an already running crawl raises error."""
-        crawl_id, create_state = prospector.create(sample_crawl_spec)
+        crawl_id, create_state = ringer.create(sample_crawl_spec)
         
         # Manually set to running
-        from prospector.core.models import RunState
-        prospector.crawls[crawl_id].add_state(RunState(state=RunStateEnum.RUNNING))
+        from ringer.core.models import RunState
+        ringer.crawls[crawl_id].add_state(RunState(state=RunStateEnum.RUNNING))
         
         with pytest.raises(RuntimeError, match="already running"):
-            prospector.start(crawl_id)
+            ringer.start(crawl_id)
     
-    def test_stop_crawl(self, prospector, sample_crawl_spec):
+    def test_stop_crawl(self, ringer, sample_crawl_spec):
         """Test stopping a crawl."""
-        crawl_id, create_state = prospector.create(sample_crawl_spec)
-        from prospector.core.models import RunState
-        prospector.crawls[crawl_id].add_state(RunState(state=RunStateEnum.RUNNING))  # Set to running
+        crawl_id, create_state = ringer.create(sample_crawl_spec)
+        from ringer.core.models import RunState
+        ringer.crawls[crawl_id].add_state(RunState(state=RunStateEnum.RUNNING))  # Set to running
         
-        stop_crawl_id, stop_state = prospector.stop(crawl_id)
+        stop_crawl_id, stop_state = ringer.stop(crawl_id)
         
         assert stop_crawl_id == crawl_id
         assert stop_state.state == RunStateEnum.STOPPED
-        crawl_state = prospector.crawls[crawl_id]
+        crawl_state = ringer.crawls[crawl_id]
         assert crawl_state.current_state == RunStateEnum.STOPPED
     
-    def test_stop_crawl_not_running(self, prospector, sample_crawl_spec):
+    def test_stop_crawl_not_running(self, ringer, sample_crawl_spec):
         """Test stopping a crawl that is not running raises error."""
-        crawl_id, create_state = prospector.create(sample_crawl_spec)
+        crawl_id, create_state = ringer.create(sample_crawl_spec)
         
         # Try to stop crawl that is in CREATED state
         with pytest.raises(RuntimeError, match="is not running"):
-            prospector.stop(crawl_id)
+            ringer.stop(crawl_id)
         
         # Set to STOPPED and try again
-        from prospector.core.models import RunState
-        prospector.crawls[crawl_id].add_state(RunState(state=RunStateEnum.STOPPED))
+        from ringer.core.models import RunState
+        ringer.crawls[crawl_id].add_state(RunState(state=RunStateEnum.STOPPED))
         
         with pytest.raises(RuntimeError, match="is not running"):
-            prospector.stop(crawl_id)
+            ringer.stop(crawl_id)
     
-    def test_stop_nonexistent_crawl(self, prospector):
+    def test_stop_nonexistent_crawl(self, ringer):
         """Test stopping a non-existent crawl raises error."""
         with pytest.raises(ValueError, match="not found"):
-            prospector.stop("nonexistent_id")
+            ringer.stop("nonexistent_id")
     
-    def test_delete_crawl(self, prospector, sample_crawl_spec):
+    def test_delete_crawl(self, ringer, sample_crawl_spec):
         """Test deleting a crawl."""
-        crawl_id, create_state = prospector.create(sample_crawl_spec)
+        crawl_id, create_state = ringer.create(sample_crawl_spec)
         
-        prospector.delete(crawl_id)
+        ringer.delete(crawl_id)
         
-        assert crawl_id not in prospector.crawls
+        assert crawl_id not in ringer.crawls
     
-    def test_delete_nonexistent_crawl(self, prospector):
+    def test_delete_nonexistent_crawl(self, ringer):
         """Test deleting a non-existent crawl raises error."""
         with pytest.raises(ValueError, match="not found"):
-            prospector.delete("nonexistent_id")
+            ringer.delete("nonexistent_id")
     
-    def test_delete_running_crawl(self, prospector, sample_crawl_spec):
+    def test_delete_running_crawl(self, ringer, sample_crawl_spec):
         """Test deleting a running crawl raises error."""
-        crawl_id, create_state = prospector.create(sample_crawl_spec)
-        from prospector.core.models import RunState
-        prospector.crawls[crawl_id].add_state(RunState(state=RunStateEnum.RUNNING))  # Set to running
+        crawl_id, create_state = ringer.create(sample_crawl_spec)
+        from ringer.core.models import RunState
+        ringer.crawls[crawl_id].add_state(RunState(state=RunStateEnum.RUNNING))  # Set to running
         
         with pytest.raises(RuntimeError, match="Cannot delete running crawl"):
-            prospector.delete(crawl_id)
+            ringer.delete(crawl_id)
     
-    def test_get_crawl_status(self, prospector, sample_crawl_spec):
+    def test_get_crawl_status(self, ringer, sample_crawl_spec):
         """Test getting crawl status."""
-        crawl_id, create_state = prospector.create(sample_crawl_spec)
+        crawl_id, create_state = ringer.create(sample_crawl_spec)
         
         # Add some test data
-        crawl_state = prospector.crawls[crawl_id]
+        crawl_state = ringer.crawls[crawl_id]
         crawl_state.increment_crawled_count()
         crawl_state.increment_processed_count()
         crawl_state.add_urls_with_scores([(0.8, "https://test.com")])
         
-        status_dict = prospector.get_crawl_status(crawl_id)
+        status_dict = ringer.get_crawl_status(crawl_id)
         
         assert status_dict["crawl_id"] == crawl_id
         assert status_dict["crawl_name"] == sample_crawl_spec.name
@@ -348,8 +348,8 @@ class TestProspector:
         assert len(status_dict["state_history"]) >= 1
         assert all(state["state"] == "CREATED" for state in status_dict["state_history"])
     
-    def test_get_crawl_status_not_found(self, prospector):
+    def test_get_crawl_status_not_found(self, ringer):
         """Test getting status for non-existent crawl raises error."""
         with pytest.raises(ValueError, match="not found"):
-            prospector.get_crawl_status("nonexistent_id")
+            ringer.get_crawl_status("nonexistent_id")
     

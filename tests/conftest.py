@@ -7,8 +7,8 @@ import atexit
 import tempfile
 from fastapi.testclient import TestClient
 from unittest.mock import Mock, patch
-from prospector.main import app
-from prospector.core import (
+from ringer.main import app
+from ringer.core import (
     CrawlSpec,
     CrawlState,
     SearchEngineSeed,
@@ -16,11 +16,11 @@ from prospector.core import (
     AnalyzerSpec,
     WeightedKeyword,
     CrawlRecord,
-    Prospector,
+    Ringer,
     KeywordScoreAnalyzer,
     RunStateEnum,
 )
-from prospector.core.models import KeywordScoringSpec
+from ringer.core.models import KeywordScoringSpec
 
 
 # Global cleanup registry
@@ -88,7 +88,7 @@ def sample_weighted_keywords():
 @pytest.fixture
 def sample_analyzer_spec(sample_weighted_keywords) -> KeywordScoringSpec:
     """Sample analyzer specification for testing."""
-    from prospector.core.models import KeywordScoringSpec
+    from ringer.core.models import KeywordScoringSpec
     return KeywordScoringSpec(
         name="KeywordScoreAnalyzer",
         composite_weight=1.0,
@@ -143,7 +143,7 @@ def sample_crawl_record():
 @pytest.fixture
 def keyword_analyzer(sample_weighted_keywords):
     """Sample keyword analyzer for testing."""
-    from prospector.core.models import KeywordScoringSpec
+    from ringer.core.models import KeywordScoringSpec
     spec = KeywordScoringSpec(
         name="KeywordScoreAnalyzer",
         composite_weight=1.0,
@@ -154,21 +154,21 @@ def keyword_analyzer(sample_weighted_keywords):
 
 
 @pytest.fixture
-def prospector():
-    """Prospector instance for testing with temporary directory."""
+def ringer():
+    """Ringer instance for testing with temporary directory."""
     with tempfile.TemporaryDirectory() as temp_dir:
         # Patch the FsCrawlResultsManager settings to use temp directory
-        with patch('prospector.core.results_managers.fs_crawl_results_manager.FsCrawlResultsManagerSettings') as mock_settings:
+        with patch('ringer.core.results_managers.fs_crawl_results_manager.FsCrawlResultsManagerSettings') as mock_settings:
             mock_settings.return_value.crawl_data_dir = temp_dir
             # Also patch the results manager to return a consistent storage ID
-            with patch('prospector.core.results_managers.fs_crawl_results_manager.uuid.uuid4') as mock_uuid:
+            with patch('ringer.core.results_managers.fs_crawl_results_manager.uuid.uuid4') as mock_uuid:
                 mock_uuid.return_value = Mock()
                 mock_uuid.return_value.__str__ = Mock(return_value="test-storage-id-123")
-                prospector_instance = Prospector()
-                yield prospector_instance
-                # Cleanup prospector after test
+                ringer_instance = Ringer()
+                yield ringer_instance
+                # Cleanup ringer after test
                 try:
-                    prospector_instance.shutdown()
+                    ringer_instance.shutdown()
                 except Exception:
                     pass  # Ignore shutdown errors in tests
 
@@ -202,11 +202,11 @@ def client():
 
 
 @pytest.fixture
-def mock_prospector():
-    """Create a mock Prospector instance."""
-    prospector = Mock(spec=Prospector)
-    prospector.crawls = {}
-    return prospector
+def mock_ringer():
+    """Create a mock Ringer instance."""
+    ringer = Mock(spec=Ringer)
+    ringer.crawls = {}
+    return ringer
 
 
 @pytest.fixture

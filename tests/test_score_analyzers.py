@@ -3,12 +3,12 @@ import pytest
 import math
 from unittest.mock import Mock, patch
 
-from prospector.core import (
+from ringer.core import (
     KeywordScoreAnalyzer,
     WeightedKeyword,
     DhLlmScoreAnalyzer,
 )
-from prospector.core.models import (
+from ringer.core.models import (
     KeywordScoringSpec,
     DhLlmScoringSpec,
     PromptInput,
@@ -118,7 +118,7 @@ class TestKeywordScoreAnalyzer:
     
     def test_init_with_regexes(self):
         """Test initialization with regexes."""
-        from prospector.core.models import WeightedRegex
+        from ringer.core.models import WeightedRegex
         import re
         
         regexes = [
@@ -138,7 +138,7 @@ class TestKeywordScoreAnalyzer:
     
     def test_init_with_invalid_regex(self):
         """Test initialization with invalid regex pattern."""
-        from prospector.core.models import WeightedRegex
+        from ringer.core.models import WeightedRegex
         
         regexes = [WeightedRegex(regex=r"[invalid", weight=1.0)]  # Invalid regex
         
@@ -153,7 +153,7 @@ class TestKeywordScoreAnalyzer:
     
     def test_score_with_regex_matches(self):
         """Test scoring with regex matches."""
-        from prospector.core.models import WeightedRegex
+        from ringer.core.models import WeightedRegex
         import re
         
         regexes = [
@@ -177,7 +177,7 @@ class TestKeywordScoreAnalyzer:
     
     def test_score_mixed_keywords_and_regexes(self, sample_weighted_keywords):
         """Test scoring with both keywords and regexes."""
-        from prospector.core.models import WeightedRegex
+        from ringer.core.models import WeightedRegex
         
         regexes = [WeightedRegex(regex=r"\d+", weight=1.0)]
         
@@ -213,7 +213,7 @@ class TestDhLlmScoreAnalyzer:
         assert analyzer.session.headers['Content-Type'] == 'application/json'
         assert analyzer.session.headers['Accept'] == 'application/json'
     
-    @patch('prospector.core.score_analyzers.dh_llm_score_analyzer.requests.Session.post')
+    @patch('ringer.core.score_analyzers.dh_llm_score_analyzer.requests.Session.post')
     def test_score_with_valid_response(self, mock_post):
         """Test scoring with valid LLM service response."""
         # Mock successful response
@@ -244,7 +244,7 @@ class TestDhLlmScoreAnalyzer:
         assert 'text_inputs' in request_data
         assert "Test content about python programming" in request_data['text_inputs']
     
-    @patch('prospector.core.score_analyzers.dh_llm_score_analyzer.requests.Session.post')
+    @patch('ringer.core.score_analyzers.dh_llm_score_analyzer.requests.Session.post')
     def test_score_with_custom_prompt(self, mock_post):
         """Test scoring with custom prompt."""
         # Mock successful response
@@ -271,7 +271,7 @@ class TestDhLlmScoreAnalyzer:
         request_data = call_args[1]['json']
         assert "Custom scoring prompt:" in request_data['generation_input']['prompt']
     
-    @patch('prospector.core.score_analyzers.dh_llm_score_analyzer.requests.Session.post')
+    @patch('ringer.core.score_analyzers.dh_llm_score_analyzer.requests.Session.post')
     def test_score_with_default_prompt(self, mock_post):
         """Test scoring with default prompt when using topics."""
         # Mock successful response
@@ -311,7 +311,7 @@ class TestDhLlmScoreAnalyzer:
         with pytest.raises(TypeError, match="Content must be a string"):
             analyzer.score(123)
     
-    @patch('prospector.core.score_analyzers.dh_llm_score_analyzer.requests.Session.post')
+    @patch('ringer.core.score_analyzers.dh_llm_score_analyzer.requests.Session.post')
     def test_score_with_http_error(self, mock_post):
         """Test scoring with HTTP error returns 0.0."""
         import requests
@@ -331,7 +331,7 @@ class TestDhLlmScoreAnalyzer:
         
         assert score == 0.0
     
-    @patch('prospector.core.score_analyzers.dh_llm_score_analyzer.requests.Session.post')
+    @patch('ringer.core.score_analyzers.dh_llm_score_analyzer.requests.Session.post')
     def test_score_with_timeout(self, mock_post):
         """Test scoring with timeout returns 0.0."""
         import requests
@@ -351,7 +351,7 @@ class TestDhLlmScoreAnalyzer:
         
         assert score == 0.0
     
-    @patch('prospector.core.score_analyzers.dh_llm_score_analyzer.requests.Session.post')
+    @patch('ringer.core.score_analyzers.dh_llm_score_analyzer.requests.Session.post')
     def test_score_with_invalid_json_response(self, mock_post):
         """Test scoring with invalid JSON response returns 0.0."""
         import json
@@ -374,7 +374,7 @@ class TestDhLlmScoreAnalyzer:
         
         assert score == 0.0
     
-    @patch('prospector.core.score_analyzers.dh_llm_score_analyzer.requests.Session.post')
+    @patch('ringer.core.score_analyzers.dh_llm_score_analyzer.requests.Session.post')
     def test_score_with_missing_score_field(self, mock_post):
         """Test scoring with missing score field in response returns 0.0."""
         # Mock response missing score field
