@@ -545,7 +545,7 @@ class Ringer:
 
     def delete(self, crawl_id: str) -> None:
         """
-        Remove a crawl from Prospector state.
+        Remove a crawl from Ringer state.
         
         Args:
             crawl_id: ID of the crawl to delete
