@@ -92,7 +92,7 @@ export const SearchEngineModal: React.FC<SearchEngineModalProps> = ({
             <select
               value={searchEngine}
               onChange={(e) => setSearchEngine(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-prospector-blue"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-ringer-blue"
             >
               <option value="Google">Google</option>
               <option value="Bing">Bing</option>
@@ -110,7 +110,7 @@ export const SearchEngineModal: React.FC<SearchEngineModalProps> = ({
               onChange={(e) => setCount(parseInt(e.target.value) || 10)}
               min="1"
               max="100"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-prospector-blue"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-ringer-blue"
             />
           </div>
           
@@ -124,13 +124,13 @@ export const SearchEngineModal: React.FC<SearchEngineModalProps> = ({
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Enter search query..."
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-prospector-blue"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-ringer-blue"
                 onKeyPress={(e) => e.key === 'Enter' && handleRunQuery()}
               />
               <button
                 onClick={handleRunQuery}
                 disabled={loading || !query.trim()}
-                className="px-4 py-2 bg-prospector-blue text-white rounded-r-md hover:bg-prospector-dark-blue disabled:opacity-50"
+                className="px-4 py-2 bg-ringer-blue text-white rounded-r-md hover:bg-ringer-dark-blue disabled:opacity-50"
               >
                 {loading ? 'Running...' : 'Run Query'}
               </button>
@@ -162,7 +162,7 @@ export const SearchEngineModal: React.FC<SearchEngineModalProps> = ({
               <button
                 onClick={handleAddSelected}
                 disabled={selectedUrls.size === 0}
-                className="px-4 py-2 bg-prospector-blue text-white rounded hover:bg-prospector-dark-blue disabled:opacity-50"
+                className="px-4 py-2 bg-ringer-blue text-white rounded hover:bg-ringer-dark-blue disabled:opacity-50"
               >
                 Add Selected ({selectedUrls.size})
               </button>
