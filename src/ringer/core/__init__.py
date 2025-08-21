@@ -1,6 +1,6 @@
-"""core - Implementation of the Prospector core functionality."""
+"""core - Implementation of the Ringer core functionality."""
 
-from .prospector import Prospector, CrawlState
+from .ringer import Ringer, CrawlState
 from .models import (
     CrawlSpec,
     SearchEngineSeed,
@@ -42,7 +42,7 @@ from .utils import ScoreAnalyzerInfoUtil
 
 __version__ = "1.0.0"
 __all__ = [
-    "Prospector",
+    "Ringer",
     "CrawlState",
     "CrawlSpec",
     "SearchEngineSeed",

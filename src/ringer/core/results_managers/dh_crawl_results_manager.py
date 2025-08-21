@@ -5,12 +5,12 @@ import requests
 import uuid
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
-from prospector.core.models import (
+from ringer.core.models import (
     CrawlRecord,
     CrawlSpec,
     StoreCrawlRecordRequest,
 )
-from prospector.core.settings import DhCrawlResultsManagerSettings
+from ringer.core.settings import DhCrawlResultsManagerSettings
 from .crawl_results_manager import CrawlResultsManager
 
 

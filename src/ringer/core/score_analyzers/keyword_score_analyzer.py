@@ -3,7 +3,7 @@ import math
 import re
 from typing import List
 
-from prospector.core.models import KeywordScoringSpec, WeightedKeyword, WeightedRegex
+from ringer.core.models import KeywordScoringSpec, WeightedKeyword, WeightedRegex
 from .score_analyzer import ScoreAnalyzer
 
 

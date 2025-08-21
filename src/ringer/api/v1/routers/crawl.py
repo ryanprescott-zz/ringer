@@ -3,7 +3,7 @@
 from datetime import datetime
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse
-from prospector.api.v1.models import (
+from ringer.api.v1.models import (
     CreateCrawlRequest, CreateCrawlResponse,
     StartCrawlRequest, StartCrawlResponse,
     StopCrawlRequest, StopCrawlResponse,
@@ -34,8 +34,8 @@ def create_crawl(request: CreateCrawlRequest, app_request: Request) -> CreateCra
         HTTPException: If crawl creation fails
     """
     try:
-        prospector = app_request.app.state.prospector
-        crawl_id, run_state = prospector.create(request.crawl_spec)
+        ringer = app_request.app.state.ringer
+        crawl_id, run_state = ringer.create(request.crawl_spec)
         
         return CreateCrawlResponse(
             crawl_id=crawl_id,
@@ -63,8 +63,8 @@ def start_crawl(request: StartCrawlRequest, app_request: Request) -> StartCrawlR
         HTTPException: If crawl start fails
     """
     try:
-        prospector = app_request.app.state.prospector
-        crawl_id, run_state = prospector.start(request.crawl_id)
+        ringer = app_request.app.state.ringer
+        crawl_id, run_state = ringer.start(request.crawl_id)
         
         return StartCrawlResponse(
             crawl_id=crawl_id,
@@ -94,8 +94,8 @@ def stop_crawl(request: StopCrawlRequest, app_request: Request) -> StopCrawlResp
         HTTPException: If crawl stop fails
     """
     try:
-        prospector = app_request.app.state.prospector
-        crawl_id, run_state = prospector.stop(request.crawl_id)
+        ringer = app_request.app.state.ringer
+        crawl_id, run_state = ringer.stop(request.crawl_id)
         
         return StopCrawlResponse(
             crawl_id=crawl_id,
@@ -125,8 +125,8 @@ def delete_crawl(request: DeleteCrawlRequest, app_request: Request) -> DeleteCra
         HTTPException: If crawl deletion fails
     """
     try:
-        prospector = app_request.app.state.prospector
-        prospector.delete(request.crawl_id)
+        ringer = app_request.app.state.ringer
+        ringer.delete(request.crawl_id)
         
         # Set deletion time to now since the crawl state is removed
         deletion_time = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -158,11 +158,11 @@ def get_all_crawl_statuses(app_request: Request) -> CrawlStatusListResponse:
         HTTPException: If crawl status retrieval fails
     """
     try:
-        prospector = app_request.app.state.prospector
-        crawl_status_dicts = prospector.get_all_crawl_statuses()
+        ringer = app_request.app.state.ringer
+        crawl_status_dicts = ringer.get_all_crawl_statuses()
         
         # Create the API models from the dictionaries
-        from prospector.api.v1.models import CrawlStatus
+        from ringer.api.v1.models import CrawlStatus
         crawl_statuses = [CrawlStatus(**status_dict) for status_dict in crawl_status_dicts]
         
         return CrawlStatusListResponse(crawls=crawl_statuses)
@@ -186,12 +186,12 @@ def get_all_crawl_info(app_request: Request) -> CrawlInfoListResponse:
         HTTPException: If crawl info retrieval fails
     """
     try:
-        prospector = app_request.app.state.prospector
-        crawl_info_dicts = prospector.get_all_crawl_info()
+        ringer = app_request.app.state.ringer
+        crawl_info_dicts = ringer.get_all_crawl_info()
         
         # Create the API models from the dictionaries
-        from prospector.api.v1.models import CrawlInfo, CrawlStatus
-        from prospector.core.models import CrawlSpec
+        from ringer.api.v1.models import CrawlInfo, CrawlStatus
+        from ringer.core.models import CrawlSpec
         
         crawl_infos = []
         for info_dict in crawl_info_dicts:
@@ -222,12 +222,12 @@ def get_crawl_info(crawl_id: str, app_request: Request) -> CrawlInfoResponse:
         HTTPException: If crawl info retrieval fails
     """
     try:
-        prospector = app_request.app.state.prospector
-        crawl_info_dict = prospector.get_crawl_info(crawl_id)
+        ringer = app_request.app.state.ringer
+        crawl_info_dict = ringer.get_crawl_info(crawl_id)
         
         # Create the API models from the dictionary
-        from prospector.api.v1.models import CrawlInfo, CrawlStatus
-        from prospector.core.models import CrawlSpec
+        from ringer.api.v1.models import CrawlInfo, CrawlStatus
+        from ringer.core.models import CrawlSpec
         
         crawl_spec = CrawlSpec(**crawl_info_dict["crawl_spec"])
         crawl_status = CrawlStatus(**crawl_info_dict["crawl_status"])
@@ -257,11 +257,11 @@ def get_crawl_status(crawl_id: str, app_request: Request) -> CrawlStatusResponse
         HTTPException: If crawl status retrieval fails
     """
     try:
-        prospector = app_request.app.state.prospector
-        crawl_status_dict = prospector.get_crawl_status(crawl_id)
+        ringer = app_request.app.state.ringer
+        crawl_status_dict = ringer.get_crawl_status(crawl_id)
         
         # Create the API models from the dictionary
-        from prospector.api.v1.models import CrawlStatus
+        from ringer.api.v1.models import CrawlStatus
         crawl_status = CrawlStatus(**crawl_status_dict)
         
         return CrawlStatusResponse(status=crawl_status)
@@ -288,8 +288,8 @@ def download_crawl_spec(crawl_id: str, app_request: Request) -> JSONResponse:
         HTTPException: If crawl does not exist
     """
     try:
-        prospector = app_request.app.state.prospector
-        crawl_info_dict = prospector.get_crawl_info(crawl_id)
+        ringer = app_request.app.state.ringer
+        crawl_info_dict = ringer.get_crawl_info(crawl_id)
         
         # Extract just the crawl spec
         crawl_spec_dict = crawl_info_dict["crawl_spec"]

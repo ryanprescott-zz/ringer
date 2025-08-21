@@ -212,8 +212,8 @@ def mock_ringer():
 @pytest.fixture
 def sample_crawl_state(sample_crawl_spec):
     """Create a sample CrawlState for testing."""
-    from prospector.core.models import RunState, RunStateEnum
-    from prospector.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
+    from ringer.core.models import RunState, RunStateEnum
+    from ringer.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
     manager = MemoryCrawlStateManager()
     storage_id = "test-storage-id-123"
     crawl_state = CrawlState(sample_crawl_spec, manager, storage_id)

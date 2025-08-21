@@ -6,8 +6,8 @@ import uuid
 import shutil
 from pathlib import Path
 
-from prospector.core.models import CrawlRecord, CrawlSpec
-from prospector.core.settings import FsCrawlResultsManagerSettings
+from ringer.core.models import CrawlRecord, CrawlSpec
+from ringer.core.settings import FsCrawlResultsManagerSettings
 from .crawl_results_manager import CrawlResultsManager
 
 

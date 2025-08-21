@@ -12,15 +12,15 @@ class ResultsManagerType(str, Enum):
     DH = "dh"
 
 
-class ProspectorSettings(BaseSettings):
-    """Settings for the main Prospector application."""
+class RingerSettings(BaseSettings):
+    """Settings for the main Ringer application."""
     
     max_workers: int = 10
     prohibited_file_types: List[str] = []
     results_manager_type: ResultsManagerType = ResultsManagerType.FILE_SYSTEM
     
     model_config = {
-        "env_prefix": "prospector_"
+        "env_prefix": "ringer_"
     }
 
 
@@ -28,7 +28,7 @@ class PlaywrightScraperSettings(BaseSettings):
     """Settings for the Playwright web scraper."""
     
     timeout: int = 60
-    user_agent: str = "Prospector/1.0"
+    user_agent: str = "Ringer/1.0"
     javascript_enabled: bool = True
     
     model_config = {
@@ -102,7 +102,7 @@ class CrawlStateManagerSettings(BaseSettings):
     storage_type: str = "memory"  # "redis", "sqlite", "memory"
     redis_url: str = "redis://localhost:6379"
     redis_db: int = 0
-    redis_key_prefix: str = "prospector"
+    redis_key_prefix: str = "ringer"
     sqlite_path: str = "./crawl_state.db"
     
     model_config = {
@@ -110,11 +110,11 @@ class CrawlStateManagerSettings(BaseSettings):
     }
 
 
-class ProspectorServiceSettings(BaseSettings):
+class RingerServiceSettings(BaseSettings):
     """Settings for the FastAPI web service."""
     
     base_router_path: str = "/api/v1"
     openapi_prefix: str = "/api/static"
     model_config = {
-        "env_prefix": "prospector_service_"
+        "env_prefix": "ringer_service_"
     }

@@ -4,7 +4,7 @@ import json
 import logging
 import requests
 
-from prospector.core.models import (
+from ringer.core.models import (
     DhLlmScoringSpec,
     PromptInput,
     TopicListInput,
@@ -12,7 +12,7 @@ from prospector.core.models import (
     FieldMap,
     DhLlmGenerationRequest
 )
-from prospector.core.settings import DhLlmScoreAnalyzerSettings
+from ringer.core.settings import DhLlmScoreAnalyzerSettings
 from .score_analyzer import ScoreAnalyzer
 
 logger = logging.getLogger(__name__)

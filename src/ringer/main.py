@@ -1,4 +1,4 @@
-"""FastAPI application for the Prospector web crawler service."""
+"""FastAPI application for the Ringer web crawler service."""
 
 import logging
 from contextlib import asynccontextmanager
@@ -10,9 +10,9 @@ from fastapi.openapi.docs import (
 )
 from fastapi.staticfiles import StaticFiles
 
-from prospector.core.prospector import Prospector
-from prospector.api.v1.api import api_router
-from prospector.core.settings.settings import ProspectorServiceSettings
+from ringer.core.ringer import Ringer
+from ringer.api.v1.api import api_router
+from ringer.core.settings.settings import RingerServiceSettings
 
 
 logger = logging.getLogger(__name__)
@@ -22,7 +22,7 @@ async def lifespan(app: FastAPI):
     """
     Manage the application lifespan.
     
-    Creates a Prospector instance at startup and ensures proper cleanup at shutdown.
+    Creates a Ringer instance at startup and ensures proper cleanup at shutdown.
     
     Args:
         app: The FastAPI application instance
@@ -30,23 +30,23 @@ async def lifespan(app: FastAPI):
     Yields:
         None: Control back to FastAPI during application runtime
     """
-    # Startup: Create and store Prospector instance
-    logger.info(f"Starting Prospector web crawler service {app.title}")
-    prospector = Prospector()
-    app.state.prospector = prospector
+    # Startup: Create and store Ringer instance
+    logger.info(f"Starting Ringer web crawler service {app.title}")
+    ringer = Ringer()
+    app.state.ringer = ringer
     
     yield
     
-    # Shutdown: Clean up Prospector resources
-    logger.info(f"Shutting down Prospector web crawler service {app.title}")
-    prospector.shutdown()
+    # Shutdown: Clean up Ringer resources
+    logger.info(f"Shutting down Ringer web crawler service {app.title}")
+    ringer.shutdown()
 
-settings = ProspectorServiceSettings()
+settings = RingerServiceSettings()
 uri_prefix = settings.base_router_path
 
 # Create FastAPI application with lifespan management
 app = FastAPI(
-    title="Prospector Web Crawler API",
+    title="Ringer Web Crawler API",
     description="A best-first-search web crawler with intelligent content prioritization",
     openapi_url=f"{uri_prefix}/openapi.json",
     docs_url=None,
@@ -70,7 +70,7 @@ def read_root():
         dict: Basic API information and status
     """
     return {
-        "message": "Prospector Web Crawler API",
+        "message": "Ringer Web Crawler API",
         "version": "1.0.0",
         "status": "running"
     }

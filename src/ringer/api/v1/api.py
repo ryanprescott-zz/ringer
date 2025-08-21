@@ -1,11 +1,11 @@
-"""Main API router for Prospector v1 endpoints."""
+"""Main API router for Ringer v1 endpoints."""
 
 from fastapi import APIRouter
-from prospector.api.v1.routers import crawl, seeds, analyzers
-from prospector.core.settings import ProspectorServiceSettings
+from ringer.api.v1.routers import crawl, seeds, analyzers
+from ringer.core.settings import RingerServiceSettings
 
 # Load service settings
-settings = ProspectorServiceSettings()
+settings = RingerServiceSettings()
 
 # Create the main API router
 api_router = APIRouter()

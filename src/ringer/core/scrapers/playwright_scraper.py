@@ -4,8 +4,8 @@ from urllib.parse import urljoin, urlparse
 
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 
-from prospector.core.models import CrawlRecord
-from prospector.core.settings import PlaywrightScraperSettings
+from ringer.core.models import CrawlRecord
+from ringer.core.settings import PlaywrightScraperSettings
 from .scraper import Scraper
 
 

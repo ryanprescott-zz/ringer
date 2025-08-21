@@ -1,4 +1,4 @@
-"""Pydantic models for the Prospector application."""
+"""Pydantic models for the Ringer application."""
 
 import hashlib
 from datetime import datetime
