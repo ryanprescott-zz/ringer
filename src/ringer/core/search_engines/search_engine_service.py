@@ -5,13 +5,23 @@ import logging
 import re
 from abc import ABC, abstractmethod
 from typing import List, Set
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin, urlparse, unquote
 
 import aiohttp
 from bs4 import BeautifulSoup
 
-from ..models import SearchEngineSeed, SearchEngineEnum
+from ..models import SearchEngineSeed
 from ..settings import SearchEngineSettings
+
+# Define SearchEngineEnum if not available in models
+try:
+    from ..models import SearchEngineEnum
+except ImportError:
+    from enum import Enum
+    class SearchEngineEnum(str, Enum):
+        GOOGLE = "google"
+        BING = "bing"
+        DUCKDUCKGO = "duckduckgo"
 
 
 logger = logging.getLogger(__name__)
@@ -43,33 +53,56 @@ class GoogleParser(SearchEngineParser):
         soup = BeautifulSoup(html_content, 'html.parser')
         urls = []
         
-        # Google search results are typically in <a> tags with specific patterns
-        for link in soup.find_all('a', href=True):
-            href = link['href']
-            
-            # Google result links often start with /url?q= or /search?q=
-            if href.startswith('/url?q='):
-                # Extract the actual URL from Google's redirect
-                url_match = re.search(r'/url\?q=([^&]+)', href)
-                if url_match:
-                    url = url_match.group(1)
-                    if self._is_valid_url(url):
-                        urls.append(url)
-            elif href.startswith('http') and not 'google.com' in href:
-                # Direct links that aren't Google's own
-                if self._is_valid_url(href):
-                    urls.append(href)
+        # Try multiple selectors for Google results as they change frequently
+        selectors = [
+            'div.g a[href]',  # Standard organic results
+            'div[data-ved] a[href]',  # Alternative structure
+            'h3 a[href]',  # Header links
+            'a[href^="/url?q="]',  # URL redirect links
+        ]
+        
+        for selector in selectors:
+            links = soup.select(selector)
+            for link in links:
+                href = link.get('href', '')
+                
+                # Handle Google's URL redirect format
+                if href.startswith('/url?q='):
+                    # Extract the actual URL from Google's redirect
+                    url_match = re.search(r'/url\?q=([^&]+)', href)
+                    if url_match:
+                        url = unquote(url_match.group(1))
+                        if self._is_valid_url(url):
+                            urls.append(url)
+                elif href.startswith('http') and not any(domain in href for domain in ['google.com', 'googleusercontent.com', 'gstatic.com']):
+                    # Direct links that aren't Google's own
+                    if self._is_valid_url(href):
+                        urls.append(href)
+                
+                if len(urls) >= result_count:
+                    break
             
             if len(urls) >= result_count:
                 break
         
-        return urls[:result_count]
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_urls = []
+        for url in urls:
+            if url not in seen:
+                seen.add(url)
+                unique_urls.append(url)
+        
+        return unique_urls[:result_count]
     
     def _is_valid_url(self, url: str) -> bool:
         """Check if URL is valid HTTP/HTTPS."""
         try:
             parsed = urlparse(url)
-            return parsed.scheme in ('http', 'https') and parsed.netloc
+            return (parsed.scheme in ('http', 'https') and 
+                   parsed.netloc and 
+                   not parsed.netloc.endswith('.google.com') and
+                   not parsed.netloc.endswith('.googleusercontent.com'))
         except Exception:
             return False
 
@@ -203,24 +236,41 @@ class SearchEngineService:
         
         # Build search URL with query parameters
         if seed.search_engine == SearchEngineEnum.GOOGLE:
-            search_url = f"{base_url}?q={seed.query}"
+            # Add more parameters to look more like a real browser request
+            search_url = f"{base_url}?q={seed.query}&num={min(seed.result_count, 100)}&hl=en"
         elif seed.search_engine == SearchEngineEnum.BING:
-            search_url = f"{base_url}?q={seed.query}"
+            search_url = f"{base_url}?q={seed.query}&count={min(seed.result_count, 50)}"
         elif seed.search_engine == SearchEngineEnum.DUCKDUCKGO:
             search_url = f"{base_url}?q={seed.query}"
         else:
             raise ValueError(f"Unsupported search engine: {seed.search_engine}")
         
+        # Enhanced headers for Google to avoid blocking
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+        }
+        
         for attempt in range(self.settings.max_retries):
             try:
-                async with session.get(search_url) as response:
+                async with session.get(search_url, headers=headers) as response:
                     if response.status == 200:
                         html_content = await response.text()
                         urls = parser.parse_results(html_content, seed.result_count)
                         logger.info(f"Fetched {len(urls)} URLs from {seed.search_engine} for query: {seed.query}")
                         return urls
+                    elif response.status == 429:
+                        logger.warning(f"Rate limited by {seed.search_engine}, waiting longer...")
+                        await asyncio.sleep(self.settings.rate_limit_delay * 3)
                     else:
                         logger.warning(f"Search engine {seed.search_engine} returned status {response.status}")
+                        # Log response content for debugging
+                        content = await response.text()
+                        logger.debug(f"Response content preview: {content[:500]}")
                         
             except Exception as e:
                 logger.error(f"Attempt {attempt + 1} failed for {seed.search_engine}: {e}")
