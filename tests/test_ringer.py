@@ -25,7 +25,7 @@ class TestCrawlState:
     
     def test_init(self, sample_crawl_spec):
         """Test CrawlState initialization."""
-        from prospector.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
+        from ringer.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
         manager = MemoryCrawlStateManager()
         storage_id = "test-storage-id-123"
         state = CrawlState(sample_crawl_spec, manager, storage_id)
@@ -44,7 +44,7 @@ class TestCrawlState:
     
     def test_add_urls_with_scores(self, sample_crawl_spec):
         """Test adding URLs with scores to frontier."""
-        from prospector.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
+        from ringer.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
         manager = MemoryCrawlStateManager()
         storage_id = "test-storage-id-123"
         state = CrawlState(sample_crawl_spec, manager, storage_id)
@@ -62,7 +62,7 @@ class TestCrawlState:
     
     def test_get_next_url(self, sample_crawl_spec):
         """Test getting next URL from frontier."""
-        from prospector.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
+        from ringer.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
         manager = MemoryCrawlStateManager()
         storage_id = "test-storage-id-123"
         state = CrawlState(sample_crawl_spec, manager, storage_id)
@@ -81,7 +81,7 @@ class TestCrawlState:
     
     def test_get_next_url_empty_frontier(self, sample_crawl_spec):
         """Test getting next URL when frontier is empty."""
-        from prospector.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
+        from ringer.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
         manager = MemoryCrawlStateManager()
         storage_id = "test-storage-id-123"
         state = CrawlState(sample_crawl_spec, manager, storage_id)
@@ -92,7 +92,7 @@ class TestCrawlState:
     
     def test_frontier_duplicate_urls(self, sample_crawl_spec):
         """Test that frontier prevents duplicate URLs."""
-        from prospector.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
+        from ringer.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
         manager = MemoryCrawlStateManager()
         storage_id = "test-storage-id-123"
         state = CrawlState(sample_crawl_spec, manager, storage_id)
@@ -111,7 +111,7 @@ class TestCrawlState:
     
     def test_is_url_allowed_domain_blacklist(self, sample_crawl_spec):
         """Test URL filtering with domain blacklist."""
-        from prospector.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
+        from ringer.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
         manager = MemoryCrawlStateManager()
         storage_id = "test-storage-id-123"
         state = CrawlState(sample_crawl_spec, manager, storage_id)
@@ -124,7 +124,7 @@ class TestCrawlState:
     
     def test_is_url_allowed_no_blacklist(self, sample_analyzer_spec):
         """Test URL filtering with no domain blacklist."""
-        from prospector.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
+        from ringer.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
         spec = CrawlSpec(
             name="test",
             seeds=["https://example.com"],
@@ -140,7 +140,7 @@ class TestCrawlState:
     
     def test_counter_methods(self, sample_crawl_spec):
         """Test thread-safe counter increment methods."""
-        from prospector.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
+        from ringer.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
         manager = MemoryCrawlStateManager()
         storage_id = "test-storage-id-123"
         state = CrawlState(sample_crawl_spec, manager, storage_id)
@@ -163,7 +163,7 @@ class TestCrawlState:
     
     def test_get_status_counts(self, sample_crawl_spec):
         """Test getting thread-safe status counts."""
-        from prospector.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
+        from ringer.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
         manager = MemoryCrawlStateManager()
         storage_id = "test-storage-id-123"
         state = CrawlState(sample_crawl_spec, manager, storage_id)
