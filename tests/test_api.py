@@ -986,7 +986,7 @@ class TestAPIModels:
 class TestApplicationLifespan:
     """Tests for FastAPI application lifespan management."""
     
-    @patch('ringer.main.ringer')
+    @patch('ringer.main.Ringer')
     def test_lifespan_startup_shutdown(self, mock_ringer_class):
         """Test that ringer is created on startup and shutdown on exit."""
         from contextlib import asynccontextmanager
