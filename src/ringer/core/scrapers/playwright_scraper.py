@@ -40,7 +40,16 @@ class PlaywrightScraper(Scraper):
         try:
             with sync_playwright() as p:
                 try:
-                    browser = p.chromium.launch(headless=True)
+                    browser = (
+                        p.chromium.launch(
+                            headless=True,
+                            proxy={
+                                "server": self.settings.proxy_server, 
+                            }
+                        )
+                        if self.settings.proxy_server is not None
+                        else p.chromium.launch(headless=True)
+                    )
                     logger.debug(f"Launched browser for URL: {url}")
                 except Exception as e:
                     logger.error(f"Failed to launch browser for URL {url}: {e}")
