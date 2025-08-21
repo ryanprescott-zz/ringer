@@ -53,18 +53,32 @@ class GoogleParser(SearchEngineParser):
         soup = BeautifulSoup(html_content, 'html.parser')
         urls = []
         
+        logger.debug(f"Parsing Google results, HTML length: {len(html_content)}")
+        
+        # Save HTML for debugging if no results found
+        if logger.isEnabledFor(logging.DEBUG):
+            with open('/tmp/google_debug.html', 'w', encoding='utf-8') as f:
+                f.write(html_content)
+            logger.debug("Saved Google HTML to /tmp/google_debug.html for debugging")
+        
         # Try multiple selectors for Google results as they change frequently
         selectors = [
             'div.g a[href]',  # Standard organic results
-            'div[data-ved] a[href]',  # Alternative structure
+            'div[data-ved] a[href]',  # Alternative structure  
             'h3 a[href]',  # Header links
             'a[href^="/url?q="]',  # URL redirect links
+            'div.yuRUbf a[href]',  # Updated Google structure
+            'div.tF2Cxc a[href]',  # Another common structure
+            'a[jsname][href]',  # Links with jsname attribute
         ]
         
-        for selector in selectors:
+        for i, selector in enumerate(selectors):
             links = soup.select(selector)
+            logger.debug(f"Selector {i+1} '{selector}' found {len(links)} links")
+            
             for link in links:
                 href = link.get('href', '')
+                logger.debug(f"Processing href: {href[:100]}...")
                 
                 # Handle Google's URL redirect format
                 if href.startswith('/url?q='):
@@ -72,18 +86,23 @@ class GoogleParser(SearchEngineParser):
                     url_match = re.search(r'/url\?q=([^&]+)', href)
                     if url_match:
                         url = unquote(url_match.group(1))
+                        logger.debug(f"Extracted URL from redirect: {url}")
                         if self._is_valid_url(url):
                             urls.append(url)
+                            logger.debug(f"Added valid URL: {url}")
                 elif href.startswith('http') and not any(domain in href for domain in ['google.com', 'googleusercontent.com', 'gstatic.com']):
                     # Direct links that aren't Google's own
                     if self._is_valid_url(href):
                         urls.append(href)
+                        logger.debug(f"Added direct URL: {href}")
                 
                 if len(urls) >= result_count:
                     break
             
             if len(urls) >= result_count:
                 break
+        
+        logger.info(f"Google parser found {len(urls)} URLs before deduplication")
         
         # Remove duplicates while preserving order
         seen = set()
@@ -93,6 +112,7 @@ class GoogleParser(SearchEngineParser):
                 seen.add(url)
                 unique_urls.append(url)
         
+        logger.info(f"Google parser returning {len(unique_urls)} unique URLs")
         return unique_urls[:result_count]
     
     def _is_valid_url(self, url: str) -> bool:
@@ -237,13 +257,15 @@ class SearchEngineService:
         # Build search URL with query parameters
         if seed.search_engine == SearchEngineEnum.GOOGLE:
             # Add more parameters to look more like a real browser request
-            search_url = f"{base_url}?q={seed.query}&num={min(seed.result_count, 100)}&hl=en"
+            search_url = f"{base_url}?q={seed.query}&num={min(seed.result_count, 100)}&hl=en&safe=off"
         elif seed.search_engine == SearchEngineEnum.BING:
             search_url = f"{base_url}?q={seed.query}&count={min(seed.result_count, 50)}"
         elif seed.search_engine == SearchEngineEnum.DUCKDUCKGO:
             search_url = f"{base_url}?q={seed.query}"
         else:
             raise ValueError(f"Unsupported search engine: {seed.search_engine}")
+        
+        logger.info(f"Fetching from {seed.search_engine}: {search_url}")
         
         # Enhanced headers for Google to avoid blocking
         headers = {
@@ -253,13 +275,21 @@ class SearchEngineService:
             'Accept-Encoding': 'gzip, deflate',
             'Connection': 'keep-alive',
             'Upgrade-Insecure-Requests': '1',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
         }
         
         for attempt in range(self.settings.max_retries):
             try:
+                logger.debug(f"Attempt {attempt + 1} for {seed.search_engine}")
                 async with session.get(search_url, headers=headers) as response:
+                    logger.debug(f"Response status: {response.status}")
+                    
                     if response.status == 200:
                         html_content = await response.text()
+                        logger.debug(f"Received HTML content, length: {len(html_content)}")
+                        
                         urls = parser.parse_results(html_content, seed.result_count)
                         logger.info(f"Fetched {len(urls)} URLs from {seed.search_engine} for query: {seed.query}")
                         return urls
