@@ -30,7 +30,7 @@ class PlaywrightScraperSettings(BaseSettings):
     timeout: int = 60
     user_agent: str = "Ringer/1.0"
     javascript_enabled: bool = True
-    proxy_server: str = None
+    proxy_server: str|None = None
     
     model_config = {
         "env_prefix": "playwright_scraper_"
