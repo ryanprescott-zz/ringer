@@ -1,4 +1,4 @@
-"""Settings for the Prospector application."""
+"""Settings for the Ringer application."""
 
 import os
 from enum import Enum

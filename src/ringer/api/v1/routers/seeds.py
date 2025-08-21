@@ -2,7 +2,7 @@
 
 import logging
 from fastapi import APIRouter, HTTPException, Request
-from prospector.api.v1.models import (
+from ringer.api.v1.models import (
     SeedUrlScrapeRequest, SeedUrlScrapeResponse
 )
 
@@ -30,8 +30,8 @@ async def collect_seed_urls(request: SeedUrlScrapeRequest, app_request: Request)
         HTTPException: If seed URL collection fails
     """
     try:
-        prospector = app_request.app.state.prospector
-        seed_urls = await prospector.collect_seed_urls_from_search_engines(request.search_engine_seeds)
+        ringer = app_request.app.state.ringer
+        seed_urls = await ringer.collect_seed_urls_from_search_engines(request.search_engine_seeds)
         
         return SeedUrlScrapeResponse(
             seed_urls=seed_urls

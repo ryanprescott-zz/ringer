@@ -2,8 +2,8 @@
 
 import logging
 from fastapi import APIRouter, HTTPException
-from prospector.api.v1.models import AnalyzerInfoResponse, AnalyzerInfo, FieldDescriptor
-from prospector.core.utils import ScoreAnalyzerInfoUtil
+from ringer.api.v1.models import AnalyzerInfoResponse, AnalyzerInfo, FieldDescriptor
+from ringer.core.utils import ScoreAnalyzerInfoUtil
 
 logger = logging.getLogger(__name__)
 
