@@ -75,7 +75,7 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
-      <div className="bg-prospector-blue text-white px-6 py-4">
+      <div className="bg-ringer-blue text-white px-6 py-4">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold">Ringer</h1>
         </div>
@@ -86,7 +86,7 @@ function App() {
         <div className="mb-6">
           <button
             onClick={handleNewCrawl}
-            className="px-4 py-2 bg-prospector-blue text-white rounded hover:bg-prospector-dark-blue"
+            className="px-4 py-2 bg-ringer-blue text-white rounded hover:bg-ringer-dark-blue"
           >
             New Crawl
           </button>

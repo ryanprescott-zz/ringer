@@ -86,7 +86,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
               value={crawlSpec?.name || ''}
               onChange={(e) => handleNameChange(e.target.value)}
               disabled={!isNewCrawl}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-prospector-blue disabled:bg-gray-100"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-ringer-blue disabled:bg-gray-100"
               placeholder="Enter crawl name..."
             />
           </div>
@@ -100,7 +100,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
               onChange={(e) => setDescription(e.target.value)}
               disabled={!isNewCrawl}
               rows={6}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-prospector-blue disabled:bg-gray-100"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-ringer-blue disabled:bg-gray-100"
               placeholder="Enter crawl description..."
             />
           </div>
@@ -117,7 +117,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                 disabled={!isNewCrawl}
                 min="1"
                 max="16"
-                className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-prospector-blue disabled:bg-gray-100"
+                className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-ringer-blue disabled:bg-gray-100"
               />
             </div>
             
@@ -125,7 +125,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
               <button
                 onClick={handleSubmitCrawl}
                 disabled={loading}
-                className="px-4 py-2 bg-prospector-blue text-white rounded hover:bg-prospector-dark-blue disabled:opacity-50"
+                className="px-4 py-2 bg-ringer-blue text-white rounded hover:bg-ringer-dark-blue disabled:opacity-50"
               >
                 {loading ? 'Creating...' : 'Create Crawl'}
               </button>
@@ -134,7 +134,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
             {selectedCrawl && (
               <button
                 onClick={handleExportParams}
-                className="px-4 py-2 bg-prospector-blue text-white rounded hover:bg-prospector-dark-blue"
+                className="px-4 py-2 bg-ringer-blue text-white rounded hover:bg-ringer-dark-blue"
               >
                 Export Params
               </button>

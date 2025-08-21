@@ -7,8 +7,8 @@ export default {
   theme: {
     extend: {
       colors: {
-        'prospector-blue': '#4a90a4',
-        'prospector-dark-blue': '#2c5f75',
+        'ringer-blue': '#4a90a4',
+        'ringer-dark-blue': '#2c5f75',
         'ringer-blue': '#4a90a4',
         'ringer-dark-blue': '#2c5f75',
         'table-header': '#d1d5db',

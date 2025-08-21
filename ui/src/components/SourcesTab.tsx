@@ -65,7 +65,7 @@ export const SourcesTab: React.FC<SourcesTabProps> = ({
           {isNewCrawl && (
             <button
               onClick={setIsSearchModalOpen.bind(null, true)}
-              className="px-4 py-2 bg-prospector-blue text-white rounded hover:bg-prospector-dark-blue"
+              className="px-4 py-2 bg-ringer-blue text-white rounded hover:bg-ringer-dark-blue"
             >
               Search Engine
             </button>

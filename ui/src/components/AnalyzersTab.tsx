@@ -172,7 +172,7 @@ export const AnalyzersTab: React.FC<AnalyzersTabProps> = ({
               onClick={() => setSelectedAnalyzer(analyzer)}
               className={`w-full text-left px-3 py-2 rounded ${
                 selectedAnalyzer === analyzer
-                  ? 'bg-prospector-blue text-white'
+                  ? 'bg-ringer-blue text-white'
                   : 'bg-gray-100 hover:bg-gray-200'
               }`}
             >
@@ -201,7 +201,7 @@ export const AnalyzersTab: React.FC<AnalyzersTabProps> = ({
                   )}
                   disabled={!isNewCrawl}
                   step="0.1"
-                  className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-prospector-blue disabled:bg-gray-100"
+                  className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-ringer-blue disabled:bg-gray-100"
                 />
               </div>
             </div>
@@ -347,7 +347,7 @@ export const AnalyzersTab: React.FC<AnalyzersTabProps> = ({
                   )}
                   disabled={!isNewCrawl}
                   step="0.1"
-                  className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-prospector-blue disabled:bg-gray-100"
+                  className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-ringer-blue disabled:bg-gray-100"
                 />
               </div>
             </div>
@@ -359,7 +359,7 @@ export const AnalyzersTab: React.FC<AnalyzersTabProps> = ({
                 onChange={(e) => handlePromptChange(e.target.value)}
                 disabled={!isNewCrawl}
                 rows={6}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-prospector-blue disabled:bg-gray-100"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-ringer-blue disabled:bg-gray-100"
                 placeholder="Enter LLM prompt..."
               />
             </div>

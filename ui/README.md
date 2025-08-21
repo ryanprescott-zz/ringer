@@ -1,12 +1,12 @@
-# Prospector UI
+# Ringer UI
 
-A React TypeScript frontend for the Prospector web crawler service.
+A React TypeScript frontend for the Ringer web crawler service.
 
 ## Prerequisites
 
 - Node.js 18+ 
 - npm or yarn
-- Prospector service running (default: http://prospector)
+- Ringer service running
 
 ## Development Setup
 
@@ -18,7 +18,7 @@ A React TypeScript frontend for the Prospector web crawler service.
 
 2. **Configure API base URL (optional):**
    
-   The UI connects to `http://prospector` by default. To use a different URL, create a `.env.local` file:
+   The UI connects to `http://ringer` by default. To use a different URL, create a `.env.local` file:
    ```bash
    echo "VITE_API_BASE_URL=http://localhost:8000" > .env.local
    ```
@@ -61,7 +61,7 @@ ui/
 
 ## API Configuration
 
-The UI communicates with the Prospector service via REST API. Configure the base URL using the `VITE_API_BASE_URL` environment variable.
+The UI communicates with the Ringer service via REST API. Configure the base URL using the `VITE_API_BASE_URL` environment variable.
 
 Default endpoints used:
 - `GET /api/v1/crawl/info` - Fetch all crawl information
@@ -82,9 +82,9 @@ Default endpoints used:
 ## Troubleshooting
 
 **Connection Issues:**
-- Ensure Prospector service is running and accessible
+- Ensure Ringer service is running and accessible
 - Check API base URL configuration in `.env.local`
-- Verify CORS settings on the Prospector service
+- Verify CORS settings on the Ringer service
 
 **Build Issues:**
 - Clear node_modules and reinstall: `rm -rf node_modules package-lock.json && npm install`
