@@ -2,7 +2,7 @@
 
 import pytest
 from unittest.mock import Mock, patch, MagicMock
-from prospector.core import PlaywrightScraper, CrawlRecord
+from ringer.core import PlaywrightScraper, CrawlRecord
 
 
 class TestPlaywrightScraper:
@@ -13,7 +13,7 @@ class TestPlaywrightScraper:
         scraper = PlaywrightScraper()
         assert scraper.settings is not None
     
-    @patch('prospector.core.scrapers.playwright_scraper.sync_playwright')
+    @patch('ringer.core.scrapers.playwright_scraper.sync_playwright')
     def test_scrape_success(self, mock_playwright):
         """Test successful page scraping."""
         # Mock Playwright components
@@ -48,7 +48,7 @@ class TestPlaywrightScraper:
         mock_page.goto.assert_called_once_with("https://example.com", timeout=60000)
         mock_browser.close.assert_called_once()
     
-    @patch('prospector.core.scrapers.playwright_scraper.sync_playwright')
+    @patch('ringer.core.scrapers.playwright_scraper.sync_playwright')
     def test_scrape_timeout(self, mock_playwright):
         """Test scraping with timeout error."""
         from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
@@ -74,7 +74,7 @@ class TestPlaywrightScraper:
         
         mock_browser.close.assert_called_once()
     
-    @patch('prospector.core.scrapers.playwright_scraper.sync_playwright')
+    @patch('ringer.core.scrapers.playwright_scraper.sync_playwright')
     def test_scrape_general_error(self, mock_playwright):
         """Test scraping with general error."""
         mock_page = Mock()

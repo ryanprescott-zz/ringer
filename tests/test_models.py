@@ -6,7 +6,7 @@ import time
 from datetime import datetime
 from unittest.mock import patch
 
-from prospector.core.models import (
+from ringer.core.models import (
     KeywordScoringSpec,
     DhLlmScoringSpec,
     PromptInput,
@@ -112,7 +112,7 @@ class TestKeywordScoringSpec:
     
     def test_valid_keyword_scoring_spec_with_regexes(self):
         """Test creating valid keyword scoring spec with regexes."""
-        from prospector.core.models import WeightedRegex
+        from ringer.core.models import WeightedRegex
         import re
         
         regexes = [
@@ -133,7 +133,7 @@ class TestKeywordScoringSpec:
     
     def test_valid_keyword_scoring_spec_mixed(self, sample_weighted_keywords):
         """Test creating valid keyword scoring spec with both keywords and regexes."""
-        from prospector.core.models import WeightedRegex
+        from ringer.core.models import WeightedRegex
         
         regexes = [WeightedRegex(regex=r"\d+", weight=1.5)]
         

@@ -7,11 +7,11 @@ import os
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from prospector.core.results_managers import (
+from ringer.core.results_managers import (
     FsCrawlResultsManager,
     DhCrawlResultsManager,
 )
-from prospector.core import CrawlRecord
+from ringer.core import CrawlRecord
 
 
 class TestDhCrawlResultsManager:
@@ -24,7 +24,7 @@ class TestDhCrawlResultsManager:
         assert manager.session is not None
         assert manager.session.headers['Content-Type'] == 'application/json'
     
-    @patch('prospector.core.results_managers.dh_crawl_results_manager.requests.Session.post')
+    @patch('ringer.core.results_managers.dh_crawl_results_manager.requests.Session.post')
     def test_store_record_success(self, mock_post, sample_crawl_record):
         """Test successful record handling via service."""
         # Mock successful response
@@ -52,7 +52,7 @@ class TestDhCrawlResultsManager:
         assert 'crawl_id' in request_data
         assert request_data['crawl_id'] == "test_storage_id"
     
-    @patch('prospector.core.results_managers.dh_crawl_results_manager.requests.Session.post')
+    @patch('ringer.core.results_managers.dh_crawl_results_manager.requests.Session.post')
     def test_store_record_http_error_after_retries(self, mock_post, sample_crawl_record):
         """Test handling with HTTP error after all retries."""
         # Mock HTTP error response
@@ -69,7 +69,7 @@ class TestDhCrawlResultsManager:
         # Should have made multiple attempts (3 retries + 1 initial = 4 total)
         assert mock_post.call_count >= 3
     
-    @patch('prospector.core.results_managers.dh_crawl_results_manager.requests.Session.post')
+    @patch('ringer.core.results_managers.dh_crawl_results_manager.requests.Session.post')
     def test_store_record_timeout_after_retries(self, mock_post, sample_crawl_record):
         """Test handling with timeout after all retries."""
         import requests
@@ -85,7 +85,7 @@ class TestDhCrawlResultsManager:
         # Should have made multiple attempts
         assert mock_post.call_count >= 3
     
-    @patch('prospector.core.results_managers.dh_crawl_results_manager.requests.Session.post')
+    @patch('ringer.core.results_managers.dh_crawl_results_manager.requests.Session.post')
     def test_store_record_connection_error_after_retries(self, mock_post, sample_crawl_record):
         """Test handling with connection error after all retries."""
         import requests
@@ -101,7 +101,7 @@ class TestDhCrawlResultsManager:
         # Should have made multiple attempts
         assert mock_post.call_count >= 3
     
-    @patch('prospector.core.results_managers.dh_crawl_results_manager.requests.Session.post')
+    @patch('ringer.core.results_managers.dh_crawl_results_manager.requests.Session.post')
     def test_store_record_success_after_retry(self, mock_post, sample_crawl_record):
         """Test successful handling after initial failures."""
         # Mock first call fails, second succeeds

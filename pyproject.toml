@@ -1,7 +1,7 @@
 [project]
-name = "prospector"
+name = "ringer"
 version = "0.1.0"
-description = "Prospector web crawler/scraper"
+description = "Ringer web crawler/scraper"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = []

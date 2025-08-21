@@ -4,7 +4,7 @@ import json
 import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import Mock, patch
-from prospector.api.v1.routers.crawl import router
+from ringer.api.v1.routers.crawl import router
 from fastapi import FastAPI
 
 
@@ -23,8 +23,8 @@ def client(app):
 
 
 @pytest.fixture
-def mock_prospector():
-    """Create a mock prospector instance."""
+def mock_ringer():
+    """Create a mock ringer instance."""
     return Mock()
 
 
@@ -54,14 +54,14 @@ def sample_crawl_info():
 class TestDownloadCrawlSpec:
     """Tests for the download crawl spec endpoint."""
 
-    def test_download_crawl_spec_success(self, client, mock_prospector, sample_crawl_info):
+    def test_download_crawl_spec_success(self, client, mock_ringer, sample_crawl_info):
         """Test successful crawl spec download."""
         # Setup
         crawl_id = "test_crawl_123"
-        mock_prospector.get_crawl_info.return_value = sample_crawl_info
+        mock_ringer.get_crawl_info.return_value = sample_crawl_info
         
         with patch.object(client.app, 'state') as mock_state:
-            mock_state.prospector = mock_prospector
+            mock_state.ringer = mock_ringer
             
             # Execute
             response = client.get(f"/api/v1/crawl/{crawl_id}/spec/download")
@@ -75,17 +75,17 @@ class TestDownloadCrawlSpec:
             response_json = response.json()
             assert response_json == sample_crawl_info["crawl_spec"]
             
-            # Verify prospector was called correctly
-            mock_prospector.get_crawl_info.assert_called_once_with(crawl_id)
+            # Verify ringer was called correctly
+            mock_ringer.get_crawl_info.assert_called_once_with(crawl_id)
 
-    def test_download_crawl_spec_not_found(self, client, mock_prospector):
+    def test_download_crawl_spec_not_found(self, client, mock_ringer):
         """Test crawl spec download when crawl doesn't exist."""
         # Setup
         crawl_id = "nonexistent_crawl"
-        mock_prospector.get_crawl_info.side_effect = ValueError("Crawl not found")
+        mock_ringer.get_crawl_info.side_effect = ValueError("Crawl not found")
         
         with patch.object(client.app, 'state') as mock_state:
-            mock_state.prospector = mock_prospector
+            mock_state.ringer = mock_ringer
             
             # Execute
             response = client.get(f"/api/v1/crawl/{crawl_id}/spec/download")
@@ -94,17 +94,17 @@ class TestDownloadCrawlSpec:
             assert response.status_code == 404
             assert response.json()["detail"] == "The requested crawl does not exist"
             
-            # Verify prospector was called correctly
-            mock_prospector.get_crawl_info.assert_called_once_with(crawl_id)
+            # Verify ringer was called correctly
+            mock_ringer.get_crawl_info.assert_called_once_with(crawl_id)
 
-    def test_download_crawl_spec_internal_error(self, client, mock_prospector):
+    def test_download_crawl_spec_internal_error(self, client, mock_ringer):
         """Test crawl spec download when internal error occurs."""
         # Setup
         crawl_id = "test_crawl_123"
-        mock_prospector.get_crawl_info.side_effect = Exception("Database connection failed")
+        mock_ringer.get_crawl_info.side_effect = Exception("Database connection failed")
         
         with patch.object(client.app, 'state') as mock_state:
-            mock_state.prospector = mock_prospector
+            mock_state.ringer = mock_ringer
             
             # Execute
             response = client.get(f"/api/v1/crawl/{crawl_id}/spec/download")
@@ -113,17 +113,17 @@ class TestDownloadCrawlSpec:
             assert response.status_code == 500
             assert "Internal server error" in response.json()["detail"]
             
-            # Verify prospector was called correctly
-            mock_prospector.get_crawl_info.assert_called_once_with(crawl_id)
+            # Verify ringer was called correctly
+            mock_ringer.get_crawl_info.assert_called_once_with(crawl_id)
 
-    def test_download_crawl_spec_filename_format(self, client, mock_prospector, sample_crawl_info):
+    def test_download_crawl_spec_filename_format(self, client, mock_ringer, sample_crawl_info):
         """Test that the filename format is correct for different crawl IDs."""
         # Setup
         crawl_id = "my-special-crawl_456"
-        mock_prospector.get_crawl_info.return_value = sample_crawl_info
+        mock_ringer.get_crawl_info.return_value = sample_crawl_info
         
         with patch.object(client.app, 'state') as mock_state:
-            mock_state.prospector = mock_prospector
+            mock_state.ringer = mock_ringer
             
             # Execute
             response = client.get(f"/api/v1/crawl/{crawl_id}/spec/download")
@@ -133,14 +133,14 @@ class TestDownloadCrawlSpec:
             expected_filename = f"crawl_spec_{crawl_id}.json"
             assert response.headers["content-disposition"] == f"attachment; filename={expected_filename}"
 
-    def test_download_crawl_spec_only_returns_spec(self, client, mock_prospector, sample_crawl_info):
+    def test_download_crawl_spec_only_returns_spec(self, client, mock_ringer, sample_crawl_info):
         """Test that only the crawl spec is returned, not the full crawl info."""
         # Setup
         crawl_id = "test_crawl_123"
-        mock_prospector.get_crawl_info.return_value = sample_crawl_info
+        mock_ringer.get_crawl_info.return_value = sample_crawl_info
         
         with patch.object(client.app, 'state') as mock_state:
-            mock_state.prospector = mock_prospector
+            mock_state.ringer = mock_ringer
             
             # Execute
             response = client.get(f"/api/v1/crawl/{crawl_id}/spec/download")

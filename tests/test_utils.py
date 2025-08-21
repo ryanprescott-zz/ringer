@@ -1,7 +1,7 @@
 """Tests for utility classes."""
 
 import pytest
-from prospector.core.utils import ScoreAnalyzerInfoUtil
+from ringer.core.utils import ScoreAnalyzerInfoUtil
 
 
 class TestScoreAnalyzerInfoUtil:
@@ -71,7 +71,7 @@ class TestScoreAnalyzerInfoUtil:
     
     def test_extract_class_description(self):
         """Test extracting class description from docstring."""
-        from prospector.core.score_analyzers import KeywordScoreAnalyzer
+        from ringer.core.score_analyzers import KeywordScoreAnalyzer
         
         description = ScoreAnalyzerInfoUtil._extract_class_description(KeywordScoreAnalyzer)
         
@@ -82,7 +82,7 @@ class TestScoreAnalyzerInfoUtil:
     
     def test_get_field_type_string_union(self):
         """Test getting field type string for union types."""
-        from prospector.core.models import PromptInput, TopicListInput
+        from ringer.core.models import PromptInput, TopicListInput
         from typing import Union
         
         union_type = Union[PromptInput, TopicListInput]
@@ -95,7 +95,7 @@ class TestScoreAnalyzerInfoUtil:
     
     def test_get_field_type_string_list(self):
         """Test getting field type string for list types."""
-        from prospector.core.models import WeightedKeyword
+        from ringer.core.models import WeightedKeyword
         from typing import List
         
         list_type = List[WeightedKeyword]
@@ -111,5 +111,5 @@ class TestScoreAnalyzerInfoUtil:
         assert ScoreAnalyzerInfoUtil._get_simple_type_name(float) == "float"
         
         # Test custom class
-        from prospector.core.models import WeightedKeyword
+        from ringer.core.models import WeightedKeyword
         assert ScoreAnalyzerInfoUtil._get_simple_type_name(WeightedKeyword) == "WeightedKeyword"
