@@ -1,13 +1,13 @@
-# Prospector - Best-First-Search Web Crawler
+# Ringer - Best-First-Search Web Crawler
 
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Prospector** is a sophisticated web crawler that implements a **best-first-search** strategy to intelligently prioritize crawling based on content relevance. Unlike traditional breadth-first crawlers that visit all links equally, Prospector scores content and visits the most relevant pages first.
+**Ringer** is a sophisticated web crawler that implements a **best-first-search** strategy to intelligently prioritize crawling based on content relevance. Unlike traditional breadth-first crawlers that visit all links equally, Ringer scores content and visits the most relevant pages first.
 
 ## 🎯 Overview
 
-Prospector combines intelligent content analysis with efficient crawling to:
+Ringer combines intelligent content analysis with efficient crawling to:
 - **Prioritize relevant content** using configurable scoring algorithms
 - **Scale crawling operations** with concurrent worker pools
 - **Adapt to different content types** through pluggable analyzers and managers
@@ -34,7 +34,7 @@ Prospector combines intelligent content analysis with efficient crawling to:
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Prospector    │    │   ScoreAnalyzer │    │ CrawlResultManager│
+│     Ringer      │    │   ScoreAnalyzer │    │ CrawlResultManager│
 │   (Orchestrator)│───▶│   (Content      │───▶│   (Output       │
 │                 │    │    Scoring)     │    │    Processing)  │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
@@ -49,9 +49,9 @@ Prospector combines intelligent content analysis with efficient crawling to:
 
 ## 🧩 Core Components
 
-### 1. Prospector (Main Orchestrator)
+### 1. Ringer (Main Orchestrator)
 
-The **Prospector** class is the central orchestrator that manages the entire crawling process.
+The **Ringer** class is the central orchestrator that manages the entire crawling process.
 
 **Key Responsibilities:**
 - Manages multiple concurrent crawls with separate state tracking
@@ -67,9 +67,9 @@ The **Prospector** class is the central orchestrator that manages the entire cra
 
 ```python
 # Example usage
-prospector = Prospector()
-crawl_id = prospector.submit(crawl_spec)
-prospector.start(crawl_id)
+ringer = Ringer()
+crawl_id = ringer.submit(crawl_spec)
+ringer.start(crawl_id)
 ```
 
 ### 2. Scrapers (Content Extraction)
@@ -178,13 +178,13 @@ class CrawlResultsManager(ABC):
 ## 📁 Project Structure
 
 ```
-prospector/                                      # Prospector project root folder
+ringer/                                          # Ringer project root folder
 ├── src/                                         # Source folder
-    ├── prospector/                              # Prospector top-level package
+    ├── ringer/                                  # Ringer top-level package
        ├── core/                                 # Core component package
            ├── __init__.py                       # Package initialization and exports
            ├── models.py                         # Pydantic data models
-           ├── prospector.py                     # Prospector orchestrator
+           ├── ringer.py                        # Ringer orchestrator
            ├── results_managers/                 # Crawl output managers package
                ├── __init__.py                   # Package initialization and exports
                ├── dh_crawl_results_manager.py   # Service call output processing
@@ -211,7 +211,7 @@ prospector/                                      # Prospector project root folde
        └── main.py                               # FastAPI web service main file
 ├── tests/                                       # Tests folder
     ├── conftest.py                              # Pytest fixtures and configuration
-    ├── test_prospector.py                       # Core orchestrator tests
+    ├── test_ringer.py                           # Core orchestrator tests
     ├── test_scrapers.py                         # Scraper component tests
     ├── test_score_analyzers.py                  # Analyzer component tests
     ├── test_crawl_results_managers.py           # Crawl results manager component tests
@@ -224,16 +224,16 @@ prospector/                                      # Prospector project root folde
 
 ### Environment Variables
 
-Prospector uses environment variable prefixes for different components:
+Ringer uses environment variable prefixes for different components:
 
 ```bash
-# Prospector Core Settings
-PROSPECTOR_CRAWL_RESULTS_MANAGER_TYPE=file_system  # or service_call
-PROSPECTOR_MAX_WORKERS=10
+# Ringer Core Settings
+RINGER_CRAWL_RESULTS_MANAGER_TYPE=file_system  # or service_call
+RINGER_MAX_WORKERS=10
 
 # Scraper Settings  
 SCRAPER_TIMEOUT=30
-SCRAPER_USER_AGENT="Prospector/1.0"
+SCRAPER_USER_AGENT="Ringer/1.0"
 SCRAPER_JAVASCRIPT_ENABLED=true
 
 # Score Analyzer Settings
@@ -244,9 +244,9 @@ ANALYZER_LLM_REQUEST_TIMEOUT=60
 ### Programmatic Configuration
 
 ```python
-from prospector.settings import ProspectorSettings, CrawlResultsManagerType
+from ringer.settings import RingerSettings, CrawlResultsManagerType
 
-settings = ProspectorSettings(
+settings = RingerSettings(
     crawl_results_manager_type=CrawlResultsManagerType.DH,
     max_workers=8
 )
@@ -257,8 +257,8 @@ settings = ProspectorSettings(
 ### Basic Crawling with Keyword Analysis
 
 ```python
-from prospector import (
-    Prospector, CrawlSpec, AnalyzerSpec, WeightedKeyword
+from ringer import (
+    Ringer, CrawlSpec, AnalyzerSpec, WeightedKeyword
 )
 
 # Define scoring criteria
@@ -285,19 +285,19 @@ crawl_spec = CrawlSpec(
 )
 
 # Execute crawl
-prospector = Prospector()
-crawl_id = prospector.submit(crawl_spec)
-prospector.start(crawl_id)
+ringer = Ringer()
+crawl_id = ringer.submit(crawl_spec)
+ringer.start(crawl_id)
 
 # Later: stop and cleanup
-prospector.stop(crawl_id)
-prospector.delete(crawl_id)
+ringer.stop(crawl_id)
+ringer.delete(crawl_id)
 ```
 
 ### Multi-Analyzer Crawling (Keywords + LLM)
 
 ```python
-from prospector import DhLlmScoreAnalyzer
+from ringer import DhLlmScoreAnalyzer
 
 # Combine keyword and LLM analysis
 keyword_spec = AnalyzerSpec(
@@ -324,14 +324,14 @@ crawl_spec = CrawlSpec(
 
 ```python
 import os
-from prospector.settings import ResultsManagerType
+from ringer.settings import ResultsManagerType
 
 # Configure for service output
-os.environ['PROSPECTOR_RESULTS_MANAGER_TYPE'] = 'dh'
+os.environ['RINGER_RESULTS_MANAGER_TYPE'] = 'dh'
 os.environ['DH_CRAWL_RESULTS_MANAGER_SERVICE_URL'] = 'https://api.mycompany.com/crawl-records'
 
-# Prospector will automatically use DhCrawlResultsManager
-prospector = Prospector()
+# Ringer will automatically use DhCrawlResultsManager
+ringer = Ringer()
 ```
 
 ## 🧪 Testing
@@ -349,11 +349,11 @@ playwright install chromium
 pytest -v
 
 # Run specific test categories
-pytest tests/test_prospector.py -v
+pytest tests/test_ringer.py -v
 pytest tests/test_score_analyzers.py -v
 
 # Run with coverage
-pytest --cov=prospector tests/
+pytest --cov=ringer tests/
 ```
 
 ### Test Structure
@@ -394,8 +394,8 @@ MIT License - see LICENSE file for details.
 ### Development Setup
 
 ```bash
-git clone https://github.com/your-org/prospector.git
-cd prospector
+git clone https://github.com/your-org/ringer.git
+cd ringer
 pip install -e .[dev]
 pre-commit install
 pytest
@@ -404,9 +404,9 @@ pytest
 ## 📧 Support
 
 For questions, issues, or contributions:
-- **Issues**: [GitHub Issues](https://github.com/your-org/prospector/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/your-org/prospector/discussions)
-- **Documentation**: [Wiki](https://github.com/your-org/prospector/wiki)
+- **Issues**: [GitHub Issues](https://github.com/your-org/ringer/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/your-org/ringer/discussions)
+- **Documentation**: [Wiki](https://github.com/your-org/ringer/wiki)
 
 ---
 
@@ -417,4 +417,4 @@ For questions, issues, or contributions:
 - Anti-Bot Avoidance
 - Search engine seeding
 
-**Prospector** - Intelligent web crawling with best-first search prioritization 🎯
+**Ringer** - Intelligent web crawling with best-first search prioritization 🎯
