@@ -1,25 +1,25 @@
 from .settings import (
     ResultsManagerType,
-    ProspectorSettings,
+    RingerSettings,
     PlaywrightScraperSettings,
     FsCrawlResultsManagerSettings,
     DhCrawlResultsManagerSettings,
     DhLlmScoreAnalyzerSettings,
     SearchEngineSettings,
-    ProspectorServiceSettings,
+    RingerServiceSettings,
     CrawlStateManagerSettings,
     CrawlResultsManagerSettings,
 )
 
 __version__ = "1.0.0"
 __all__ = [
-    "ProspectorSettings",
+    "RingerSettings",
     "PlaywrightScraperSettings",
     "FsCrawlResultsManagerSettings",
     "DhCrawlResultsManagerSettings",
     "DhLlmScoreAnalyzerSettings",
     "SearchEngineSettings",
-    "ProspectorServiceSettings",
+    "RingerServiceSettings",
     "CrawlStateManagerSettings",
     "CrawlResultsManagerSettings",
     "ResultsManagerType",

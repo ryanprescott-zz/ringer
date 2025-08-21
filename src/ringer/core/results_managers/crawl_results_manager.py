@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 
-from prospector.core.models import (
+from ringer.core.models import (
     CrawlRecord,
     CrawlSpec
 

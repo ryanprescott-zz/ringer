@@ -1,4 +1,4 @@
-"""Utility classes for Prospector core functionality."""
+"""Utility classes for Ringer core functionality."""
 
 from .score_analyzer_info_util import ScoreAnalyzerInfoUtil
 

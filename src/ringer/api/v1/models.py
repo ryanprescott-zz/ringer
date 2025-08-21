@@ -1,8 +1,8 @@
-"""Pydantic models for the Prospector FastAPI web service."""
+"""Pydantic models for the Ringer FastAPI web service."""
 
 from typing import List, Optional
 from pydantic import BaseModel
-from prospector.core.models import CrawlSpec, RunState, SearchEngineSeed
+from ringer.core.models import CrawlSpec, RunState, SearchEngineSeed
 
 
 class CreateCrawlRequest(BaseModel):

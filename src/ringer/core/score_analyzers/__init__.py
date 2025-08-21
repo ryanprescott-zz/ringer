@@ -1,4 +1,4 @@
-"""score_analyzers - Implementation of score analyzers for Prospector."""
+"""score_analyzers - Implementation of score analyzers for Ringer."""
 
 from .score_analyzer import ScoreAnalyzer
 from .keyword_score_analyzer import KeywordScoreAnalyzer

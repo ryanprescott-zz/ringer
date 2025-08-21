@@ -1,4 +1,4 @@
-"""scrapers - Implementation of web scrapers for Prospector."""
+"""scrapers - Implementation of web scrapers for Ringer."""
 
 from .scraper import Scraper
 from .playwright_scraper import PlaywrightScraper

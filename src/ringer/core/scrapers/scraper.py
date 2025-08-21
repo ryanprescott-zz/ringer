@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 
-from prospector.core.models import CrawlRecord
+from ringer.core.models import CrawlRecord
 
 
 class Scraper(ABC):

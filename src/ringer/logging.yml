@@ -1,10 +1,10 @@
-# Logging configuration for prospector
+# Logging configuration for Ringer 
 version: 1
 disable_existing_loggers: False
 handlers:
     logfile:
         class: logging.handlers.RotatingFileHandler
-        filename: prospector-debug.log
+        filename: ringer-debug.log
         formatter: simple
         level: INFO
         maxBytes: 104857600

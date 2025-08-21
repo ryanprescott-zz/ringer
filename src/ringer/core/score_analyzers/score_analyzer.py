@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
-from prospector.core.models import WeightedKeyword
+from ringer.core.models import WeightedKeyword
 
 
 class ScoreAnalyzer(ABC):
