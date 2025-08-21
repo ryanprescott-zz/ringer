@@ -4,7 +4,7 @@ import pytest
 from datetime import datetime
 from unittest.mock import Mock, patch
 from ringer.main import app
-from ringer.core.ringer import ringer
+from ringer.core.ringer import Ringer
 from ringer.core import (
     CrawlSpec,
     WeightedKeyword,
@@ -52,7 +52,7 @@ class TestMainEndpoints:
         response = client.get("/")
         assert response.status_code == 200
         data = response.json()
-        assert data["message"] == "ringer Web Crawler API"
+        assert data["message"] == "Ringer Web Crawler API"
         assert data["version"] == "1.0.0"
         assert data["status"] == "running"
     
