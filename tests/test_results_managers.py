@@ -35,7 +35,7 @@ class TestDhCrawlResultsManager:
         mock_post.return_value = mock_response
         
         manager = DhCrawlResultsManager()
-        results_id = CrawlResultsId(id="test_results_id")
+        results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
         
         # Should not raise any exception
         manager.store_record(sample_crawl_record, results_id)
@@ -65,7 +65,7 @@ class TestDhCrawlResultsManager:
         mock_post.return_value = mock_response
         
         manager = DhCrawlResultsManager()
-        results_id = CrawlResultsId(id="test_results_id")
+        results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
         
         # Should not raise exception, just log and discard
         manager.store_record(sample_crawl_record, results_id)
@@ -83,7 +83,7 @@ class TestDhCrawlResultsManager:
         mock_post.side_effect = requests.exceptions.Timeout("Request timeout")
         
         manager = DhCrawlResultsManager()
-        results_id = CrawlResultsId(id="test_results_id")
+        results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
         
         # Should not raise exception, just log and discard
         manager.store_record(sample_crawl_record, results_id)
@@ -101,7 +101,7 @@ class TestDhCrawlResultsManager:
         mock_post.side_effect = requests.exceptions.ConnectionError("Connection failed")
         
         manager = DhCrawlResultsManager()
-        results_id = CrawlResultsId(id="test_results_id")
+        results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
         
         # Should not raise exception, just log and discard
         manager.store_record(sample_crawl_record, results_id)
@@ -125,7 +125,7 @@ class TestDhCrawlResultsManager:
         mock_post.side_effect = [mock_response_fail, mock_response_success]
         
         manager = DhCrawlResultsManager()
-        results_id = CrawlResultsId(id="test_results_id")
+        results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
         
         # Should succeed after retry
         manager.store_record(sample_crawl_record, results_id)
@@ -156,7 +156,7 @@ class TestFsCrawlResultsManager:
                 manager.base_dir = Path(temp_dir)
                 
                 # First create the crawl and get results ID
-                results_id = CrawlResultsId()
+                results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
                 manager.create_crawl(sample_crawl_spec, results_id)
                 manager.store_record(sample_crawl_record, results_id)
                 
@@ -194,7 +194,7 @@ class TestFsCrawlResultsManager:
                 manager.base_dir = Path(temp_dir)
                 
                 # Create crawl and handle multiple records for same crawl
-                results_id = CrawlResultsId()
+                results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
                 manager.create_crawl(sample_crawl_spec, results_id)
                 manager.store_record(sample_crawl_record, results_id)
                 
@@ -231,6 +231,6 @@ class TestFsCrawlResultsManager:
             })()
             manager.base_dir = Path('/invalid/path')
             
-            results_id = CrawlResultsId(id="test_results_id")
+            results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
             with pytest.raises(Exception):
                 manager.store_record(sample_crawl_record, results_id)

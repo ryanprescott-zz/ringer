@@ -200,7 +200,7 @@ class TestRinger:
     def test_create_crawl(self, ringer, sample_crawl_spec):
         """Test creating a new crawl."""
         from ringer.core.models import CrawlResultsId
-        results_id = CrawlResultsId()
+        results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
         crawl_id, run_state = ringer.create(sample_crawl_spec, results_id)
         
         assert crawl_id == sample_crawl_spec.id
@@ -215,7 +215,7 @@ class TestRinger:
     def test_create_duplicate_crawl(self, ringer, sample_crawl_spec):
         """Test creating a crawl with duplicate ID raises error."""
         from ringer.core.models import CrawlResultsId
-        results_id = CrawlResultsId()
+        results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
         crawl_id, run_state = ringer.create(sample_crawl_spec, results_id)
         
         with pytest.raises(ValueError, match="already exists"):
@@ -237,7 +237,7 @@ class TestRinger:
             worker_count=1
         )
         
-        results_id = CrawlResultsId()
+        results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
         crawl_id, run_state = ringer.create(crawl_spec, results_id)
         
         assert crawl_id in ringer.crawls
@@ -253,7 +253,7 @@ class TestRinger:
         ringer.scraper = mock_scraper
         ringer.results_manager = mock_results_manager
         
-        results_id = CrawlResultsId()
+        results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
         crawl_id, create_state = ringer.create(sample_crawl_spec, results_id)
         start_crawl_id, start_state = ringer.start(crawl_id)
         
@@ -270,7 +270,7 @@ class TestRinger:
     def test_start_already_running_crawl(self, ringer, sample_crawl_spec):
         """Test starting an already running crawl raises error."""
         from ringer.core.models import CrawlResultsId, RunState
-        results_id = CrawlResultsId()
+        results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
         crawl_id, create_state = ringer.create(sample_crawl_spec, results_id)
         
         # Manually set to running
@@ -282,7 +282,7 @@ class TestRinger:
     def test_stop_crawl(self, ringer, sample_crawl_spec):
         """Test stopping a crawl."""
         from ringer.core.models import CrawlResultsId, RunState
-        results_id = CrawlResultsId()
+        results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
         crawl_id, create_state = ringer.create(sample_crawl_spec, results_id)
         ringer.crawls[crawl_id].add_state(RunState(state=RunStateEnum.RUNNING))  # Set to running
         
@@ -296,7 +296,7 @@ class TestRinger:
     def test_stop_crawl_not_running(self, ringer, sample_crawl_spec):
         """Test stopping a crawl that is not running raises error."""
         from ringer.core.models import CrawlResultsId, RunState
-        results_id = CrawlResultsId()
+        results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
         crawl_id, create_state = ringer.create(sample_crawl_spec, results_id)
         
         # Try to stop crawl that is in CREATED state
@@ -317,7 +317,7 @@ class TestRinger:
     def test_delete_crawl(self, ringer, sample_crawl_spec):
         """Test deleting a crawl."""
         from ringer.core.models import CrawlResultsId
-        results_id = CrawlResultsId()
+        results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
         crawl_id, create_state = ringer.create(sample_crawl_spec, results_id)
         
         ringer.delete(crawl_id)
@@ -332,7 +332,7 @@ class TestRinger:
     def test_delete_running_crawl(self, ringer, sample_crawl_spec):
         """Test deleting a running crawl raises error."""
         from ringer.core.models import CrawlResultsId, RunState
-        results_id = CrawlResultsId()
+        results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
         crawl_id, create_state = ringer.create(sample_crawl_spec, results_id)
         ringer.crawls[crawl_id].add_state(RunState(state=RunStateEnum.RUNNING))  # Set to running
         
@@ -342,7 +342,7 @@ class TestRinger:
     def test_get_crawl_status(self, ringer, sample_crawl_spec):
         """Test getting crawl status."""
         from ringer.core.models import CrawlResultsId
-        results_id = CrawlResultsId()
+        results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
         crawl_id, create_state = ringer.create(sample_crawl_spec, results_id)
         
         # Add some test data
