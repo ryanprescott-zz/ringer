@@ -11,7 +11,7 @@ from ringer.core import (
 )
 from ringer.core.models import KeywordScoringSpec
 from ringer.api.v1.models import (
-    CreateCrawlRequest, StartCrawlRequest, StopCrawlRequest, DeleteCrawlRequest,
+    CreateCrawlRequest,
     SeedUrlScrapeRequest, SeedUrlScrapeResponse
 )
 
@@ -81,7 +81,7 @@ class TestCreateCrawlEndpoint:
         app.state.ringer = mock_ringer
         
         response = client.post(
-            "/api/v1/crawl/create",
+            "/api/v1/crawls",
             json={"crawl_spec": sample_crawl_spec_dict}
         )
         
@@ -100,7 +100,7 @@ class TestCreateCrawlEndpoint:
         app.state.ringer = mock_ringer
         
         response = client.post(
-            "/api/v1/crawl/create",
+            "/api/v1/crawls",
             json={"crawl_spec": sample_crawl_spec_dict}
         )
         
@@ -118,7 +118,7 @@ class TestCreateCrawlEndpoint:
         app.state.ringer = mock_ringer
         
         response = client.post(
-            "/api/v1/crawl/create",
+            "/api/v1/crawls",
             json={"crawl_spec": invalid_spec}
         )
         
@@ -132,7 +132,7 @@ class TestCreateCrawlEndpoint:
         app.state.ringer = mock_ringer
         
         response = client.post(
-            "/api/v1/crawl/create",
+            "/api/v1/crawls",
             json={"crawl_spec": sample_crawl_spec_dict}
         )
         
@@ -156,8 +156,7 @@ class TestStartCrawlEndpoint:
         app.state.ringer = mock_ringer
         
         response = client.post(
-            "/api/v1/crawl/start",
-            json={"crawl_id": test_crawl_id}
+            f"/api/v1/crawls/{test_crawl_id}/start"
         )
         
         assert response.status_code == 200
@@ -175,8 +174,7 @@ class TestStartCrawlEndpoint:
         app.state.ringer = mock_ringer
         
         response = client.post(
-            "/api/v1/crawl/start",
-            json={"crawl_id": "nonexistent_id"}
+            "/api/v1/crawls/nonexistent_id/start"
         )
         
         assert response.status_code == 404
@@ -190,8 +188,7 @@ class TestStartCrawlEndpoint:
         app.state.ringer = mock_ringer
         
         response = client.post(
-            "/api/v1/crawl/start",
-            json={"crawl_id": "test_crawl"}
+            "/api/v1/crawls/test_crawl/start"
         )
         
         assert response.status_code == 400
@@ -205,8 +202,7 @@ class TestStartCrawlEndpoint:
         app.state.ringer = mock_ringer
         
         response = client.post(
-            "/api/v1/crawl/start",
-            json={"crawl_id": "test_crawl"}
+            "/api/v1/crawls/test_crawl/start"
         )
         
         assert response.status_code == 500
@@ -229,8 +225,7 @@ class TestStopCrawlEndpoint:
         app.state.ringer = mock_ringer
         
         response = client.post(
-            "/api/v1/crawl/stop",
-            json={"crawl_id": test_crawl_id}
+            f"/api/v1/crawls/{test_crawl_id}/stop"
         )
         
         assert response.status_code == 200
@@ -248,8 +243,7 @@ class TestStopCrawlEndpoint:
         app.state.ringer = mock_ringer
         
         response = client.post(
-            "/api/v1/crawl/stop",
-            json={"crawl_id": "nonexistent_id"}
+            "/api/v1/crawls/nonexistent_id/stop"
         )
         
         assert response.status_code == 404
@@ -263,8 +257,7 @@ class TestStopCrawlEndpoint:
         app.state.ringer = mock_ringer
         
         response = client.post(
-            "/api/v1/crawl/stop",
-            json={"crawl_id": "test_crawl"}
+            "/api/v1/crawls/test_crawl/stop"
         )
         
         assert response.status_code == 400
@@ -278,8 +271,7 @@ class TestStopCrawlEndpoint:
         app.state.ringer = mock_ringer
         
         response = client.post(
-            "/api/v1/crawl/stop",
-            json={"crawl_id": "test_crawl"}
+            "/api/v1/crawls/test_crawl/stop"
         )
         
         assert response.status_code == 500
@@ -299,9 +291,8 @@ class TestDeleteCrawlEndpoint:
         # Set the ringer in app state
         app.state.ringer = mock_ringer
         
-        response = client.post(
-            "/api/v1/crawl/delete",
-            json={"crawl_id": test_crawl_id}
+        response = client.delete(
+            f"/api/v1/crawls/{test_crawl_id}"
         )
         
         assert response.status_code == 200
@@ -317,9 +308,8 @@ class TestDeleteCrawlEndpoint:
         # Set the ringer in app state
         app.state.ringer = mock_ringer
         
-        response = client.post(
-            "/api/v1/crawl/delete",
-            json={"crawl_id": "nonexistent_id"}
+        response = client.delete(
+            "/api/v1/crawls/nonexistent_id"
         )
         
         assert response.status_code == 404
@@ -332,9 +322,8 @@ class TestDeleteCrawlEndpoint:
         # Set the ringer in app state
         app.state.ringer = mock_ringer
         
-        response = client.post(
-            "/api/v1/crawl/delete",
-            json={"crawl_id": "test_crawl"}
+        response = client.delete(
+            "/api/v1/crawls/test_crawl"
         )
         
         assert response.status_code == 400
@@ -347,9 +336,8 @@ class TestDeleteCrawlEndpoint:
         # Set the ringer in app state
         app.state.ringer = mock_ringer
         
-        response = client.post(
-            "/api/v1/crawl/delete",
-            json={"crawl_id": "test_crawl"}
+        response = client.delete(
+            "/api/v1/crawls/test_crawl"
         )
         
         assert response.status_code == 500
@@ -410,7 +398,7 @@ class TestCrawlStatusEndpoint:
         # Set the ringer in app state
         app.state.ringer = mock_ringer
         
-        response = client.get("/api/v1/crawl/status")
+        response = client.get("/api/v1/crawls/status")
         
         assert response.status_code == 200
         data = response.json()
@@ -438,7 +426,7 @@ class TestCrawlStatusEndpoint:
         # Set the ringer in app state
         app.state.ringer = mock_ringer
         
-        response = client.get("/api/v1/crawl/status")
+        response = client.get("/api/v1/crawls/status")
         
         assert response.status_code == 200
         data = response.json()
@@ -455,7 +443,7 @@ class TestCrawlStatusEndpoint:
         # Set the ringer in app state
         app.state.ringer = mock_ringer
         
-        response = client.get("/api/v1/crawl/status")
+        response = client.get("/api/v1/crawls/status")
         
         assert response.status_code == 500
         assert "Internal server error" in response.json()["detail"]
@@ -545,7 +533,7 @@ class TestCrawlStatusEndpoint:
         # Set the ringer in app state
         app.state.ringer = mock_ringer
         
-        response = client.get("/api/v1/crawl/info")
+        response = client.get("/api/v1/crawls")
         
         assert response.status_code == 200
         data = response.json()
@@ -575,7 +563,7 @@ class TestCrawlStatusEndpoint:
         # Set the ringer in app state
         app.state.ringer = mock_ringer
         
-        response = client.get("/api/v1/crawl/info")
+        response = client.get("/api/v1/crawls")
         
         assert response.status_code == 200
         data = response.json()
@@ -592,7 +580,7 @@ class TestCrawlStatusEndpoint:
         # Set the ringer in app state
         app.state.ringer = mock_ringer
         
-        response = client.get("/api/v1/crawl/info")
+        response = client.get("/api/v1/crawls")
         
         assert response.status_code == 500
         assert "Internal server error" in response.json()["detail"]
@@ -649,7 +637,7 @@ class TestCrawlStatusEndpoint:
         # Set the ringer in app state
         app.state.ringer = mock_ringer
         
-        response = client.get(f"/api/v1/crawl/{test_crawl_id}/info")
+        response = client.get(f"/api/v1/crawls/{test_crawl_id}")
         
         assert response.status_code == 200
         data = response.json()
@@ -682,7 +670,7 @@ class TestCrawlStatusEndpoint:
         # Set the ringer in app state
         app.state.ringer = mock_ringer
         
-        response = client.get("/api/v1/crawl/nonexistent_id/info")
+        response = client.get("/api/v1/crawls/nonexistent_id")
         
         assert response.status_code == 404
         assert "Crawl nonexistent_id not found" in response.json()["detail"]
@@ -694,7 +682,7 @@ class TestCrawlStatusEndpoint:
         # Set the ringer in app state
         app.state.ringer = mock_ringer
         
-        response = client.get("/api/v1/crawl/test_crawl/info")
+        response = client.get("/api/v1/crawls/test_crawl")
         
         assert response.status_code == 500
         assert "Internal server error" in response.json()["detail"]
@@ -734,7 +722,7 @@ class TestCrawlStatusEndpoint:
         # Set the ringer in app state
         app.state.ringer = mock_ringer
         
-        response = client.get(f"/api/v1/crawl/{test_crawl_id}/status")
+        response = client.get(f"/api/v1/crawls/{test_crawl_id}/status")
         
         assert response.status_code == 200
         data = response.json()
@@ -759,7 +747,7 @@ class TestCrawlStatusEndpoint:
         # Set the ringer in app state
         app.state.ringer = mock_ringer
         
-        response = client.get("/api/v1/crawl/nonexistent_id/status")
+        response = client.get("/api/v1/crawls/nonexistent_id/status")
         
         assert response.status_code == 404
         assert "Crawl nonexistent_id not found" in response.json()["detail"]
@@ -771,7 +759,7 @@ class TestCrawlStatusEndpoint:
         # Set the ringer in app state
         app.state.ringer = mock_ringer
         
-        response = client.get("/api/v1/crawl/test_crawl/status")
+        response = client.get("/api/v1/crawls/test_crawl/status")
         
         assert response.status_code == 500
         assert "Internal server error" in response.json()["detail"]
@@ -952,35 +940,6 @@ class TestAPIModels:
         with pytest.raises(ValueError):
             SeedUrlScrapeRequest()
     
-    def test_crawl_start_request_validation(self):
-        """Test StartCrawlRequest model validation."""
-        # Valid request
-        request = StartCrawlRequest(crawl_id="test_crawl_123")
-        assert request.crawl_id == "test_crawl_123"
-        
-        # Invalid request - missing crawl_id
-        with pytest.raises(ValueError):
-            StartCrawlRequest()
-    
-    def test_crawl_stop_request_validation(self):
-        """Test StopCrawlRequest model validation."""
-        # Valid request
-        request = StopCrawlRequest(crawl_id="test_crawl_123")
-        assert request.crawl_id == "test_crawl_123"
-        
-        # Invalid request - missing crawl_id
-        with pytest.raises(ValueError):
-            StopCrawlRequest()
-    
-    def test_crawl_delete_request_validation(self):
-        """Test DeleteCrawlRequest model validation."""
-        # Valid request
-        request = DeleteCrawlRequest(crawl_id="test_crawl_123")
-        assert request.crawl_id == "test_crawl_123"
-        
-        # Invalid request - missing crawl_id
-        with pytest.raises(ValueError):
-            DeleteCrawlRequest()
 
 
 class TestApplicationLifespan:
@@ -1039,7 +998,7 @@ class TestEndToEndWorkflow:
         
         # 1. create crawl
         create_response = client.post(
-            "/api/v1/crawl/create",
+            "/api/v1/crawls",
             json={"crawl_spec": sample_crawl_spec_dict}
         )
         assert create_response.status_code == 200
@@ -1048,8 +1007,7 @@ class TestEndToEndWorkflow:
         
         # 2. Start crawl
         start_response = client.post(
-            "/api/v1/crawl/start",
-            json={"crawl_id": test_crawl_id}
+            f"/api/v1/crawls/{test_crawl_id}/start"
         )
         assert start_response.status_code == 200
         assert start_response.json()["crawl_id"] == test_crawl_id
@@ -1057,8 +1015,7 @@ class TestEndToEndWorkflow:
         
         # 3. Stop crawl
         stop_response = client.post(
-            "/api/v1/crawl/stop",
-            json={"crawl_id": test_crawl_id}
+            f"/api/v1/crawls/{test_crawl_id}/stop"
         )
         assert stop_response.status_code == 200
         assert stop_response.json()["crawl_id"] == test_crawl_id
@@ -1067,9 +1024,8 @@ class TestEndToEndWorkflow:
         # 4. Delete crawl
         with patch('ringer.api.v1.routers.crawl.datetime') as mock_datetime:
             mock_datetime.utcnow.return_value.strftime.return_value = "2023-12-01T10:35:00Z"
-            delete_response = client.post(
-                "/api/v1/crawl/delete",
-                json={"crawl_id": test_crawl_id}
+            delete_response = client.delete(
+                f"/api/v1/crawls/{test_crawl_id}"
             )
             assert delete_response.status_code == 200
             assert delete_response.json()["crawl_id"] == test_crawl_id
@@ -1092,8 +1048,7 @@ class TestEndToEndWorkflow:
         
         # Try to start non-existent crawl
         response = client.post(
-            "/api/v1/crawl/start",
-            json={"crawl_id": nonexistent_crawl_id}
+            f"/api/v1/crawls/{nonexistent_crawl_id}/start"
         )
         assert response.status_code == 404
         assert "not found" in response.json()["detail"]
@@ -1105,7 +1060,7 @@ class TestErrorHandling:
     def test_malformed_json_request(self, client):
         """Test handling of malformed JSON requests."""
         response = client.post(
-            "/api/v1/crawl/create",
+            "/api/v1/crawls",
             content="invalid json",
             headers={"Content-Type": "application/json"}
         )
@@ -1113,13 +1068,13 @@ class TestErrorHandling:
     
     def test_missing_request_body(self, client):
         """Test handling of missing request body."""
-        response = client.post("/api/v1/crawl/create")
+        response = client.post("/api/v1/crawls")
         assert response.status_code == 422
     
     def test_invalid_content_type(self, client, sample_crawl_spec_dict):
         """Test handling of invalid content type."""
         response = client.post(
-            "/api/v1/crawl/create",
+            "/api/v1/crawls",
             content=str(sample_crawl_spec_dict),
             headers={"Content-Type": "text/plain"}
         )
@@ -1132,7 +1087,7 @@ class TestErrorHandling:
             delattr(app.state, 'ringer')
         
         response = client.post(
-            "/api/v1/crawl/create",
+            "/api/v1/crawls",
             json={"crawl_spec": sample_crawl_spec_dict}
         )
         assert response.status_code == 500
