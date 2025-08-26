@@ -209,6 +209,11 @@ class TestRinger:
     def test_create_crawl(self, ringer, sample_crawl_spec):
         """Test creating a new crawl."""
         from ringer.core.models import CrawlResultsId
+        
+        # Mock the results manager to avoid SQLite initialization issues
+        mock_results_manager = Mock()
+        ringer.results_manager = mock_results_manager
+        
         results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
         crawl_id, run_state = ringer.create(sample_crawl_spec, results_id)
         
@@ -220,10 +225,18 @@ class TestRinger:
         assert crawl_state.crawl_spec == sample_crawl_spec
         assert len(crawl_state.analyzers) == 1
         assert crawl_state.current_state == RunStateEnum.CREATED
+        
+        # Verify results manager was called
+        mock_results_manager.create_crawl.assert_called_once_with(sample_crawl_spec, results_id)
     
     def test_create_duplicate_crawl(self, ringer, sample_crawl_spec):
         """Test creating a crawl with duplicate ID raises error."""
         from ringer.core.models import CrawlResultsId
+        
+        # Mock the results manager to avoid SQLite initialization issues
+        mock_results_manager = Mock()
+        ringer.results_manager = mock_results_manager
+        
         results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
         crawl_id, run_state = ringer.create(sample_crawl_spec, results_id)
         
@@ -233,6 +246,11 @@ class TestRinger:
     def test_create_crawl_with_llm_analyzer(self, ringer, sample_analyzer_spec):
         """Test creating a crawl with LLM analyzer."""
         from ringer.core.models import CrawlResultsId
+        
+        # Mock the results manager to avoid SQLite initialization issues
+        mock_results_manager = Mock()
+        ringer.results_manager = mock_results_manager
+        
         llm_spec = DhLlmScoringSpec(
             name="DhLlmScoreAnalyzer",
             composite_weight=0.5,
@@ -279,6 +297,11 @@ class TestRinger:
     def test_start_already_running_crawl(self, ringer, sample_crawl_spec):
         """Test starting an already running crawl raises error."""
         from ringer.core.models import CrawlResultsId, RunState
+        
+        # Mock the results manager to avoid SQLite initialization issues
+        mock_results_manager = Mock()
+        ringer.results_manager = mock_results_manager
+        
         results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
         crawl_id, create_state = ringer.create(sample_crawl_spec, results_id)
         
@@ -291,6 +314,11 @@ class TestRinger:
     def test_stop_crawl(self, ringer, sample_crawl_spec):
         """Test stopping a crawl."""
         from ringer.core.models import CrawlResultsId, RunState
+        
+        # Mock the results manager to avoid SQLite initialization issues
+        mock_results_manager = Mock()
+        ringer.results_manager = mock_results_manager
+        
         results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
         crawl_id, create_state = ringer.create(sample_crawl_spec, results_id)
         ringer.crawls[crawl_id].add_state(RunState(state=RunStateEnum.RUNNING))  # Set to running
@@ -305,6 +333,11 @@ class TestRinger:
     def test_stop_crawl_not_running(self, ringer, sample_crawl_spec):
         """Test stopping a crawl that is not running raises error."""
         from ringer.core.models import CrawlResultsId, RunState
+        
+        # Mock the results manager to avoid SQLite initialization issues
+        mock_results_manager = Mock()
+        ringer.results_manager = mock_results_manager
+        
         results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
         crawl_id, create_state = ringer.create(sample_crawl_spec, results_id)
         
@@ -326,12 +359,19 @@ class TestRinger:
     def test_delete_crawl(self, ringer, sample_crawl_spec):
         """Test deleting a crawl."""
         from ringer.core.models import CrawlResultsId
+        
+        # Mock the results manager to avoid SQLite initialization issues
+        mock_results_manager = Mock()
+        ringer.results_manager = mock_results_manager
+        
         results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
         crawl_id, create_state = ringer.create(sample_crawl_spec, results_id)
         
         ringer.delete(crawl_id)
         
         assert crawl_id not in ringer.crawls
+        # Verify results manager was called
+        mock_results_manager.delete_crawl.assert_called_once_with(results_id)
     
     def test_delete_nonexistent_crawl(self, ringer):
         """Test deleting a non-existent crawl raises error."""
@@ -341,6 +381,11 @@ class TestRinger:
     def test_delete_running_crawl(self, ringer, sample_crawl_spec):
         """Test deleting a running crawl raises error."""
         from ringer.core.models import CrawlResultsId, RunState
+        
+        # Mock the results manager to avoid SQLite initialization issues
+        mock_results_manager = Mock()
+        ringer.results_manager = mock_results_manager
+        
         results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
         crawl_id, create_state = ringer.create(sample_crawl_spec, results_id)
         ringer.crawls[crawl_id].add_state(RunState(state=RunStateEnum.RUNNING))  # Set to running
@@ -351,6 +396,11 @@ class TestRinger:
     def test_get_crawl_status(self, ringer, sample_crawl_spec):
         """Test getting crawl status."""
         from ringer.core.models import CrawlResultsId
+        
+        # Mock the results manager to avoid SQLite initialization issues
+        mock_results_manager = Mock()
+        ringer.results_manager = mock_results_manager
+        
         results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
         crawl_id, create_state = ringer.create(sample_crawl_spec, results_id)
         
