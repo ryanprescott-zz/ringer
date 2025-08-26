@@ -18,12 +18,6 @@ class CreateCrawlResponse(BaseModel):
     run_state: RunState
 
 
-class StartCrawlRequest(BaseModel):
-    """Request model for starting a crawl."""
-    
-    crawl_id: str
-
-
 class StartCrawlResponse(BaseModel):
     """Response model for crawl start."""
     
@@ -31,23 +25,11 @@ class StartCrawlResponse(BaseModel):
     run_state: RunState
 
 
-class StopCrawlRequest(BaseModel):
-    """Request model for stopping a crawl."""
-    
-    crawl_id: str
-
-
 class StopCrawlResponse(BaseModel):
     """Response model for crawl stop."""
     
     crawl_id: str
     run_state: RunState
-
-
-class DeleteCrawlRequest(BaseModel):
-    """Request model for deleting a crawl."""
-    
-    crawl_id: str
 
 
 class DeleteCrawlResponse(BaseModel):

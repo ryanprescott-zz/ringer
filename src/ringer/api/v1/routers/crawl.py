@@ -5,20 +5,20 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse
 from ringer.api.v1.models import (
     CreateCrawlRequest, CreateCrawlResponse,
-    StartCrawlRequest, StartCrawlResponse,
-    StopCrawlRequest, StopCrawlResponse,
-    DeleteCrawlRequest, DeleteCrawlResponse,
+    StartCrawlResponse,
+    StopCrawlResponse,
+    DeleteCrawlResponse,
     CrawlStatusResponse, CrawlStatusListResponse,
     CrawlInfoResponse, CrawlInfoListResponse
 )
 
 router = APIRouter(
-    prefix="/crawl",
-    tags=["crawl"],
+    prefix="/crawls",
+    tags=["crawls"],
 )
 
 
-@router.post("/create", response_model=CreateCrawlResponse)
+@router.post("", response_model=CreateCrawlResponse)
 def create_crawl(request: CreateCrawlRequest, app_request: Request) -> CreateCrawlResponse:
     """
     Create a new crawl.
@@ -47,13 +47,13 @@ def create_crawl(request: CreateCrawlRequest, app_request: Request) -> CreateCra
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
-@router.post("/start", response_model=StartCrawlResponse)
-def start_crawl(request: StartCrawlRequest, app_request: Request) -> StartCrawlResponse:
+@router.post("/{crawl_id}/start", response_model=StartCrawlResponse)
+def start_crawl(crawl_id: str, app_request: Request) -> StartCrawlResponse:
     """
     Start a previously created crawl.
     
     Args:
-        request: The crawl start request containing crawl ID
+        crawl_id: ID of the crawl to start
         app_request: FastAPI request object to access application state
         
     Returns:
@@ -64,7 +64,7 @@ def start_crawl(request: StartCrawlRequest, app_request: Request) -> StartCrawlR
     """
     try:
         ringer = app_request.app.state.ringer
-        crawl_id, run_state = ringer.start(request.crawl_id)
+        crawl_id, run_state = ringer.start(crawl_id)
         
         return StartCrawlResponse(
             crawl_id=crawl_id,
@@ -78,13 +78,13 @@ def start_crawl(request: StartCrawlRequest, app_request: Request) -> StartCrawlR
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
-@router.post("/stop", response_model=StopCrawlResponse)
-def stop_crawl(request: StopCrawlRequest, app_request: Request) -> StopCrawlResponse:
+@router.post("/{crawl_id}/stop", response_model=StopCrawlResponse)
+def stop_crawl(crawl_id: str, app_request: Request) -> StopCrawlResponse:
     """
     Stop a running crawl.
     
     Args:
-        request: The crawl stop request containing crawl ID
+        crawl_id: ID of the crawl to stop
         app_request: FastAPI request object to access application state
         
     Returns:
@@ -95,7 +95,7 @@ def stop_crawl(request: StopCrawlRequest, app_request: Request) -> StopCrawlResp
     """
     try:
         ringer = app_request.app.state.ringer
-        crawl_id, run_state = ringer.stop(request.crawl_id)
+        crawl_id, run_state = ringer.stop(crawl_id)
         
         return StopCrawlResponse(
             crawl_id=crawl_id,
@@ -109,13 +109,13 @@ def stop_crawl(request: StopCrawlRequest, app_request: Request) -> StopCrawlResp
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
-@router.post("/delete", response_model=DeleteCrawlResponse)
-def delete_crawl(request: DeleteCrawlRequest, app_request: Request) -> DeleteCrawlResponse:
+@router.delete("/{crawl_id}", response_model=DeleteCrawlResponse)
+def delete_crawl(crawl_id: str, app_request: Request) -> DeleteCrawlResponse:
     """
     Delete a crawl from the system.
     
     Args:
-        request: The crawl delete request containing crawl ID
+        crawl_id: ID of the crawl to delete
         app_request: FastAPI request object to access application state
         
     Returns:
@@ -126,13 +126,13 @@ def delete_crawl(request: DeleteCrawlRequest, app_request: Request) -> DeleteCra
     """
     try:
         ringer = app_request.app.state.ringer
-        ringer.delete(request.crawl_id)
+        ringer.delete(crawl_id)
         
         # Set deletion time to now since the crawl state is removed
         deletion_time = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
         
         return DeleteCrawlResponse(
-            crawl_id=request.crawl_id,
+            crawl_id=crawl_id,
             crawl_deleted_time=deletion_time
         )
     except ValueError as e:
@@ -171,7 +171,7 @@ def get_all_crawl_statuses(app_request: Request) -> CrawlStatusListResponse:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
-@router.get("/info", response_model=CrawlInfoListResponse)
+@router.get("", response_model=CrawlInfoListResponse)
 def get_all_crawl_info(app_request: Request) -> CrawlInfoListResponse:
     """
     Get complete information (spec + status) for all crawls.
@@ -206,7 +206,7 @@ def get_all_crawl_info(app_request: Request) -> CrawlInfoListResponse:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
-@router.get("/{crawl_id}/info", response_model=CrawlInfoResponse)
+@router.get("/{crawl_id}", response_model=CrawlInfoResponse)
 def get_crawl_info(crawl_id: str, app_request: Request) -> CrawlInfoResponse:
     """
     Get complete information (spec + status) for a crawl.
