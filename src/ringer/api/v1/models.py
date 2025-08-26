@@ -1,14 +1,26 @@
 """Pydantic models for the Ringer FastAPI web service."""
 
 from typing import List, Optional
-from pydantic import BaseModel
-from ringer.core.models import CrawlSpec, RunState, SearchEngineSeed
+from pydantic import BaseModel, Field
+from ringer.core.models import CrawlSpec, RunState, SearchEngineSeed, CrawlResultsId
+import uuid
 
 
 class CreateCrawlRequest(BaseModel):
     """Request model for creating a new crawl."""
     
     crawl_spec: CrawlSpec
+    results_id: CrawlResultsId = Field(
+        default_factory=lambda: CreateCrawlRequest._create_default_results_id(),
+        description="Identifier for the crawl results data set"
+    )
+    
+    @staticmethod
+    def _create_default_results_id() -> CrawlResultsId:
+        """Create a default CrawlResultsId with unique collection_id and data_id."""
+        collection_id = f"collection_{uuid.uuid4()}"
+        data_id = f"data_{uuid.uuid4()}"
+        return CrawlResultsId(collection_id=collection_id, data_id=data_id)
 
 
 class CreateCrawlResponse(BaseModel):

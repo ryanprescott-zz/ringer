@@ -8,6 +8,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_excep
 from ringer.core.models import (
     CrawlRecord,
     CrawlSpec,
+    CrawlResultsId,
     StoreCrawlRecordRequest,
 )
 from ringer.core.settings import DhCrawlResultsManagerSettings
@@ -29,12 +30,13 @@ class DhCrawlResultsManager(CrawlResultsManager):
         })
 
 
-    def create_crawl(self, crawl_spec: CrawlSpec) -> str:
+    def create_crawl(self, crawl_spec: CrawlSpec, results_id: CrawlResultsId) -> str:
         """
-        Create a new crawl with the given spec by calling the DH service.
+        Create a new crawl with the given spec and results ID by calling the DH service.
         
         Args:
             crawl_spec: Specification of the crawl to create.
+            results_id: Identifier for the crawl results data set.
             
         Returns:
             str: Storage ID for the created crawl

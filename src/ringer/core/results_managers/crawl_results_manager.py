@@ -4,20 +4,21 @@ from abc import ABC, abstractmethod
 
 from ringer.core.models import (
     CrawlRecord,
-    CrawlSpec
-
+    CrawlSpec,
+    CrawlResultsId
 )
 
 class CrawlResultsManager(ABC):
     """Abstract base class for crawl results processing."""
     
     @abstractmethod
-    def create_crawl(self, crawl_spec: CrawlSpec) -> str:
+    def create_crawl(self, crawl_spec: CrawlSpec, results_id: 'CrawlResultsId') -> str:
         """
-        Create a new crawl with the given spec.
+        Create a new crawl with the given spec and results ID.
         
         Args:
             crawl_spec: Specification of the crawl to create.
+            results_id: Identifier for the crawl results data set.
             
         Returns:
             str: Storage ID for the created crawl

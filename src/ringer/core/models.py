@@ -155,10 +155,6 @@ class CrawlSpec(BaseModel):
     domain_blacklist: Optional[List[str]] = Field(
         default=None, description="Domains to exclude from crawling"
     )
-    results_id: CrawlResultsId = Field(
-        default_factory=lambda: CrawlSpec._create_default_results_id(), 
-        description="Identifier for the crawl results data set"
-    )
     
     @field_validator('seeds')
     @classmethod
@@ -173,12 +169,6 @@ class CrawlSpec(BaseModel):
         """Generate a hash ID for this crawl based on the name."""
         return hashlib.md5(self.name.encode()).hexdigest()
     
-    @staticmethod
-    def _create_default_results_id() -> CrawlResultsId:
-        """Create a default CrawlResultsId with unique collection_id and data_id."""
-        collection_id = f"collection_{uuid.uuid4()}"
-        data_id = f"data_{uuid.uuid4()}"
-        return CrawlResultsId(collection_id=collection_id, data_id=data_id)
 
 
 class CrawlRecord(BaseModel):

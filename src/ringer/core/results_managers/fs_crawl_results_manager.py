@@ -6,7 +6,7 @@ import uuid
 import shutil
 from pathlib import Path
 
-from ringer.core.models import CrawlRecord, CrawlSpec
+from ringer.core.models import CrawlRecord, CrawlSpec, CrawlResultsId
 from ringer.core.settings import FsCrawlResultsManagerSettings
 from .crawl_results_manager import CrawlResultsManager
 
@@ -26,12 +26,13 @@ class FsCrawlResultsManager(CrawlResultsManager):
         
         logger.info(f"Initialized FsCrawlResultsManager with base directory: {self.base_dir}")
     
-    def create_crawl(self, crawl_spec: CrawlSpec) -> str:
+    def create_crawl(self, crawl_spec: CrawlSpec, results_id: CrawlResultsId) -> str:
         """
         Create a new crawl directory structure.
         
         Args:
             crawl_spec: Specification for the crawl to create
+            results_id: Identifier for the crawl results data set
             
         Returns:
             str: Storage ID for the created crawl
@@ -62,6 +63,21 @@ class FsCrawlResultsManager(CrawlResultsManager):
                     shutil.rmtree(crawl_dir)
                 except Exception as cleanup_error:
                     logger.error(f"Failed to cleanup directory after spec storage failure: {cleanup_error}")
+                raise
+            
+            # Store the results ID
+            results_id_file = crawl_dir / "results_id.json"
+            try:
+                with open(results_id_file, 'w', encoding='utf-8') as f:
+                    json.dump(results_id.model_dump(), f, indent=2, default=str)
+                logger.debug(f"Stored results ID to: {results_id_file}")
+            except Exception as e:
+                logger.error(f"Failed to store results ID to {results_id_file}: {e}")
+                # Cleanup directory if results ID storage fails
+                try:
+                    shutil.rmtree(crawl_dir)
+                except Exception as cleanup_error:
+                    logger.error(f"Failed to cleanup directory after results ID storage failure: {cleanup_error}")
                 raise
             
             logger.info(f"Successfully created crawl directory: {crawl_dir} with storage ID: {storage_id}")

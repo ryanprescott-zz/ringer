@@ -14,6 +14,7 @@ from sortedcontainers import SortedSet
 
 from .models import (
     CrawlSpec,
+    CrawlResultsId,
     DhLlmScoringSpec,
     KeywordScoringSpec,
     CrawlRecord,
@@ -64,16 +65,18 @@ class ScoreUrlTuple:
 class CrawlState:
     """Thread-safe state management for a single crawl with persistent storage."""
     
-    def __init__(self, crawl_spec: CrawlSpec, manager: CrawlStateManager, storage_id: str):
+    def __init__(self, crawl_spec: CrawlSpec, results_id: 'CrawlResultsId', manager: CrawlStateManager, storage_id: str):
         """
         Initialize crawl state.
         
         Args:
             crawl_spec: Specification for the crawl
+            results_id: Identifier for the crawl results data set
             manager: State manager backend for persistence
             storage_id: Storage ID for the crawl results
         """
         self.crawl_spec = crawl_spec
+        self.results_id = results_id
         self.manager = manager
         self.storage_id = storage_id
         self.analyzers: List[ScoreAnalyzer] = []
@@ -188,12 +191,13 @@ class Ringer:
         )
         self.crawls_lock = Lock()
     
-    def create(self, crawl_spec: CrawlSpec) -> tuple:
+    def create(self, crawl_spec: CrawlSpec, results_id: 'CrawlResultsId') -> tuple:
         """
         Create a new crawl.
         
         Args:
             crawl_spec: Specification for the crawl including seed URLs and analyzers
+            results_id: Identifier for the crawl results data set
             
         Returns:
             tuple: (crawl_id, RunState) containing the crawl ID and creation state
@@ -213,7 +217,7 @@ class Ringer:
                 
                 # Create crawl in results manager and get storage ID
                 try:
-                    storage_id = self.results_manager.create_crawl(crawl_spec)
+                    storage_id = self.results_manager.create_crawl(crawl_spec, results_id)
                     logger.debug(f"Created storage for crawl {crawl_id} with storage ID {storage_id}")
                 except Exception as e:
                     logger.error(f"Failed to create storage for crawl {crawl_id}: {e}")
@@ -221,7 +225,7 @@ class Ringer:
                 
                 # Create crawl state with persistent storage
                 try:
-                    crawl_state = CrawlState(crawl_spec, self.state_manager, storage_id)
+                    crawl_state = CrawlState(crawl_spec, results_id, self.state_manager, storage_id)
                     logger.debug(f"Created crawl state for crawl {crawl_id}")
                 except Exception as e:
                     logger.error(f"Failed to create crawl state for crawl {crawl_id}: {e}")

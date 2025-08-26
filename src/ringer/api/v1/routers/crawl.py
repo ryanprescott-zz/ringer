@@ -35,7 +35,7 @@ def create_crawl(request: CreateCrawlRequest, app_request: Request) -> CreateCra
     """
     try:
         ringer = app_request.app.state.ringer
-        crawl_id, run_state = ringer.create(request.crawl_spec)
+        crawl_id, run_state = ringer.create(request.crawl_spec, request.results_id)
         
         return CreateCrawlResponse(
             crawl_id=crawl_id,
