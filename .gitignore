@@ -5,3 +5,5 @@ crawl_data/
 prospector-debug.log
 .DS_Store
 MagicMock/
+datastore/crawl_results.db
+ringer-debug.log

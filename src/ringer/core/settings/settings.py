@@ -18,7 +18,6 @@ class RingerSettings(BaseSettings):
     
     max_workers: int = 10
     prohibited_file_types: List[str] = []
-    results_manager_type: ResultsManagerType = ResultsManagerType.FILE_SYSTEM
     
     model_config = {
         "env_prefix": "ringer_"
@@ -53,7 +52,7 @@ class DhLlmScoreAnalyzerSettings(BaseSettings):
 class CrawlResultsManagerSettings(BaseSettings):
     """Settings for crawl results management."""
     
-    manager_type: ResultsManagerType = ResultsManagerType.FILE_SYSTEM
+    manager_type: ResultsManagerType = ResultsManagerType.SQLITE
 
 
 class FsCrawlResultsManagerSettings(BaseSettings):
@@ -83,7 +82,7 @@ class DhCrawlResultsManagerSettings(BaseSettings):
 class SQLiteCrawlResultsManagerSettings(BaseSettings):
     """Settings for SQLite database storage of crawl records."""
     
-    database_path: str = "./crawl_results.db"
+    database_path: str = "datastore/crawl_results.db"
     echo_sql: bool = False
     pool_size: int = 5
     max_overflow: int = 10
