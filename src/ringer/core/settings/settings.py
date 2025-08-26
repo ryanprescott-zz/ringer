@@ -10,6 +10,7 @@ class ResultsManagerType(str, Enum):
     """Enum for crawl results manager types."""
     FILE_SYSTEM = "file_system"
     DH = "dh"
+    SQLITE = "sqlite"
 
 
 class RingerSettings(BaseSettings):
@@ -76,6 +77,19 @@ class DhCrawlResultsManagerSettings(BaseSettings):
 
     model_config = {
         "env_prefix": "dh_crawl_results_manager_"
+    }
+
+
+class SQLiteCrawlResultsManagerSettings(BaseSettings):
+    """Settings for SQLite database storage of crawl records."""
+    
+    database_path: str = "./crawl_results.db"
+    echo_sql: bool = False
+    pool_size: int = 5
+    max_overflow: int = 10
+    
+    model_config = {
+        "env_prefix": "sqlite_crawl_results_manager_"
     }
 
 
