@@ -216,5 +216,5 @@ def sample_crawl_state(sample_crawl_spec):
     from ringer.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
     manager = MemoryCrawlStateManager()
     results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
-    crawl_state = CrawlState(sample_crawl_spec, results_id, manager)
+    crawl_state = CrawlState(sample_crawl_spec, results_id, manager, "test_crawl_id")
     return crawl_state

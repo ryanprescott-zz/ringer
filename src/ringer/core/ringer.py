@@ -65,7 +65,7 @@ class ScoreUrlTuple:
 class CrawlState:
     """Thread-safe state management for a single crawl with persistent storage."""
     
-    def __init__(self, crawl_spec: CrawlSpec, results_id: 'CrawlResultsId', manager: CrawlStateManager):
+    def __init__(self, crawl_spec: CrawlSpec, results_id: 'CrawlResultsId', manager: CrawlStateManager, crawl_id: str):
         """
         Initialize crawl state.
         
@@ -73,10 +73,12 @@ class CrawlState:
             crawl_spec: Specification for the crawl
             results_id: Identifier for the crawl results data set
             manager: State manager backend for persistence
+            crawl_id: Unique identifier for the crawl
         """
         self.crawl_spec = crawl_spec
         self.results_id = results_id
         self.manager = manager
+        self.crawl_id = crawl_id
         self.analyzers: List[ScoreAnalyzer] = []
         self.analyzer_weights: Dict[str, float] = {}
         
@@ -223,7 +225,7 @@ class Ringer:
                 
                 # Create crawl state with persistent storage
                 try:
-                    crawl_state = CrawlState(crawl_spec, results_id, self.state_manager)
+                    crawl_state = CrawlState(crawl_spec, results_id, self.state_manager, crawl_id)
                     logger.debug(f"Created crawl state for crawl {crawl_id}")
                 except Exception as e:
                     logger.error(f"Failed to create crawl state for crawl {crawl_id}: {e}")
@@ -714,6 +716,7 @@ class Ringer:
                 self.results_manager.store_record(
                     crawl_record,
                     crawl_state.results_id,
+                    crawl_state.crawl_id
                 )
                 logger.debug(f"Stored crawl record for URL {url}")
             except Exception as e:

@@ -29,7 +29,7 @@ class TestCrawlState:
         from ringer.core.models import CrawlResultsId
         manager = MemoryCrawlStateManager()
         results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
-        state = CrawlState(sample_crawl_spec, results_id, manager)
+        state = CrawlState(sample_crawl_spec, results_id, manager, "test_crawl_id")
         
         assert state.crawl_spec == sample_crawl_spec
         assert state.results_id == results_id
@@ -49,7 +49,7 @@ class TestCrawlState:
         from ringer.core.models import CrawlResultsId
         manager = MemoryCrawlStateManager()
         results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
-        state = CrawlState(sample_crawl_spec, results_id, manager)
+        state = CrawlState(sample_crawl_spec, results_id, manager, "test_crawl_id")
         
         url_scores = [(0.8, "https://test1.com"), (0.6, "https://test2.com")]
         state.add_urls_with_scores(url_scores)
@@ -68,7 +68,7 @@ class TestCrawlState:
         from ringer.core.models import CrawlResultsId
         manager = MemoryCrawlStateManager()
         results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
-        state = CrawlState(sample_crawl_spec, results_id, manager)
+        state = CrawlState(sample_crawl_spec, results_id, manager, "test_crawl_id")
         
         # Add some URLs with different scores
         url_scores = [(0.8, "https://high.com"), (0.2, "https://low.com")]
@@ -88,7 +88,7 @@ class TestCrawlState:
         from ringer.core.models import CrawlResultsId
         manager = MemoryCrawlStateManager()
         results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
-        state = CrawlState(sample_crawl_spec, results_id, manager)
+        state = CrawlState(sample_crawl_spec, results_id, manager, "test_crawl_id")
         
         # Frontier should be empty initially
         next_url = state.get_next_url()
@@ -100,7 +100,7 @@ class TestCrawlState:
         from ringer.core.models import CrawlResultsId
         manager = MemoryCrawlStateManager()
         results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
-        state = CrawlState(sample_crawl_spec, results_id, manager)
+        state = CrawlState(sample_crawl_spec, results_id, manager, "test_crawl_id")
         
         # Add same URL with different scores
         url_scores = [(0.8, "https://test.com"), (0.6, "https://test.com")]
@@ -120,7 +120,7 @@ class TestCrawlState:
         from ringer.core.models import CrawlResultsId
         manager = MemoryCrawlStateManager()
         results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
-        state = CrawlState(sample_crawl_spec, results_id, manager)
+        state = CrawlState(sample_crawl_spec, results_id, manager, "test_crawl_id")
         
         # Should allow URLs not in blacklist
         assert state.is_url_allowed("https://example.com/page")
@@ -140,7 +140,7 @@ class TestCrawlState:
         )
         manager = MemoryCrawlStateManager()
         results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
-        state = CrawlState(spec, results_id, manager)
+        state = CrawlState(spec, results_id, manager, "test_crawl_id")
         
         # Should allow all URLs when no blacklist
         assert state.is_url_allowed("https://any-domain.com/page")
@@ -151,7 +151,7 @@ class TestCrawlState:
         from ringer.core.models import CrawlResultsId
         manager = MemoryCrawlStateManager()
         results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
-        state = CrawlState(sample_crawl_spec, results_id, manager)
+        state = CrawlState(sample_crawl_spec, results_id, manager, "test_crawl_id")
         
         # Test increment methods
         state.increment_crawled_count()
@@ -175,7 +175,7 @@ class TestCrawlState:
         from ringer.core.models import CrawlResultsId
         manager = MemoryCrawlStateManager()
         results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
-        state = CrawlState(sample_crawl_spec, results_id, manager)
+        state = CrawlState(sample_crawl_spec, results_id, manager, "test_crawl_id")
         
         # Add some URLs to frontier
         state.add_urls_with_scores([(0.8, "https://test1.com"), (0.6, "https://test2.com")])

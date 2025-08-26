@@ -81,13 +81,14 @@ class FsCrawlResultsManager(CrawlResultsManager):
             logger.error(f"Failed to create crawl for results_id {results_id.collection_id}/{results_id.data_id}: {e}")
             raise
     
-    def store_record(self, crawl_record: CrawlRecord, results_id: CrawlResultsId) -> None:
+    def store_record(self, crawl_record: CrawlRecord, results_id: CrawlResultsId, crawl_id: str) -> None:
         """
         Store a crawl record as a JSON file.
         
         Args:
             crawl_record: The crawl record to store
             results_id: Identifier for the crawl results data set
+            crawl_id: Unique identifier for the crawl
         """
         try:
             crawl_dir = self.base_dir / results_id.collection_id / results_id.data_id / "records"

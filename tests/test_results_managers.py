@@ -38,7 +38,7 @@ class TestDhCrawlResultsManager:
         results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
         
         # Should not raise any exception
-        manager.store_record(sample_crawl_record, results_id)
+        manager.store_record(sample_crawl_record, results_id, "test_crawl_id")
         
         # Verify request was made
         mock_patch.assert_called_once()
@@ -56,7 +56,7 @@ class TestDhCrawlResultsManager:
         assert request_data['operation'] == "add_from_docs"
         assert 'documents' in request_data['operation_info']
         assert 'source' in request_data['operation_info']
-        assert request_data['operation_info']['source'] == "test_collection/test_data"
+        assert request_data['operation_info']['source'] == "test_crawl_id"
         assert len(request_data['operation_info']['documents']) == 1
     
     @patch('ringer.core.results_managers.dh_crawl_results_manager.requests.Session.patch')
@@ -73,7 +73,7 @@ class TestDhCrawlResultsManager:
         results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
         
         # Should not raise exception, just log and discard
-        manager.store_record(sample_crawl_record, results_id)
+        manager.store_record(sample_crawl_record, results_id, "test_crawl_id")
         
         # Should have made multiple attempts (3 retries + 1 initial = 4 total)
         assert mock_patch.call_count >= 3
@@ -91,7 +91,7 @@ class TestDhCrawlResultsManager:
         results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
         
         # Should not raise exception, just log and discard
-        manager.store_record(sample_crawl_record, results_id)
+        manager.store_record(sample_crawl_record, results_id, "test_crawl_id")
         
         # Should have made multiple attempts
         assert mock_patch.call_count >= 3
@@ -109,7 +109,7 @@ class TestDhCrawlResultsManager:
         results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
         
         # Should not raise exception, just log and discard
-        manager.store_record(sample_crawl_record, results_id)
+        manager.store_record(sample_crawl_record, results_id, "test_crawl_id")
         
         # Should have made multiple attempts
         assert mock_patch.call_count >= 3
@@ -133,7 +133,7 @@ class TestDhCrawlResultsManager:
         results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
         
         # Should succeed after retry
-        manager.store_record(sample_crawl_record, results_id)
+        manager.store_record(sample_crawl_record, results_id, "test_crawl_id")
         
         # Should have made 2 calls
         assert mock_patch.call_count == 2
@@ -163,7 +163,7 @@ class TestFsCrawlResultsManager:
                 # First create the crawl and get results ID
                 results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
                 manager.create_crawl(sample_crawl_spec, results_id)
-                manager.store_record(sample_crawl_record, results_id)
+                manager.store_record(sample_crawl_record, results_id, "test_crawl_id")
                 
                 # Check that directory was created with results ID
                 # First, let's find what directories were actually created
@@ -203,7 +203,7 @@ class TestFsCrawlResultsManager:
                 # Create crawl and handle multiple records for same crawl
                 results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
                 manager.create_crawl(sample_crawl_spec, results_id)
-                manager.store_record(sample_crawl_record, results_id)
+                manager.store_record(sample_crawl_record, results_id, "test_crawl_id")
                 
                 record2 = CrawlRecord(
                     url="https://example2.com",
@@ -213,7 +213,7 @@ class TestFsCrawlResultsManager:
                     scores={},
                     composite_score=0.0
                 )
-                manager.store_record(record2, results_id)
+                manager.store_record(record2, results_id, "test_crawl_id")
                 
                 # Should create same directory structure
                 # First, let's find what directories were actually created
@@ -245,4 +245,4 @@ class TestFsCrawlResultsManager:
             
             results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
             with pytest.raises(Exception):
-                manager.store_record(sample_crawl_record, results_id)
+                manager.store_record(sample_crawl_record, results_id, "test_crawl_id")

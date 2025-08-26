@@ -27,13 +27,14 @@ class CrawlResultsManager(ABC):
 
 
     @abstractmethod
-    def store_record(self, crawl_record: CrawlRecord, results_id: CrawlResultsId) -> None:
+    def store_record(self, crawl_record: CrawlRecord, results_id: CrawlResultsId, crawl_id: str) -> None:
         """
         Store a crawl record.
         
         Args:
             crawl_record: The crawl record to process
             results_id: Identifier for the crawl results data set
+            crawl_id: Unique identifier for the crawl
         Raises:
             NotImplementedError: If not implemented by subclass
         """

@@ -46,17 +46,18 @@ class DhCrawlResultsManager(CrawlResultsManager):
         # TODO send HTTP post to dh create endpoint using the results_id.
 
     
-    def store_record(self, crawl_record: CrawlRecord, results_id: CrawlResultsId)-> None:
+    def store_record(self, crawl_record: CrawlRecord, results_id: CrawlResultsId, crawl_id: str) -> None:
         """
         Store a crawl record to the DH service.
         
         Args:
             crawl_record: The crawl record to process.
             results_id: Identifier for the crawl results data set
+            crawl_id: Unique identifier for the crawl
         """
 
         try:
-            self._send_record_with_retry(crawl_record, results_id)
+            self._send_record_with_retry(crawl_record, results_id, crawl_id)
         except Exception as e:
             logger.error(
                 f"Failed to send crawl record after all retries for {crawl_record.url}: {e}. "
@@ -78,13 +79,14 @@ class DhCrawlResultsManager(CrawlResultsManager):
         raise NotImplementedError(error_msg)
         # TODO implement deletion logic by calling the DH service.
     
-    def _send_record_with_retry(self, crawl_record: CrawlRecord, results_id: CrawlResultsId) -> None:
+    def _send_record_with_retry(self, crawl_record: CrawlRecord, results_id: CrawlResultsId, crawl_id: str) -> None:
         """
         Send a crawl record with retry logic.
         
         Args:
             crawl_record: The crawl record to send
             results_id: Identifier for the crawl results data set
+            crawl_id: Unique identifier for the crawl
             
         Raises:
             requests.exceptions.RequestException: For HTTP-related errors
@@ -98,7 +100,6 @@ class DhCrawlResultsManager(CrawlResultsManager):
         )
         def _do_send():
             # Create the request payload
-            crawl_id = f"{results_id.collection_id}/{results_id.data_id}"
             request_data = StoreCrawlRecordRequest(
                 operation="add_from_docs",
                 operation_info={
