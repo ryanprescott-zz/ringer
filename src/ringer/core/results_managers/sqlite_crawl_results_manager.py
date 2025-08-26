@@ -64,39 +64,36 @@ class SQLiteCrawlResultsManager(CrawlResultsManager):
     
     def __init__(self):
         """Initialize the SQLite results manager with settings and database connection."""
-        # Initialize attributes first to prevent AttributeError
+        # Initialize ALL attributes first to prevent AttributeError, even if initialization fails
         self.SessionLocal = None
         self.engine = None
         self.settings = None
         
-        try:
-            self.settings = SQLiteCrawlResultsManagerSettings()
-            
-            # Ensure the database directory exists
-            db_path = Path(self.settings.database_path)
-            db_path.parent.mkdir(parents=True, exist_ok=True)
-            
-            # Create SQLAlchemy engine
-            database_url = f"sqlite:///{self.settings.database_path}"
-            self.engine = create_engine(
-                database_url,
-                echo=self.settings.echo_sql,
-                pool_size=self.settings.pool_size,
-                max_overflow=self.settings.max_overflow,
-                # SQLite-specific settings
-                connect_args={"check_same_thread": False}
-            )
-            
-            # Create tables
-            Base.metadata.create_all(self.engine)
-            
-            # Create session factory
-            self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
-            
-            logger.info(f"Initialized SQLiteCrawlResultsManager with database: {self.settings.database_path}")
-        except Exception as e:
-            logger.error(f"Failed to initialize SQLiteCrawlResultsManager: {e}")
-            raise
+        # Now attempt initialization
+        self.settings = SQLiteCrawlResultsManagerSettings()
+        
+        # Ensure the database directory exists
+        db_path = Path(self.settings.database_path)
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Create SQLAlchemy engine
+        database_url = f"sqlite:///{self.settings.database_path}"
+        self.engine = create_engine(
+            database_url,
+            echo=self.settings.echo_sql,
+            pool_size=self.settings.pool_size,
+            max_overflow=self.settings.max_overflow,
+            # SQLite-specific settings
+            connect_args={"check_same_thread": False}
+        )
+        
+        # Create tables
+        Base.metadata.create_all(self.engine)
+        
+        # Create session factory
+        self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
+        
+        logger.info(f"Initialized SQLiteCrawlResultsManager with database: {self.settings.database_path}")
     
     def create_crawl(self, crawl_spec: CrawlSpec, results_id: CrawlResultsId) -> None:
         """
