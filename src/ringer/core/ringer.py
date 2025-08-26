@@ -211,11 +211,6 @@ class Ringer:
                     logger.error(error_msg)
                     raise ValueError(error_msg)
                 
-                # Ensure crawl_spec has a results_id
-                if crawl_spec.results_id is None:
-                    crawl_spec.results_id = crawl_spec.create_default_results_id()
-                    logger.debug(f"Generated default results_id for crawl {crawl_id}: collection_id={crawl_spec.results_id.collection_id}, data_id={crawl_spec.results_id.data_id}")
-                
                 # Create crawl in results manager and get storage ID
                 try:
                     storage_id = self.results_manager.create_crawl(crawl_spec)
