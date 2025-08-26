@@ -3,10 +3,13 @@
 from .crawl_results_manager import CrawlResultsManager
 from .fs_crawl_results_manager import FsCrawlResultsManager
 from .dh_crawl_results_manager import DhCrawlResultsManager
+from .sqlite_crawl_results_manager import SQLiteCrawlResultsManager
 from .crawl_results_manager_factory import create_crawl_results_manager
 
 __all__ = [
     "CrawlResultsManager",
     "FsCrawlResultsManager", 
-    "DhCrawlResultsManager"
+    "DhCrawlResultsManager",
+    "SQLiteCrawlResultsManager",
+    "create_crawl_results_manager"
 ]

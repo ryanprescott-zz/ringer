@@ -3,6 +3,7 @@
 from .crawl_results_manager import CrawlResultsManager
 from .fs_crawl_results_manager import FsCrawlResultsManager
 from .dh_crawl_results_manager import DhCrawlResultsManager
+from .sqlite_crawl_results_manager import SQLiteCrawlResultsManager
 from ..settings import CrawlResultsManagerSettings, ResultsManagerType
 
 
@@ -19,5 +20,7 @@ def create_crawl_results_manager() -> CrawlResultsManager:
         return FsCrawlResultsManager()
     elif settings.manager_type == ResultsManagerType.DH:
         return DhCrawlResultsManager()
+    elif settings.manager_type == ResultsManagerType.SQLITE:
+        return SQLiteCrawlResultsManager()
     else:
         raise ValueError(f"Unknown results manager type: {settings.manager_type}")
