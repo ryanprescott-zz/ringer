@@ -69,31 +69,36 @@ class SQLiteCrawlResultsManager(CrawlResultsManager):
         self.engine = None
         self.settings = None
         
-        # Now attempt initialization
-        self.settings = SQLiteCrawlResultsManagerSettings()
-        
-        # Ensure the database directory exists
-        db_path = Path(self.settings.database_path)
-        db_path.parent.mkdir(parents=True, exist_ok=True)
-        
-        # Create SQLAlchemy engine
-        database_url = f"sqlite:///{self.settings.database_path}"
-        self.engine = create_engine(
-            database_url,
-            echo=self.settings.echo_sql,
-            pool_size=self.settings.pool_size,
-            max_overflow=self.settings.max_overflow,
-            # SQLite-specific settings
-            connect_args={"check_same_thread": False}
-        )
-        
-        # Create tables
-        Base.metadata.create_all(self.engine)
-        
-        # Create session factory
-        self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
-        
-        logger.info(f"Initialized SQLiteCrawlResultsManager with database: {self.settings.database_path}")
+        try:
+            # Now attempt initialization
+            self.settings = SQLiteCrawlResultsManagerSettings()
+            
+            # Ensure the database directory exists
+            db_path = Path(self.settings.database_path)
+            db_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            # Create SQLAlchemy engine
+            database_url = f"sqlite:///{self.settings.database_path}"
+            self.engine = create_engine(
+                database_url,
+                echo=self.settings.echo_sql,
+                pool_size=self.settings.pool_size,
+                max_overflow=self.settings.max_overflow,
+                # SQLite-specific settings
+                connect_args={"check_same_thread": False}
+            )
+            
+            # Create tables
+            Base.metadata.create_all(self.engine)
+            
+            # Create session factory
+            self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
+            
+            logger.info(f"Initialized SQLiteCrawlResultsManager with database: {self.settings.database_path}")
+        except Exception as e:
+            logger.error(f"Failed to initialize SQLiteCrawlResultsManager: {e}")
+            # Keep SessionLocal as None so methods can detect the failure
+            raise
     
     def create_crawl(self, crawl_spec: CrawlSpec, results_id: CrawlResultsId) -> None:
         """
@@ -103,8 +108,8 @@ class SQLiteCrawlResultsManager(CrawlResultsManager):
             crawl_spec: Specification for the crawl to create
             results_id: Identifier for the crawl results data set
         """
-        if self.SessionLocal is None:
-            raise RuntimeError("SQLiteCrawlResultsManager not properly initialized")
+        if not hasattr(self, 'SessionLocal') or self.SessionLocal is None:
+            raise RuntimeError("SQLiteCrawlResultsManager not properly initialized - database connection failed")
             
         logger.debug(f"Creating crawl in database for results_id: collection_id={results_id.collection_id}, data_id={results_id.data_id}")
         
@@ -149,8 +154,8 @@ class SQLiteCrawlResultsManager(CrawlResultsManager):
             results_id: Identifier for the crawl results data set
             crawl_id: Unique identifier for the crawl
         """
-        if self.SessionLocal is None:
-            raise RuntimeError("SQLiteCrawlResultsManager not properly initialized")
+        if not hasattr(self, 'SessionLocal') or self.SessionLocal is None:
+            raise RuntimeError("SQLiteCrawlResultsManager not properly initialized - database connection failed")
             
         session = self.SessionLocal()
         try:
@@ -214,8 +219,8 @@ class SQLiteCrawlResultsManager(CrawlResultsManager):
         Args:
             results_id: Results ID of the crawl to delete
         """
-        if self.SessionLocal is None:
-            raise RuntimeError("SQLiteCrawlResultsManager not properly initialized")
+        if not hasattr(self, 'SessionLocal') or self.SessionLocal is None:
+            raise RuntimeError("SQLiteCrawlResultsManager not properly initialized - database connection failed")
             
         session = self.SessionLocal()
         try:
@@ -251,8 +256,8 @@ class SQLiteCrawlResultsManager(CrawlResultsManager):
         Returns:
             List of CrawlRecord objects
         """
-        if self.SessionLocal is None:
-            raise RuntimeError("SQLiteCrawlResultsManager not properly initialized")
+        if not hasattr(self, 'SessionLocal') or self.SessionLocal is None:
+            raise RuntimeError("SQLiteCrawlResultsManager not properly initialized - database connection failed")
             
         session = self.SessionLocal()
         try:
@@ -305,8 +310,8 @@ class SQLiteCrawlResultsManager(CrawlResultsManager):
         Returns:
             Dictionary with crawl statistics
         """
-        if self.SessionLocal is None:
-            raise RuntimeError("SQLiteCrawlResultsManager not properly initialized")
+        if not hasattr(self, 'SessionLocal') or self.SessionLocal is None:
+            raise RuntimeError("SQLiteCrawlResultsManager not properly initialized - database connection failed")
             
         session = self.SessionLocal()
         try:
