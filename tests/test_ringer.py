@@ -27,11 +27,11 @@ class TestCrawlState:
         """Test CrawlState initialization."""
         from ringer.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
         manager = MemoryCrawlStateManager()
-        storage_id = "test-storage-id-123"
-        state = CrawlState(sample_crawl_spec, manager, storage_id)
+        results_id = "test-results-id-123"
+        state = CrawlState(sample_crawl_spec, manager, results_id)
         
         assert state.crawl_spec == sample_crawl_spec
-        assert state.storage_id == storage_id
+        assert state.results_id == results_id
         assert len(state.analyzers) == 0
         assert state.current_state == RunStateEnum.CREATED
         
@@ -46,8 +46,8 @@ class TestCrawlState:
         """Test adding URLs with scores to frontier."""
         from ringer.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
         manager = MemoryCrawlStateManager()
-        storage_id = "test-storage-id-123"
-        state = CrawlState(sample_crawl_spec, manager, storage_id)
+        results_id = "test-results-id-123"
+        state = CrawlState(sample_crawl_spec, manager, results_id)
         
         url_scores = [(0.8, "https://test1.com"), (0.6, "https://test2.com")]
         state.add_urls_with_scores(url_scores)
@@ -64,8 +64,8 @@ class TestCrawlState:
         """Test getting next URL from frontier."""
         from ringer.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
         manager = MemoryCrawlStateManager()
-        storage_id = "test-storage-id-123"
-        state = CrawlState(sample_crawl_spec, manager, storage_id)
+        results_id = "test-results-id-123"
+        state = CrawlState(sample_crawl_spec, manager, results_id)
         
         # Add some URLs with different scores
         url_scores = [(0.8, "https://high.com"), (0.2, "https://low.com")]
@@ -83,8 +83,8 @@ class TestCrawlState:
         """Test getting next URL when frontier is empty."""
         from ringer.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
         manager = MemoryCrawlStateManager()
-        storage_id = "test-storage-id-123"
-        state = CrawlState(sample_crawl_spec, manager, storage_id)
+        results_id = "test-results-id-123"
+        state = CrawlState(sample_crawl_spec, manager, results_id)
         
         # Frontier should be empty initially
         next_url = state.get_next_url()
@@ -94,8 +94,8 @@ class TestCrawlState:
         """Test that frontier prevents duplicate URLs."""
         from ringer.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
         manager = MemoryCrawlStateManager()
-        storage_id = "test-storage-id-123"
-        state = CrawlState(sample_crawl_spec, manager, storage_id)
+        results_id = "test-results-id-123"
+        state = CrawlState(sample_crawl_spec, manager, results_id)
         
         # Add same URL with different scores
         url_scores = [(0.8, "https://test.com"), (0.6, "https://test.com")]
@@ -113,8 +113,8 @@ class TestCrawlState:
         """Test URL filtering with domain blacklist."""
         from ringer.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
         manager = MemoryCrawlStateManager()
-        storage_id = "test-storage-id-123"
-        state = CrawlState(sample_crawl_spec, manager, storage_id)
+        results_id = "test-results-id-123"
+        state = CrawlState(sample_crawl_spec, manager, results_id)
         
         # Should allow URLs not in blacklist
         assert state.is_url_allowed("https://example.com/page")
@@ -132,8 +132,8 @@ class TestCrawlState:
             domain_blacklist=None
         )
         manager = MemoryCrawlStateManager()
-        storage_id = "test-storage-id-123"
-        state = CrawlState(spec, manager, storage_id)
+        results_id = "test-results-id-123"
+        state = CrawlState(spec, manager, results_id)
         
         # Should allow all URLs when no blacklist
         assert state.is_url_allowed("https://any-domain.com/page")
@@ -142,8 +142,8 @@ class TestCrawlState:
         """Test thread-safe counter increment methods."""
         from ringer.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
         manager = MemoryCrawlStateManager()
-        storage_id = "test-storage-id-123"
-        state = CrawlState(sample_crawl_spec, manager, storage_id)
+        results_id = "test-results-id-123"
+        state = CrawlState(sample_crawl_spec, manager, results_id)
         
         # Test increment methods
         state.increment_crawled_count()
@@ -165,8 +165,8 @@ class TestCrawlState:
         """Test getting thread-safe status counts."""
         from ringer.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
         manager = MemoryCrawlStateManager()
-        storage_id = "test-storage-id-123"
-        state = CrawlState(sample_crawl_spec, manager, storage_id)
+        results_id = "test-results-id-123"
+        state = CrawlState(sample_crawl_spec, manager, results_id)
         
         # Add some URLs to frontier
         state.add_urls_with_scores([(0.8, "https://test1.com"), (0.6, "https://test2.com")])
@@ -199,7 +199,9 @@ class TestRinger:
     
     def test_create_crawl(self, ringer, sample_crawl_spec):
         """Test creating a new crawl."""
-        crawl_id, run_state = ringer.create(sample_crawl_spec)
+        from ringer.core.models import CrawlResultsId
+        results_id = CrawlResultsId()
+        crawl_id, run_state = ringer.create(sample_crawl_spec, results_id)
         
         assert crawl_id == sample_crawl_spec.id
         assert crawl_id in ringer.crawls
@@ -212,13 +214,16 @@ class TestRinger:
     
     def test_create_duplicate_crawl(self, ringer, sample_crawl_spec):
         """Test creating a crawl with duplicate ID raises error."""
-        crawl_id, run_state = ringer.create(sample_crawl_spec)
+        from ringer.core.models import CrawlResultsId
+        results_id = CrawlResultsId()
+        crawl_id, run_state = ringer.create(sample_crawl_spec, results_id)
         
         with pytest.raises(ValueError, match="already exists"):
-            ringer.create(sample_crawl_spec)
+            ringer.create(sample_crawl_spec, results_id)
     
     def test_create_crawl_with_llm_analyzer(self, ringer, sample_analyzer_spec):
         """Test creating a crawl with LLM analyzer."""
+        from ringer.core.models import CrawlResultsId
         llm_spec = DhLlmScoringSpec(
             name="DhLlmScoreAnalyzer",
             composite_weight=0.5,
@@ -232,7 +237,8 @@ class TestRinger:
             worker_count=1
         )
         
-        crawl_id, run_state = ringer.create(crawl_spec)
+        results_id = CrawlResultsId()
+        crawl_id, run_state = ringer.create(crawl_spec, results_id)
         
         assert crawl_id in ringer.crawls
         assert run_state.state == RunStateEnum.CREATED
@@ -242,11 +248,13 @@ class TestRinger:
     
     def test_start_crawl(self, ringer, sample_crawl_spec, mock_scraper, mock_results_manager):
         """Test starting a crawl."""
+        from ringer.core.models import CrawlResultsId
         # Mock the scraper and results_manager
         ringer.scraper = mock_scraper
         ringer.results_manager = mock_results_manager
         
-        crawl_id, create_state = ringer.create(sample_crawl_spec)
+        results_id = CrawlResultsId()
+        crawl_id, create_state = ringer.create(sample_crawl_spec, results_id)
         start_crawl_id, start_state = ringer.start(crawl_id)
         
         assert start_crawl_id == crawl_id
@@ -261,10 +269,11 @@ class TestRinger:
     
     def test_start_already_running_crawl(self, ringer, sample_crawl_spec):
         """Test starting an already running crawl raises error."""
-        crawl_id, create_state = ringer.create(sample_crawl_spec)
+        from ringer.core.models import CrawlResultsId, RunState
+        results_id = CrawlResultsId()
+        crawl_id, create_state = ringer.create(sample_crawl_spec, results_id)
         
         # Manually set to running
-        from ringer.core.models import RunState
         ringer.crawls[crawl_id].add_state(RunState(state=RunStateEnum.RUNNING))
         
         with pytest.raises(RuntimeError, match="already running"):
@@ -272,8 +281,9 @@ class TestRinger:
     
     def test_stop_crawl(self, ringer, sample_crawl_spec):
         """Test stopping a crawl."""
-        crawl_id, create_state = ringer.create(sample_crawl_spec)
-        from ringer.core.models import RunState
+        from ringer.core.models import CrawlResultsId, RunState
+        results_id = CrawlResultsId()
+        crawl_id, create_state = ringer.create(sample_crawl_spec, results_id)
         ringer.crawls[crawl_id].add_state(RunState(state=RunStateEnum.RUNNING))  # Set to running
         
         stop_crawl_id, stop_state = ringer.stop(crawl_id)
@@ -285,14 +295,15 @@ class TestRinger:
     
     def test_stop_crawl_not_running(self, ringer, sample_crawl_spec):
         """Test stopping a crawl that is not running raises error."""
-        crawl_id, create_state = ringer.create(sample_crawl_spec)
+        from ringer.core.models import CrawlResultsId, RunState
+        results_id = CrawlResultsId()
+        crawl_id, create_state = ringer.create(sample_crawl_spec, results_id)
         
         # Try to stop crawl that is in CREATED state
         with pytest.raises(RuntimeError, match="is not running"):
             ringer.stop(crawl_id)
         
         # Set to STOPPED and try again
-        from ringer.core.models import RunState
         ringer.crawls[crawl_id].add_state(RunState(state=RunStateEnum.STOPPED))
         
         with pytest.raises(RuntimeError, match="is not running"):
@@ -305,7 +316,9 @@ class TestRinger:
     
     def test_delete_crawl(self, ringer, sample_crawl_spec):
         """Test deleting a crawl."""
-        crawl_id, create_state = ringer.create(sample_crawl_spec)
+        from ringer.core.models import CrawlResultsId
+        results_id = CrawlResultsId()
+        crawl_id, create_state = ringer.create(sample_crawl_spec, results_id)
         
         ringer.delete(crawl_id)
         
@@ -318,8 +331,9 @@ class TestRinger:
     
     def test_delete_running_crawl(self, ringer, sample_crawl_spec):
         """Test deleting a running crawl raises error."""
-        crawl_id, create_state = ringer.create(sample_crawl_spec)
-        from ringer.core.models import RunState
+        from ringer.core.models import CrawlResultsId, RunState
+        results_id = CrawlResultsId()
+        crawl_id, create_state = ringer.create(sample_crawl_spec, results_id)
         ringer.crawls[crawl_id].add_state(RunState(state=RunStateEnum.RUNNING))  # Set to running
         
         with pytest.raises(RuntimeError, match="Cannot delete running crawl"):
@@ -327,7 +341,9 @@ class TestRinger:
     
     def test_get_crawl_status(self, ringer, sample_crawl_spec):
         """Test getting crawl status."""
-        crawl_id, create_state = ringer.create(sample_crawl_spec)
+        from ringer.core.models import CrawlResultsId
+        results_id = CrawlResultsId()
+        crawl_id, create_state = ringer.create(sample_crawl_spec, results_id)
         
         # Add some test data
         crawl_state = ringer.crawls[crawl_id]

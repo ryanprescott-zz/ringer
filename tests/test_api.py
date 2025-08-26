@@ -90,7 +90,10 @@ class TestCreateCrawlEndpoint:
         assert data["crawl_id"] == test_crawl_id
         assert data["run_state"]["state"] == "CREATED"
         assert "timestamp" in data["run_state"]
+        # Verify create was called with crawl_spec and results_id
         mock_ringer.create.assert_called_once()
+        call_args = mock_ringer.create.call_args
+        assert len(call_args[0]) == 2  # crawl_spec and results_id
     
     def test_create_crawl_duplicate_id(self, client, mock_ringer, sample_crawl_spec_dict):
         """Test creating a crawl with duplicate ID returns 400."""
@@ -1030,8 +1033,10 @@ class TestEndToEndWorkflow:
             assert delete_response.status_code == 200
             assert delete_response.json()["crawl_id"] == test_crawl_id
         
-        # Verify all methods were called
+        # Verify all methods were called - create now takes 2 args (crawl_spec, results_id)
         mock_ringer.create.assert_called_once()
+        call_args = mock_ringer.create.call_args
+        assert len(call_args[0]) == 2  # crawl_spec and results_id
         mock_ringer.start.assert_called_once_with(test_crawl_id)
         mock_ringer.stop.assert_called_once_with(test_crawl_id)
         mock_ringer.delete.assert_called_once_with(test_crawl_id)
