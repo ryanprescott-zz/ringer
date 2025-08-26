@@ -94,8 +94,8 @@ class DhLlmGenerationRequest(BaseModel):
 class StoreCrawlRecordRequest(BaseModel):
     """Request object for crawl record storage service."""
     
-    record: 'CrawlRecord' = Field(..., description="The crawl record to handle")
-    crawl_id: str = Field(..., description="ID of the crawl")
+    operation: str = Field(..., description="The operation to perform")
+    operation_info: Dict[str, Any] = Field(..., description="Operation-specific information")
 
 class AnalyzerSpec(BaseModel):
     """Specification for a score analyzer."""

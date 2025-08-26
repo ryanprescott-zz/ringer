@@ -24,15 +24,15 @@ class TestDhCrawlResultsManager:
         assert manager.session is not None
         assert manager.session.headers['Content-Type'] == 'application/json'
     
-    @patch('ringer.core.results_managers.dh_crawl_results_manager.requests.Session.post')
-    def test_store_record_success(self, mock_post, sample_crawl_record):
+    @patch('ringer.core.results_managers.dh_crawl_results_manager.requests.Session.patch')
+    def test_store_record_success(self, mock_patch, sample_crawl_record):
         """Test successful record handling via service."""
         from ringer.core.models import CrawlResultsId
         # Mock successful response
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.text = "Success"
-        mock_post.return_value = mock_response
+        mock_patch.return_value = mock_response
         
         manager = DhCrawlResultsManager()
         results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
@@ -41,28 +41,33 @@ class TestDhCrawlResultsManager:
         manager.store_record(sample_crawl_record, results_id)
         
         # Verify request was made
-        mock_post.assert_called_once()
-        call_args = mock_post.call_args
+        mock_patch.assert_called_once()
+        call_args = mock_patch.call_args
         
         # Verify URL and timeout
-        assert call_args[0][0] == manager.settings.service_url
+        expected_url = f"{manager.settings.service_url}workbook/{results_id.collection_id}/bin/{results_id.data_id}"
+        assert call_args[0][0] == expected_url
         assert call_args[1]['timeout'] == manager.settings.service_timeout_sec
         
         # Verify request payload structure
         request_data = call_args[1]['json']
-        assert 'record' in request_data
-        assert 'crawl_id' in request_data
-        assert request_data['crawl_id'] == "test_collection/test_data"
+        assert 'operation' in request_data
+        assert 'operation_info' in request_data
+        assert request_data['operation'] == "add_from_docs"
+        assert 'documents' in request_data['operation_info']
+        assert 'source' in request_data['operation_info']
+        assert request_data['operation_info']['source'] == "test_collection/test_data"
+        assert len(request_data['operation_info']['documents']) == 1
     
-    @patch('ringer.core.results_managers.dh_crawl_results_manager.requests.Session.post')
-    def test_store_record_http_error_after_retries(self, mock_post, sample_crawl_record):
+    @patch('ringer.core.results_managers.dh_crawl_results_manager.requests.Session.patch')
+    def test_store_record_http_error_after_retries(self, mock_patch, sample_crawl_record):
         """Test handling with HTTP error after all retries."""
         from ringer.core.models import CrawlResultsId
         # Mock HTTP error response
         mock_response = Mock()
         mock_response.status_code = 500
         mock_response.text = "Internal Server Error"
-        mock_post.return_value = mock_response
+        mock_patch.return_value = mock_response
         
         manager = DhCrawlResultsManager()
         results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
@@ -71,16 +76,16 @@ class TestDhCrawlResultsManager:
         manager.store_record(sample_crawl_record, results_id)
         
         # Should have made multiple attempts (3 retries + 1 initial = 4 total)
-        assert mock_post.call_count >= 3
+        assert mock_patch.call_count >= 3
     
-    @patch('ringer.core.results_managers.dh_crawl_results_manager.requests.Session.post')
-    def test_store_record_timeout_after_retries(self, mock_post, sample_crawl_record):
+    @patch('ringer.core.results_managers.dh_crawl_results_manager.requests.Session.patch')
+    def test_store_record_timeout_after_retries(self, mock_patch, sample_crawl_record):
         """Test handling with timeout after all retries."""
         from ringer.core.models import CrawlResultsId
         import requests
         
         # Mock timeout exception
-        mock_post.side_effect = requests.exceptions.Timeout("Request timeout")
+        mock_patch.side_effect = requests.exceptions.Timeout("Request timeout")
         
         manager = DhCrawlResultsManager()
         results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
@@ -89,16 +94,16 @@ class TestDhCrawlResultsManager:
         manager.store_record(sample_crawl_record, results_id)
         
         # Should have made multiple attempts
-        assert mock_post.call_count >= 3
+        assert mock_patch.call_count >= 3
     
-    @patch('ringer.core.results_managers.dh_crawl_results_manager.requests.Session.post')
-    def test_store_record_connection_error_after_retries(self, mock_post, sample_crawl_record):
+    @patch('ringer.core.results_managers.dh_crawl_results_manager.requests.Session.patch')
+    def test_store_record_connection_error_after_retries(self, mock_patch, sample_crawl_record):
         """Test handling with connection error after all retries."""
         from ringer.core.models import CrawlResultsId
         import requests
         
         # Mock connection error
-        mock_post.side_effect = requests.exceptions.ConnectionError("Connection failed")
+        mock_patch.side_effect = requests.exceptions.ConnectionError("Connection failed")
         
         manager = DhCrawlResultsManager()
         results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
@@ -107,10 +112,10 @@ class TestDhCrawlResultsManager:
         manager.store_record(sample_crawl_record, results_id)
         
         # Should have made multiple attempts
-        assert mock_post.call_count >= 3
+        assert mock_patch.call_count >= 3
     
-    @patch('ringer.core.results_managers.dh_crawl_results_manager.requests.Session.post')
-    def test_store_record_success_after_retry(self, mock_post, sample_crawl_record):
+    @patch('ringer.core.results_managers.dh_crawl_results_manager.requests.Session.patch')
+    def test_store_record_success_after_retry(self, mock_patch, sample_crawl_record):
         """Test successful handling after initial failures."""
         from ringer.core.models import CrawlResultsId
         # Mock first call fails, second succeeds
@@ -122,7 +127,7 @@ class TestDhCrawlResultsManager:
         mock_response_success.status_code = 200
         mock_response_success.text = "Success"
         
-        mock_post.side_effect = [mock_response_fail, mock_response_success]
+        mock_patch.side_effect = [mock_response_fail, mock_response_success]
         
         manager = DhCrawlResultsManager()
         results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
@@ -131,7 +136,7 @@ class TestDhCrawlResultsManager:
         manager.store_record(sample_crawl_record, results_id)
         
         # Should have made 2 calls
-        assert mock_post.call_count == 2
+        assert mock_patch.call_count == 2
     
 
 
@@ -175,7 +180,7 @@ class TestFsCrawlResultsManager:
                 assert actual_records_dir.exists()
 
                 # Find the record file (not crawl_spec.json)
-                record_files = list(expected_records_dir.glob("*.json"))
+                record_files = list(actual_records_dir.glob("*.json"))
                 assert len(record_files) == 1
                 
                 # Check file content

@@ -98,15 +98,22 @@ class DhCrawlResultsManager(CrawlResultsManager):
         )
         def _do_send():
             # Create the request payload
+            crawl_id = f"{results_id.collection_id}/{results_id.data_id}"
             request_data = StoreCrawlRecordRequest(
-                record=crawl_record,
-                crawl_id=f"{results_id.collection_id}/{results_id.data_id}"
+                operation="add_from_docs",
+                operation_info={
+                    "documents": [crawl_record],
+                    "source": crawl_id
+                }
             )
             
+            # Construct the URL
+            url = f"{self.settings.service_url}workbook/{results_id.collection_id}/bin/{results_id.data_id}"
+            
             try:
-                # Make the HTTP POST request
-                response = self.session.post(
-                    self.settings.service_url,
+                # Make the HTTP PATCH request
+                response = self.session.patch(
+                    url,
                     json=request_data.model_dump(mode='json'),
                     timeout=self.settings.service_timeout_sec
                 )
