@@ -30,39 +30,33 @@ class DhCrawlResultsManager(CrawlResultsManager):
         })
 
 
-    def create_crawl(self, crawl_spec: CrawlSpec, results_id: CrawlResultsId) -> str:
+    def create_crawl(self, crawl_spec: CrawlSpec, results_id: CrawlResultsId) -> None:
         """
         Create a new crawl with the given spec and results ID by calling the DH service.
         
         Args:
             crawl_spec: Specification of the crawl to create.
             results_id: Identifier for the crawl results data set.
-            
-        Returns:
-            str: Storage ID for the created crawl
         """
-        # Generate a UUID4 storage ID
-        storage_id = str(uuid.uuid4())
-        logger.debug(f"Creating crawl with storage ID: {storage_id}")
+        logger.debug(f"Creating crawl with results_id: collection_id={results_id.collection_id}, data_id={results_id.data_id}")
         
         error_msg = "Create functionality is not implemented for DhCrawlResultsManager"
-        logger.error(f"{error_msg} for storage ID {storage_id}")
+        logger.error(f"{error_msg} for results_id: {results_id.collection_id}/{results_id.data_id}")
         raise NotImplementedError(error_msg)
-        # TODO send HTTP post to dh create endpoint using the storage_id.
-        # return storage_id
+        # TODO send HTTP post to dh create endpoint using the results_id.
 
     
-    def store_record(self, crawl_record: CrawlRecord, storage_id: str)-> None:
+    def store_record(self, crawl_record: CrawlRecord, results_id: CrawlResultsId)-> None:
         """
         Store a crawl record to the DH service.
         
         Args:
             crawl_record: The crawl record to process.
-            storage_id: Storage ID for the crawl
+            results_id: Identifier for the crawl results data set
         """
 
         try:
-            self._send_record_with_retry(crawl_record, storage_id)
+            self._send_record_with_retry(crawl_record, results_id)
         except Exception as e:
             logger.error(
                 f"Failed to send crawl record after all retries for {crawl_record.url}: {e}. "
@@ -70,27 +64,27 @@ class DhCrawlResultsManager(CrawlResultsManager):
             )
         
     
-    def delete_crawl(self, storage_id: str) -> None:
+    def delete_crawl(self, results_id: CrawlResultsId) -> None:
         """
-        Delete a crawl by storage ID.
+        Delete a crawl by results ID.
         
         Args:
-            storage_id: the storage ID of the crawl to delete.
+            results_id: the results ID of the crawl to delete.
         """
-        logger.debug(f"Attempting to delete crawl with storage ID: {storage_id}")
+        logger.debug(f"Attempting to delete crawl with results_id: collection_id={results_id.collection_id}, data_id={results_id.data_id}")
         
         error_msg = "Delete functionality is not implemented for DhCrawlResultsManager"
-        logger.error(f"{error_msg} for storage ID {storage_id}")
+        logger.error(f"{error_msg} for results_id: {results_id.collection_id}/{results_id.data_id}")
         raise NotImplementedError(error_msg)
         # TODO implement deletion logic by calling the DH service.
     
-    def _send_record_with_retry(self, crawl_record: CrawlRecord, storage_id: str) -> None:
+    def _send_record_with_retry(self, crawl_record: CrawlRecord, results_id: CrawlResultsId) -> None:
         """
         Send a crawl record with retry logic.
         
         Args:
             crawl_record: The crawl record to send
-            storage_id: Storage ID for the crawl
+            results_id: Identifier for the crawl results data set
             
         Raises:
             requests.exceptions.RequestException: For HTTP-related errors
@@ -106,7 +100,7 @@ class DhCrawlResultsManager(CrawlResultsManager):
             # Create the request payload
             request_data = StoreCrawlRecordRequest(
                 record=crawl_record,
-                crawl_id=storage_id
+                crawl_id=f"{results_id.collection_id}/{results_id.data_id}"
             )
             
             try:

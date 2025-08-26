@@ -65,7 +65,7 @@ class ScoreUrlTuple:
 class CrawlState:
     """Thread-safe state management for a single crawl with persistent storage."""
     
-    def __init__(self, crawl_spec: CrawlSpec, results_id: 'CrawlResultsId', manager: CrawlStateManager, storage_id: str):
+    def __init__(self, crawl_spec: CrawlSpec, results_id: 'CrawlResultsId', manager: CrawlStateManager):
         """
         Initialize crawl state.
         
@@ -73,12 +73,10 @@ class CrawlState:
             crawl_spec: Specification for the crawl
             results_id: Identifier for the crawl results data set
             manager: State manager backend for persistence
-            storage_id: Storage ID for the crawl results
         """
         self.crawl_spec = crawl_spec
         self.results_id = results_id
         self.manager = manager
-        self.storage_id = storage_id
         self.analyzers: List[ScoreAnalyzer] = []
         self.analyzer_weights: Dict[str, float] = {}
         
@@ -215,23 +213,23 @@ class Ringer:
                     logger.error(error_msg)
                     raise ValueError(error_msg)
                 
-                # Create crawl in results manager and get storage ID
+                # Create crawl in results manager
                 try:
-                    storage_id = self.results_manager.create_crawl(crawl_spec, results_id)
-                    logger.debug(f"Created storage for crawl {crawl_id} with storage ID {storage_id}")
+                    self.results_manager.create_crawl(crawl_spec, results_id)
+                    logger.debug(f"Created storage for crawl {crawl_id} with results_id: {results_id.collection_id}/{results_id.data_id}")
                 except Exception as e:
                     logger.error(f"Failed to create storage for crawl {crawl_id}: {e}")
                     raise
                 
                 # Create crawl state with persistent storage
                 try:
-                    crawl_state = CrawlState(crawl_spec, results_id, self.state_manager, storage_id)
+                    crawl_state = CrawlState(crawl_spec, results_id, self.state_manager)
                     logger.debug(f"Created crawl state for crawl {crawl_id}")
                 except Exception as e:
                     logger.error(f"Failed to create crawl state for crawl {crawl_id}: {e}")
                     # Cleanup storage if state creation fails
                     try:
-                        self.results_manager.delete_crawl(storage_id)
+                        self.results_manager.delete_crawl(results_id)
                     except Exception as cleanup_error:
                         logger.error(f"Failed to cleanup storage after state creation failure: {cleanup_error}")
                     raise
@@ -245,7 +243,7 @@ class Ringer:
                     # Cleanup storage and state if analyzer initialization fails
                     try:
                         self.state_manager.delete_crawl(crawl_id)
-                        self.results_manager.delete_crawl(storage_id)
+                        self.results_manager.delete_crawl(results_id)
                     except Exception as cleanup_error:
                         logger.error(f"Failed to cleanup after analyzer initialization failure: {cleanup_error}")
                     raise
@@ -572,7 +570,7 @@ class Ringer:
             del self.crawls[crawl_id]
 
             # Delete from results manager
-            self.results_manager.delete_crawl(crawl_state.storage_id)
+            self.results_manager.delete_crawl(crawl_state.results_id)
         
         logger.info(f"Deleted crawl {crawl_id}")
     
@@ -715,7 +713,7 @@ class Ringer:
             try:
                 self.results_manager.store_record(
                     crawl_record,
-                    crawl_state.storage_id,
+                    crawl_state.results_id,
                 )
                 logger.debug(f"Stored crawl record for URL {url}")
             except Exception as e:

@@ -26,23 +26,18 @@ class FsCrawlResultsManager(CrawlResultsManager):
         
         logger.info(f"Initialized FsCrawlResultsManager with base directory: {self.base_dir}")
     
-    def create_crawl(self, crawl_spec: CrawlSpec, results_id: CrawlResultsId) -> str:
+    def create_crawl(self, crawl_spec: CrawlSpec, results_id: CrawlResultsId) -> None:
         """
         Create a new crawl directory structure.
         
         Args:
             crawl_spec: Specification for the crawl to create
             results_id: Identifier for the crawl results data set
-            
-        Returns:
-            str: Storage ID for the created crawl
         """
-        # Generate a UUID4 storage ID
-        storage_id = str(uuid.uuid4())
-        logger.debug(f"Creating crawl directory for storage ID: {storage_id}")
+        logger.debug(f"Creating crawl directory for results_id: collection_id={results_id.collection_id}, data_id={results_id.data_id}")
         
         try:
-            crawl_dir = self.base_dir / storage_id
+            crawl_dir = self.base_dir / results_id.collection_id / results_id.data_id
             try:
                 crawl_dir.mkdir(parents=True, exist_ok=True)
                 logger.debug(f"Created crawl directory: {crawl_dir}")
@@ -80,23 +75,22 @@ class FsCrawlResultsManager(CrawlResultsManager):
                     logger.error(f"Failed to cleanup directory after results ID storage failure: {cleanup_error}")
                 raise
             
-            logger.info(f"Successfully created crawl directory: {crawl_dir} with storage ID: {storage_id}")
-            return storage_id
+            logger.info(f"Successfully created crawl directory: {crawl_dir} with results_id: {results_id.collection_id}/{results_id.data_id}")
             
         except Exception as e:
-            logger.error(f"Failed to create crawl for storage ID {storage_id}: {e}")
+            logger.error(f"Failed to create crawl for results_id {results_id.collection_id}/{results_id.data_id}: {e}")
             raise
     
-    def store_record(self, crawl_record: CrawlRecord, storage_id: str) -> None:
+    def store_record(self, crawl_record: CrawlRecord, results_id: CrawlResultsId) -> None:
         """
         Store a crawl record as a JSON file.
         
         Args:
             crawl_record: The crawl record to store
-            storage_id: Storage ID for the crawl
+            results_id: Identifier for the crawl results data set
         """
         try:
-            crawl_dir = self.base_dir / storage_id / "records"
+            crawl_dir = self.base_dir / results_id.collection_id / results_id.data_id / "records"
             crawl_dir.mkdir(parents=True, exist_ok=True)
             
             # Use the record's ID as the filename
@@ -112,15 +106,15 @@ class FsCrawlResultsManager(CrawlResultsManager):
             logger.error(f"Failed to store crawl record for {crawl_record.url}: {e}")
             raise
     
-    def delete_crawl(self, storage_id: str) -> None:
+    def delete_crawl(self, results_id: CrawlResultsId) -> None:
         """
         Delete a crawl directory and all its contents.
         
         Args:
-            storage_id: Storage ID of the crawl to delete
+            results_id: Results ID of the crawl to delete
         """
         try:
-            crawl_dir = self.base_dir / storage_id
+            crawl_dir = self.base_dir / results_id.collection_id / results_id.data_id
             
             if crawl_dir.exists():
                 shutil.rmtree(crawl_dir)
@@ -128,5 +122,5 @@ class FsCrawlResultsManager(CrawlResultsManager):
             else:
                 logger.warning(f"Crawl directory does not exist: {crawl_dir}")
         except Exception as e:
-            logger.error(f"Failed to delete crawl directory for {storage_id}: {e}")
+            logger.error(f"Failed to delete crawl directory for {results_id.collection_id}/{results_id.data_id}: {e}")
             raise

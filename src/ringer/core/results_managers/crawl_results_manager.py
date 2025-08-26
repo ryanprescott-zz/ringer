@@ -12,7 +12,7 @@ class CrawlResultsManager(ABC):
     """Abstract base class for crawl results processing."""
     
     @abstractmethod
-    def create_crawl(self, crawl_spec: CrawlSpec, results_id: 'CrawlResultsId') -> str:
+    def create_crawl(self, crawl_spec: CrawlSpec, results_id: 'CrawlResultsId') -> None:
         """
         Create a new crawl with the given spec and results ID.
         
@@ -20,9 +20,6 @@ class CrawlResultsManager(ABC):
             crawl_spec: Specification of the crawl to create.
             results_id: Identifier for the crawl results data set.
             
-        Returns:
-            str: Storage ID for the created crawl
-            
         Raises:
             NotImplementedError: If not implemented by subclass
         """
@@ -30,13 +27,13 @@ class CrawlResultsManager(ABC):
 
 
     @abstractmethod
-    def store_record(self, crawl_record: CrawlRecord, storage_id: str) -> None:
+    def store_record(self, crawl_record: CrawlRecord, results_id: CrawlResultsId) -> None:
         """
         Store a crawl record.
         
         Args:
             crawl_record: The crawl record to process
-            storage_id: Storage ID for the crawl
+            results_id: Identifier for the crawl results data set
         Raises:
             NotImplementedError: If not implemented by subclass
         """
@@ -45,12 +42,12 @@ class CrawlResultsManager(ABC):
 
 
     @abstractmethod
-    def delete_crawl(self, storage_id: str) -> None:
+    def delete_crawl(self, results_id: CrawlResultsId) -> None:
         """
-        Delete a crawl by storage ID.
+        Delete a crawl by results ID.
         
         Args:
-            storage_id: the storage ID of the crawl to delete.
+            results_id: the results ID of the crawl to delete.
 
         Raises:
             NotImplementedError: If not implemented by subclass
