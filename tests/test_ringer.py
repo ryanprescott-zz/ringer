@@ -26,9 +26,10 @@ class TestCrawlState:
     def test_init(self, sample_crawl_spec):
         """Test CrawlState initialization."""
         from ringer.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
+        from ringer.core.models import CrawlResultsId
         manager = MemoryCrawlStateManager()
-        results_id = "test-results-id-123"
-        state = CrawlState(sample_crawl_spec, manager, results_id)
+        results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
+        state = CrawlState(sample_crawl_spec, results_id, manager)
         
         assert state.crawl_spec == sample_crawl_spec
         assert state.results_id == results_id
@@ -45,9 +46,10 @@ class TestCrawlState:
     def test_add_urls_with_scores(self, sample_crawl_spec):
         """Test adding URLs with scores to frontier."""
         from ringer.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
+        from ringer.core.models import CrawlResultsId
         manager = MemoryCrawlStateManager()
-        results_id = "test-results-id-123"
-        state = CrawlState(sample_crawl_spec, manager, results_id)
+        results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
+        state = CrawlState(sample_crawl_spec, results_id, manager)
         
         url_scores = [(0.8, "https://test1.com"), (0.6, "https://test2.com")]
         state.add_urls_with_scores(url_scores)
@@ -63,9 +65,10 @@ class TestCrawlState:
     def test_get_next_url(self, sample_crawl_spec):
         """Test getting next URL from frontier."""
         from ringer.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
+        from ringer.core.models import CrawlResultsId
         manager = MemoryCrawlStateManager()
-        results_id = "test-results-id-123"
-        state = CrawlState(sample_crawl_spec, manager, results_id)
+        results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
+        state = CrawlState(sample_crawl_spec, results_id, manager)
         
         # Add some URLs with different scores
         url_scores = [(0.8, "https://high.com"), (0.2, "https://low.com")]
@@ -82,9 +85,10 @@ class TestCrawlState:
     def test_get_next_url_empty_frontier(self, sample_crawl_spec):
         """Test getting next URL when frontier is empty."""
         from ringer.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
+        from ringer.core.models import CrawlResultsId
         manager = MemoryCrawlStateManager()
-        results_id = "test-results-id-123"
-        state = CrawlState(sample_crawl_spec, manager, results_id)
+        results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
+        state = CrawlState(sample_crawl_spec, results_id, manager)
         
         # Frontier should be empty initially
         next_url = state.get_next_url()
@@ -93,9 +97,10 @@ class TestCrawlState:
     def test_frontier_duplicate_urls(self, sample_crawl_spec):
         """Test that frontier prevents duplicate URLs."""
         from ringer.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
+        from ringer.core.models import CrawlResultsId
         manager = MemoryCrawlStateManager()
-        results_id = "test-results-id-123"
-        state = CrawlState(sample_crawl_spec, manager, results_id)
+        results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
+        state = CrawlState(sample_crawl_spec, results_id, manager)
         
         # Add same URL with different scores
         url_scores = [(0.8, "https://test.com"), (0.6, "https://test.com")]
@@ -112,9 +117,10 @@ class TestCrawlState:
     def test_is_url_allowed_domain_blacklist(self, sample_crawl_spec):
         """Test URL filtering with domain blacklist."""
         from ringer.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
+        from ringer.core.models import CrawlResultsId
         manager = MemoryCrawlStateManager()
-        results_id = "test-results-id-123"
-        state = CrawlState(sample_crawl_spec, manager, results_id)
+        results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
+        state = CrawlState(sample_crawl_spec, results_id, manager)
         
         # Should allow URLs not in blacklist
         assert state.is_url_allowed("https://example.com/page")
@@ -125,6 +131,7 @@ class TestCrawlState:
     def test_is_url_allowed_no_blacklist(self, sample_analyzer_spec):
         """Test URL filtering with no domain blacklist."""
         from ringer.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
+        from ringer.core.models import CrawlResultsId
         spec = CrawlSpec(
             name="test",
             seeds=["https://example.com"],
@@ -132,8 +139,8 @@ class TestCrawlState:
             domain_blacklist=None
         )
         manager = MemoryCrawlStateManager()
-        results_id = "test-results-id-123"
-        state = CrawlState(spec, manager, results_id)
+        results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
+        state = CrawlState(spec, results_id, manager)
         
         # Should allow all URLs when no blacklist
         assert state.is_url_allowed("https://any-domain.com/page")
@@ -141,9 +148,10 @@ class TestCrawlState:
     def test_counter_methods(self, sample_crawl_spec):
         """Test thread-safe counter increment methods."""
         from ringer.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
+        from ringer.core.models import CrawlResultsId
         manager = MemoryCrawlStateManager()
-        results_id = "test-results-id-123"
-        state = CrawlState(sample_crawl_spec, manager, results_id)
+        results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
+        state = CrawlState(sample_crawl_spec, results_id, manager)
         
         # Test increment methods
         state.increment_crawled_count()
@@ -164,9 +172,10 @@ class TestCrawlState:
     def test_get_status_counts(self, sample_crawl_spec):
         """Test getting thread-safe status counts."""
         from ringer.core.state_managers.memory_crawl_state_manager import MemoryCrawlStateManager
+        from ringer.core.models import CrawlResultsId
         manager = MemoryCrawlStateManager()
-        results_id = "test-results-id-123"
-        state = CrawlState(sample_crawl_spec, manager, results_id)
+        results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
+        state = CrawlState(sample_crawl_spec, results_id, manager)
         
         # Add some URLs to frontier
         state.add_urls_with_scores([(0.8, "https://test1.com"), (0.6, "https://test2.com")])

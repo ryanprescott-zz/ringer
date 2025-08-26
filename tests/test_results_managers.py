@@ -52,7 +52,7 @@ class TestDhCrawlResultsManager:
         request_data = call_args[1]['json']
         assert 'record' in request_data
         assert 'crawl_id' in request_data
-        assert request_data['crawl_id'] == "test_results_id"
+        assert request_data['crawl_id'] == "test_collection/test_data"
     
     @patch('ringer.core.results_managers.dh_crawl_results_manager.requests.Session.post')
     def test_store_record_http_error_after_retries(self, mock_post, sample_crawl_record):
@@ -161,7 +161,7 @@ class TestFsCrawlResultsManager:
                 manager.store_record(sample_crawl_record, results_id)
                 
                 # Check that directory was created with results ID
-                expected_spec_dir = Path(temp_dir) / results_id.id
+                expected_spec_dir = Path(temp_dir) / f"{results_id.collection_id}_{results_id.data_id}"
                 assert expected_spec_dir.exists()
                 
                 # Check that file was created
@@ -169,7 +169,7 @@ class TestFsCrawlResultsManager:
                 assert len(files) == 1  # crawl_spec.json
                 
                 # Check that records directory was created with results ID
-                expected_records_dir = Path(temp_dir) / results_id.id / "records"
+                expected_records_dir = Path(temp_dir) / f"{results_id.collection_id}_{results_id.data_id}" / "records"
                 assert expected_records_dir.exists()
 
                 # Find the record file (not crawl_spec.json)
@@ -209,12 +209,12 @@ class TestFsCrawlResultsManager:
                 manager.store_record(record2, results_id)
                 
                 # Should create same directory structure
-                expected_spec_dir = Path(temp_dir) / results_id.id
+                expected_spec_dir = Path(temp_dir) / f"{results_id.collection_id}_{results_id.data_id}"
                 files = list(expected_spec_dir.glob("*.json"))
                 # Should have 1 file: spec JSON
                 assert len(files) == 1
 
-                expected_records_dir = Path(temp_dir) / results_id.id / "records"
+                expected_records_dir = Path(temp_dir) / f"{results_id.collection_id}_{results_id.data_id}" / "records"
                 files = list(expected_records_dir.glob("*.json"))
                 # Should have 2 record files
                 assert len(files) == 2
