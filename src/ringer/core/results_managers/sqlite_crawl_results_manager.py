@@ -111,7 +111,7 @@ class SQLiteCrawlResultsManager(CrawlResultsManager):
         if not hasattr(self, 'SessionLocal') or self.SessionLocal is None:
             raise RuntimeError("SQLiteCrawlResultsManager not properly initialized - database connection failed")
             
-        logger.debug(f"Creating crawl in database for results_id: collection_id={results_id.collection_id}, data_id={results_id.data_id}")
+        logger.debug(f"Creating crawl in database for crawl_id={crawl_spec.id}, results_id: collection_id={results_id.collection_id}, data_id={results_id.data_id}")
         
         session = self.SessionLocal()
         try:
@@ -136,7 +136,7 @@ class SQLiteCrawlResultsManager(CrawlResultsManager):
             session.add(crawl_spec_record)
             session.commit()
             
-            logger.info(f"Successfully created crawl in database: {crawl_spec.id} with results_id: {results_id.collection_id}/{results_id.data_id}")
+            logger.info(f"Successfully created crawl in database: crawl_id={crawl_spec.id} with results_id: {results_id.collection_id}/{results_id.data_id}")
             
         except Exception as e:
             session.rollback()
@@ -159,14 +159,24 @@ class SQLiteCrawlResultsManager(CrawlResultsManager):
             
         session = self.SessionLocal()
         try:
-            # Find the crawl spec by results_id
+            logger.debug(f"Looking for crawl spec with results_id: {results_id.collection_id}/{results_id.data_id}, crawl_id: {crawl_id}")
+            
+            # Find the crawl spec by results_id first, then try by crawl_id as fallback
             crawl_spec_record = session.query(CrawlSpecTable).filter_by(
                 collection_id=results_id.collection_id,
                 data_id=results_id.data_id
             ).first()
             
+            # If not found by results_id, try to find by crawl_id
             if not crawl_spec_record:
-                logger.error(f"Crawl spec not found for results_id: {results_id.collection_id}/{results_id.data_id}")
+                logger.debug(f"Crawl spec not found by results_id, trying crawl_id: {crawl_id}")
+                crawl_spec_record = session.query(CrawlSpecTable).filter_by(id=crawl_id).first()
+            
+            if not crawl_spec_record:
+                # Log all existing crawl specs for debugging
+                all_specs = session.query(CrawlSpecTable).all()
+                logger.error(f"Crawl spec not found for results_id: {results_id.collection_id}/{results_id.data_id} or crawl_id: {crawl_id}")
+                logger.error(f"Available crawl specs: {[(spec.id, spec.collection_id, spec.data_id) for spec in all_specs]}")
                 raise ValueError(f"Crawl spec not found for results_id: {results_id.collection_id}/{results_id.data_id}")
             
             # Check if record already exists
