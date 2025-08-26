@@ -64,6 +64,11 @@ class SQLiteCrawlResultsManager(CrawlResultsManager):
     
     def __init__(self):
         """Initialize the SQLite results manager with settings and database connection."""
+        # Initialize attributes first to prevent AttributeError
+        self.SessionLocal = None
+        self.engine = None
+        self.settings = None
+        
         try:
             self.settings = SQLiteCrawlResultsManagerSettings()
             
@@ -91,8 +96,6 @@ class SQLiteCrawlResultsManager(CrawlResultsManager):
             logger.info(f"Initialized SQLiteCrawlResultsManager with database: {self.settings.database_path}")
         except Exception as e:
             logger.error(f"Failed to initialize SQLiteCrawlResultsManager: {e}")
-            # Set a default SessionLocal to prevent AttributeError
-            self.SessionLocal = None
             raise
     
     def create_crawl(self, crawl_spec: CrawlSpec, results_id: CrawlResultsId) -> None:

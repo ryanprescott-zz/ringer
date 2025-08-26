@@ -166,22 +166,22 @@ class TestFsCrawlResultsManager:
                 manager.create_crawl(sample_crawl_spec, results_id)
                 manager.store_record(sample_crawl_record, results_id, "test_crawl_id")
                 
-                # Check that directory was created with results ID
-                # First, let's find what directories were actually created
-                created_dirs = [d for d in Path(temp_dir).iterdir() if d.is_dir()]
-                assert len(created_dirs) == 1, f"Expected 1 directory, found {len(created_dirs)}: {created_dirs}"
+                # Check that directory structure was created correctly
+                crawl_dir = Path(temp_dir) / results_id.collection_id / results_id.data_id
+                assert crawl_dir.exists()
                 
-                actual_spec_dir = created_dirs[0]
-                # Check that file was created
-                files = list(actual_spec_dir.glob("*.json"))
-                assert len(files) == 1  # crawl_spec.json
+                # Check that crawl spec and results ID files were created
+                spec_file = crawl_dir / "crawl_spec.json"
+                results_id_file = crawl_dir / "results_id.json"
+                assert spec_file.exists()
+                assert results_id_file.exists()
                 
                 # Check that records directory was created
-                actual_records_dir = actual_spec_dir / "records"
-                assert actual_records_dir.exists()
+                records_dir = crawl_dir / "records"
+                assert records_dir.exists()
 
-                # Find the record file (not crawl_spec.json)
-                record_files = list(actual_records_dir.glob("*.json"))
+                # Find the record file
+                record_files = list(records_dir.glob("*.json"))
                 assert len(record_files) == 1
                 
                 # Check file content
@@ -216,21 +216,22 @@ class TestFsCrawlResultsManager:
                 )
                 manager.store_record(record2, results_id, "test_crawl_id")
                 
-                # Should create same directory structure
-                # First, let's find what directories were actually created
-                created_dirs = [d for d in Path(temp_dir).iterdir() if d.is_dir()]
-                assert len(created_dirs) == 1, f"Expected 1 directory, found {len(created_dirs)}: {created_dirs}"
+                # Check that directory structure was created correctly
+                crawl_dir = Path(temp_dir) / results_id.collection_id / results_id.data_id
+                assert crawl_dir.exists()
                 
-                actual_spec_dir = created_dirs[0]
-                files = list(actual_spec_dir.glob("*.json"))
-                # Should have 1 file: spec JSON
-                assert len(files) == 1
-
-                actual_records_dir = actual_spec_dir / "records"
-                assert actual_records_dir.exists(), f"Records directory not found in {actual_spec_dir}"
-                files = list(actual_records_dir.glob("*.json"))
+                # Check that crawl spec and results ID files exist
+                spec_file = crawl_dir / "crawl_spec.json"
+                results_id_file = crawl_dir / "results_id.json"
+                assert spec_file.exists()
+                assert results_id_file.exists()
+                
+                # Check records directory and files
+                records_dir = crawl_dir / "records"
+                assert records_dir.exists(), f"Records directory not found in {crawl_dir}"
+                record_files = list(records_dir.glob("*.json"))
                 # Should have 2 record files
-                assert len(files) == 2
+                assert len(record_files) == 2
 
     
     def test_store_record_file_write_error(self, sample_crawl_record):
