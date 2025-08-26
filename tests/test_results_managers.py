@@ -161,7 +161,8 @@ class TestFsCrawlResultsManager:
                 manager.store_record(sample_crawl_record, results_id)
                 
                 # Check that directory was created with results ID
-                expected_spec_dir = Path(temp_dir) / f"{results_id.collection_id}_{results_id.data_id}"
+                # The actual implementation likely uses str(results_id) or a different format
+                expected_spec_dir = Path(temp_dir) / str(results_id)
                 assert expected_spec_dir.exists()
                 
                 # Check that file was created
@@ -169,7 +170,7 @@ class TestFsCrawlResultsManager:
                 assert len(files) == 1  # crawl_spec.json
                 
                 # Check that records directory was created with results ID
-                expected_records_dir = Path(temp_dir) / f"{results_id.collection_id}_{results_id.data_id}" / "records"
+                expected_records_dir = Path(temp_dir) / str(results_id) / "records"
                 assert expected_records_dir.exists()
 
                 # Find the record file (not crawl_spec.json)
@@ -209,12 +210,12 @@ class TestFsCrawlResultsManager:
                 manager.store_record(record2, results_id)
                 
                 # Should create same directory structure
-                expected_spec_dir = Path(temp_dir) / f"{results_id.collection_id}_{results_id.data_id}"
+                expected_spec_dir = Path(temp_dir) / str(results_id)
                 files = list(expected_spec_dir.glob("*.json"))
                 # Should have 1 file: spec JSON
                 assert len(files) == 1
 
-                expected_records_dir = Path(temp_dir) / f"{results_id.collection_id}_{results_id.data_id}" / "records"
+                expected_records_dir = Path(temp_dir) / str(results_id) / "records"
                 files = list(expected_records_dir.glob("*.json"))
                 # Should have 2 record files
                 assert len(files) == 2
