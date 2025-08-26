@@ -2,12 +2,12 @@
 
 import logging
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from pathlib import Path
 
 from sqlalchemy import create_engine, Column, String, Text, DateTime, Float, Integer, ForeignKey
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, Session
 from sqlalchemy.dialects.sqlite import JSON
 
@@ -33,7 +33,7 @@ class CrawlSpecTable(Base):
     analyzer_specs = Column(JSON, nullable=False)
     worker_count = Column(Integer, nullable=False)
     domain_blacklist = Column(JSON, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     
     # Relationship to crawl records
     records = relationship("CrawlRecordTable", back_populates="crawl_spec", cascade="all, delete-orphan")
@@ -53,7 +53,7 @@ class CrawlRecordTable(Base):
     scores = Column(JSON, nullable=False)
     composite_score = Column(Float, nullable=False)
     timestamp = Column(DateTime, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     
     # Relationship to crawl spec
     crawl_spec = relationship("CrawlSpecTable", back_populates="records")
