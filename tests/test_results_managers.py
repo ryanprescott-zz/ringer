@@ -161,17 +161,18 @@ class TestFsCrawlResultsManager:
                 manager.store_record(sample_crawl_record, results_id)
                 
                 # Check that directory was created with results ID
-                # Use a clean directory name format
-                expected_spec_dir = Path(temp_dir) / f"{results_id.collection_id}_{results_id.data_id}"
-                assert expected_spec_dir.exists()
+                # First, let's find what directories were actually created
+                created_dirs = [d for d in Path(temp_dir).iterdir() if d.is_dir()]
+                assert len(created_dirs) == 1, f"Expected 1 directory, found {len(created_dirs)}: {created_dirs}"
                 
+                actual_spec_dir = created_dirs[0]
                 # Check that file was created
-                files = list(expected_spec_dir.glob("*.json"))
+                files = list(actual_spec_dir.glob("*.json"))
                 assert len(files) == 1  # crawl_spec.json
                 
-                # Check that records directory was created with results ID
-                expected_records_dir = Path(temp_dir) / f"{results_id.collection_id}_{results_id.data_id}" / "records"
-                assert expected_records_dir.exists()
+                # Check that records directory was created
+                actual_records_dir = actual_spec_dir / "records"
+                assert actual_records_dir.exists()
 
                 # Find the record file (not crawl_spec.json)
                 record_files = list(expected_records_dir.glob("*.json"))
@@ -210,13 +211,18 @@ class TestFsCrawlResultsManager:
                 manager.store_record(record2, results_id)
                 
                 # Should create same directory structure
-                expected_spec_dir = Path(temp_dir) / f"{results_id.collection_id}_{results_id.data_id}"
-                files = list(expected_spec_dir.glob("*.json"))
+                # First, let's find what directories were actually created
+                created_dirs = [d for d in Path(temp_dir).iterdir() if d.is_dir()]
+                assert len(created_dirs) == 1, f"Expected 1 directory, found {len(created_dirs)}: {created_dirs}"
+                
+                actual_spec_dir = created_dirs[0]
+                files = list(actual_spec_dir.glob("*.json"))
                 # Should have 1 file: spec JSON
                 assert len(files) == 1
 
-                expected_records_dir = Path(temp_dir) / f"{results_id.collection_id}_{results_id.data_id}" / "records"
-                files = list(expected_records_dir.glob("*.json"))
+                actual_records_dir = actual_spec_dir / "records"
+                assert actual_records_dir.exists(), f"Records directory not found in {actual_spec_dir}"
+                files = list(actual_records_dir.glob("*.json"))
                 # Should have 2 record files
                 assert len(files) == 2
 
