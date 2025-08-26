@@ -16,6 +16,7 @@ dependencies:
     - redis
     - requests
     - sortedcontainers
+    - sqlalchemy
     - tenacity
     - uvicorn
 prefix: ringer
