@@ -64,7 +64,7 @@ class TestDownloadCrawlSpec:
             mock_state.ringer = mock_ringer
             
             # Execute
-            response = client.get(f"/api/v1/crawl/{crawl_id}/spec/download")
+            response = client.get(f"/api/v1/crawls/{crawl_id}/spec/download")
             
             # Verify
             assert response.status_code == 200
@@ -88,7 +88,7 @@ class TestDownloadCrawlSpec:
             mock_state.ringer = mock_ringer
             
             # Execute
-            response = client.get(f"/api/v1/crawl/{crawl_id}/spec/download")
+            response = client.get(f"/api/v1/crawls/{crawl_id}/spec/download")
             
             # Verify
             assert response.status_code == 404
@@ -107,7 +107,7 @@ class TestDownloadCrawlSpec:
             mock_state.ringer = mock_ringer
             
             # Execute
-            response = client.get(f"/api/v1/crawl/{crawl_id}/spec/download")
+            response = client.get(f"/api/v1/crawls/{crawl_id}/spec/download")
             
             # Verify
             assert response.status_code == 500
@@ -126,7 +126,7 @@ class TestDownloadCrawlSpec:
             mock_state.ringer = mock_ringer
             
             # Execute
-            response = client.get(f"/api/v1/crawl/{crawl_id}/spec/download")
+            response = client.get(f"/api/v1/crawls/{crawl_id}/spec/download")
             
             # Verify
             assert response.status_code == 200
@@ -143,7 +143,7 @@ class TestDownloadCrawlSpec:
             mock_state.ringer = mock_ringer
             
             # Execute
-            response = client.get(f"/api/v1/crawl/{crawl_id}/spec/download")
+            response = client.get(f"/api/v1/crawls/{crawl_id}/spec/download")
             
             # Verify
             response_json = response.json()
