@@ -1,6 +1,7 @@
 """Pydantic models for the Ringer application."""
 
 import hashlib
+import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 from enum import Enum
@@ -121,6 +122,13 @@ class DhLlmScoringSpec(AnalyzerSpec):
     scoring_input: PromptInput | TopicListInput = Field(..., description="Scoring input - either prompt or topics")
 
 
+class CrawlResultsId(BaseModel):
+    """Identifier for a crawl results data set."""
+    
+    collection_id: str = Field(..., description="Collection identifier for the crawl results")
+    data_id: str = Field(..., description="Data identifier for the crawl results")
+
+
 class SearchEngineSeed(BaseModel):
     """Specification for search engine seed generation."""
     
@@ -147,6 +155,9 @@ class CrawlSpec(BaseModel):
     domain_blacklist: Optional[List[str]] = Field(
         default=None, description="Domains to exclude from crawling"
     )
+    results_id: Optional[CrawlResultsId] = Field(
+        default=None, description="Identifier for the crawl results data set"
+    )
     
     @field_validator('seeds')
     @classmethod
@@ -160,6 +171,12 @@ class CrawlSpec(BaseModel):
     def id(self) -> str:
         """Generate a hash ID for this crawl based on the name."""
         return hashlib.md5(self.name.encode()).hexdigest()
+    
+    def create_default_results_id(self) -> CrawlResultsId:
+        """Create a default CrawlResultsId with unique collection_id and data_id."""
+        collection_id = f"collection_{uuid.uuid4()}"
+        data_id = f"data_{uuid.uuid4()}"
+        return CrawlResultsId(collection_id=collection_id, data_id=data_id)
 
 
 class CrawlRecord(BaseModel):
