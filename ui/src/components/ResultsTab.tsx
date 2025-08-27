@@ -46,6 +46,7 @@ export const ResultsTab: React.FC<ResultsTabProps> = ({ selectedCrawl }) => {
   const handleSelectRecord = async (summary: CrawlRecordSummary) => {
     if (!selectedCrawl) return;
     
+    // Set selected record ID immediately for visual feedback
     setSelectedRecordId(summary.id);
     
     try {
@@ -60,6 +61,8 @@ export const ResultsTab: React.FC<ResultsTabProps> = ({ selectedCrawl }) => {
       }
     } catch (error) {
       showError('Fetch Error', 'Failed to fetch record details');
+      // Reset selection on error
+      setSelectedRecordId('');
     }
   };
 
