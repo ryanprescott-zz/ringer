@@ -58,14 +58,14 @@ class CrawlResultsManager(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_crawl_records(self, results_id: CrawlResultsId, record_count: int, score_type: str) -> List[CrawlRecord]:
+    def get_crawl_records(self, results_id: CrawlResultsId, record_count: int = 10, score_type: str = "composite") -> List[CrawlRecord]:
         """
         Get crawl records sorted by score type.
         
         Args:
             results_id: Identifier for the crawl results data set
-            record_count: Number of records to return
-            score_type: Type of score to sort by ('composite' or analyzer name)
+            record_count: Number of records to return (default: 10)
+            score_type: Type of score to sort by ('composite' or analyzer name) (default: 'composite')
             
         Returns:
             List of CrawlRecord objects sorted by score in descending order

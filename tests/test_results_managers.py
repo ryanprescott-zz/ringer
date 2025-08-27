@@ -623,7 +623,7 @@ class TestSQLiteCrawlResultsManager:
                 manager.store_record(record2, results_id, "test_crawl_id")
                 
                 # Retrieve records
-                records = manager.get_crawl_records(results_id)
+                records = manager.get_crawl_records(results_id, record_count=10, score_type="composite")
                 assert len(records) == 2
                 
                 # Check record content
@@ -674,7 +674,7 @@ class TestSQLiteCrawlResultsManager:
                     manager.store_record(record, results_id, "test_crawl_id")
                 
                 # Retrieve with limit
-                records = manager.get_crawl_records(results_id, limit=2)
+                records = manager.get_crawl_records(results_id, record_count=2, score_type="composite")
                 assert len(records) == 2
     
     def test_get_crawl_records_not_found(self):
@@ -705,7 +705,7 @@ class TestSQLiteCrawlResultsManager:
                 
                 # Try to get records for non-existent crawl
                 results_id = CrawlResultsId(collection_id="nonexistent", data_id="crawl")
-                records = manager.get_crawl_records(results_id)
+                records = manager.get_crawl_records(results_id, record_count=10, score_type="composite")
                 assert records == []
     
     def test_get_crawl_stats_success(self, sample_crawl_record, sample_crawl_spec):
@@ -1029,8 +1029,8 @@ class TestSQLiteCrawlResultsManager:
                 
                 assert len(records) == 2
                 # Should get the 2 highest scoring records
-                assert records[0].composite_score == 0.4  # example4.com
-                assert records[1].composite_score == 0.3  # example3.com
+                assert abs(records[0].composite_score - 0.4) < 0.001  # example4.com
+                assert abs(records[1].composite_score - 0.3) < 0.001  # example3.com
     
     def test_get_crawl_records_empty_crawl(self, sample_crawl_spec):
         """Test retrieving records from crawl with no records."""
@@ -1252,8 +1252,8 @@ class TestFsCrawlResultsManagerGetRecords:
                 
                 assert len(records) == 2
                 # Should get the 2 highest scoring records
-                assert records[0].composite_score == 0.4  # example4.com
-                assert records[1].composite_score == 0.3  # example3.com
+                assert abs(records[0].composite_score - 0.4) < 0.001  # example4.com
+                assert abs(records[1].composite_score - 0.3) < 0.001  # example3.com
     
     def test_get_crawl_records_empty_crawl(self, sample_crawl_spec):
         """Test retrieving records from crawl with no records."""
@@ -1411,7 +1411,7 @@ class TestDhCrawlResultsManagerGetRecords:
                 manager2.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=manager2.engine)
                 
                 # Verify data persists
-                records = manager2.get_crawl_records(results_id)
+                records = manager2.get_crawl_records(results_id, record_count=10, score_type="composite")
                 assert len(records) == 1
                 assert records[0].url == sample_crawl_record.url
                 assert records[0].extracted_content == sample_crawl_record.extracted_content
@@ -1487,7 +1487,7 @@ class TestDhCrawlResultsManagerGetRecords:
                 thread.join()
             
             # Verify all records were stored
-            records = manager.get_crawl_records(results_id)
+            records = manager.get_crawl_records(results_id, record_count=20, score_type="composite")
             assert len(records) == 9  # 3 threads * 3 records each
             
             # Verify unique URLs

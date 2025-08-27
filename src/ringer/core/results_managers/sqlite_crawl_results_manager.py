@@ -256,7 +256,7 @@ class SQLiteCrawlResultsManager(CrawlResultsManager):
         finally:
             session.close()
     
-    def get_crawl_records(self, results_id: CrawlResultsId, record_count: int, score_type: str) -> List[CrawlRecord]:
+    def get_crawl_records(self, results_id: CrawlResultsId, record_count: int = 10, score_type: str = "composite") -> List[CrawlRecord]:
         """
         Get crawl records sorted by score type.
         

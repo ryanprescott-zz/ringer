@@ -445,7 +445,7 @@ class TestRinger:
         
         assert records == []
         # Verify results manager was called with correct parameters
-        mock_results_manager.get_crawl_records.assert_called_once_with(results_id, 10, "composite")
+        mock_results_manager.get_crawl_records.assert_called_once_with(results_id=results_id, record_count=10, score_type="composite")
     
     def test_get_crawl_records_invalid_score_type(self, ringer, sample_crawl_spec):
         """Test getting crawl records with invalid score type."""
