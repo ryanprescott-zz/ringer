@@ -18,6 +18,7 @@ from .models import (
     DhLlmScoringSpec,
     KeywordScoringSpec,
     CrawlRecordSummary,
+    CrawlRecord,
     AnalyzerSpec,
     RunStateEnum,
     RunState,
