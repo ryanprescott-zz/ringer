@@ -5,6 +5,7 @@ import threading
 import time
 import atexit
 import tempfile
+from pathlib import Path
 from fastapi.testclient import TestClient
 from unittest.mock import Mock, patch
 from ringer.main import app
@@ -157,20 +158,19 @@ def keyword_analyzer(sample_weighted_keywords):
 def ringer():
     """Ringer instance for testing with temporary directory."""
     with tempfile.TemporaryDirectory() as temp_dir:
-        # Patch the FsCrawlResultsManager settings to use temp directory
-        with patch('ringer.core.results_managers.fs_crawl_results_manager.FsCrawlResultsManagerSettings') as mock_settings:
-            mock_settings.return_value.crawl_data_dir = temp_dir
-            # Also patch the results manager to return a consistent storage ID
-            with patch('ringer.core.results_managers.fs_crawl_results_manager.uuid.uuid4') as mock_uuid:
-                mock_uuid.return_value = Mock()
-                mock_uuid.return_value.__str__ = Mock(return_value="test-storage-id-123")
-                ringer_instance = Ringer()
-                yield ringer_instance
-                # Cleanup ringer after test
-                try:
-                    ringer_instance.shutdown()
-                except Exception:
-                    pass  # Ignore shutdown errors in tests
+        # Patch the SQLiteCrawlResultsManager settings to use temp directory
+        with patch('ringer.core.results_managers.sqlite_crawl_results_manager.SQLiteCrawlResultsManagerSettings') as mock_settings:
+            mock_settings.return_value.database_path = str(temp_dir / "test.db")
+            mock_settings.return_value.echo_sql = False
+            mock_settings.return_value.pool_size = 5
+            mock_settings.return_value.max_overflow = 10
+            ringer_instance = Ringer()
+            yield ringer_instance
+            # Cleanup ringer after test
+            try:
+                ringer_instance.shutdown()
+            except Exception:
+                pass  # Ignore shutdown errors in tests
 
 
 @pytest.fixture
