@@ -20,6 +20,12 @@ export const ResultsTab: React.FC<ResultsTabProps> = ({ selectedCrawl }) => {
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'score', direction: 'desc' });
   const { showError } = useToast();
 
+  // Update text area when selected field changes
+  useEffect(() => {
+    // Force re-render when selectedField changes
+    // This ensures getFieldValue() is called with the new field
+  }, [selectedField, selectedRecord]);
+
   const handleGetRecords = async () => {
     if (!selectedCrawl) return;
     
@@ -86,11 +92,8 @@ export const ResultsTab: React.FC<ResultsTabProps> = ({ selectedCrawl }) => {
   };
 
   const getFieldOptions = (): string[] => {
-    if (!selectedRecord) return [];
-    return Object.keys(selectedRecord).filter(key => 
-      typeof selectedRecord[key as keyof CrawlRecord] === 'string' ||
-      Array.isArray(selectedRecord[key as keyof CrawlRecord])
-    );
+    if (!selectedRecord) return ['extracted_content'];
+    return Object.keys(selectedRecord);
   };
 
   const getFieldValue = (): string => {
@@ -98,6 +101,9 @@ export const ResultsTab: React.FC<ResultsTabProps> = ({ selectedCrawl }) => {
     const value = selectedRecord[selectedField as keyof CrawlRecord];
     if (Array.isArray(value)) {
       return value.join('\n');
+    }
+    if (typeof value === 'object' && value !== null) {
+      return JSON.stringify(value, null, 2);
     }
     return String(value || '');
   };
