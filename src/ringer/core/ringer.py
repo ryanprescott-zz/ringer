@@ -363,10 +363,7 @@ class Ringer:
         """
         with self.crawls_lock:
             if crawl_id not in self.crawls:
-                # Add debugging information to help identify the issue
-                available_crawl_ids = list(self.crawls.keys())
-                logger.error(f"Crawl {crawl_id} not found in crawls. Available crawl IDs: {available_crawl_ids}")
-                raise ValueError(f"Crawl {crawl_id} not found. Available crawls: {available_crawl_ids}")
+                raise ValueError(f"Crawl {crawl_id} not found")
             
             crawl_state = self.crawls[crawl_id]
             
