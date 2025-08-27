@@ -637,7 +637,12 @@ class Ringer:
                     record_count=record_count,
                     score_type=score_type
                 )
-                logger.debug(f"Retrieved {len(records)} records for crawl {crawl_id} with score_type '{score_type}'")
+                # Safely get length for logging, handling Mock objects in tests
+                try:
+                    record_count_str = str(len(records))
+                except (TypeError, AttributeError):
+                    record_count_str = "unknown"
+                logger.debug(f"Retrieved {record_count_str} records for crawl {crawl_id} with score_type '{score_type}'")
                 return records
             except Exception as e:
                 logger.error(f"Failed to get crawl records for crawl {crawl_id}: {e}")

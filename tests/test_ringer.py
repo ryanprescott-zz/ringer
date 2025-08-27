@@ -457,14 +457,22 @@ class TestRinger:
         
         # Mock the results manager to avoid SQLite initialization issues
         mock_results_manager = Mock()
+        mock_results_manager.get_crawl_records.return_value = []
         ringer.results_manager = mock_results_manager
         
         results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
         crawl_id, create_state = ringer.create(sample_crawl_spec, results_id)
         
-        # Test with invalid score type
-        with pytest.raises(ValueError, match="Invalid score_type"):
-            ringer.get_crawl_records(crawl_id, record_count=10, score_type="invalid_analyzer")
+        # Test with invalid score type - should now be allowed due to permissive validation
+        records = ringer.get_crawl_records(crawl_id, record_count=10, score_type="invalid_analyzer")
+        assert records == []
+        
+        # Verify results manager was called
+        mock_results_manager.get_crawl_records.assert_called_once_with(
+            results_id=results_id,
+            record_count=10,
+            score_type="invalid_analyzer"
+        )
     
     def test_get_crawl_records_not_found(self, ringer):
         """Test getting records for non-existent crawl raises error."""
