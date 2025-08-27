@@ -160,7 +160,8 @@ def ringer():
     with tempfile.TemporaryDirectory() as temp_dir:
         # Patch the SQLiteCrawlResultsManager settings to use temp directory
         with patch('ringer.core.results_managers.sqlite_crawl_results_manager.SQLiteCrawlResultsManagerSettings') as mock_settings:
-            mock_settings.return_value.database_path = str(temp_dir / "test.db")
+            temp_path = Path(temp_dir)
+            mock_settings.return_value.database_path = str(temp_path / "test.db")
             mock_settings.return_value.echo_sql = False
             mock_settings.return_value.pool_size = 5
             mock_settings.return_value.max_overflow = 10
