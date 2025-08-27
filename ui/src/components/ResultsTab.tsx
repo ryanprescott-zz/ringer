@@ -8,53 +8,27 @@ interface ResultsTabProps {
 }
 
 export const ResultsTab: React.FC<ResultsTabProps> = ({ selectedCrawl }) => {
-  const [crawls, setCrawls] = useState<CrawlInfo[]>([]);
-  const [selectedCrawlId, setSelectedCrawlId] = useState<string>('');
   const [scoreType, setScoreType] = useState<string>('composite');
-  const [count, setCount] = useState<number>(500);
+  const [count, setCount] = useState<number>(400);
   const [recordSummaries, setRecordSummaries] = useState<CrawlRecordSummary[]>([]);
   const [selectedRecord, setSelectedRecord] = useState<CrawlRecord | null>(null);
+  const [selectedRecordId, setSelectedRecordId] = useState<string>('');
   const [selectedField, setSelectedField] = useState<string>('extracted_content');
   const [loading, setLoading] = useState<boolean>(false);
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [rowsPerPage, setRowsPerPage] = useState<number>(20);
+  const [rowsPerPage, setRowsPerPage] = useState<number>(10);
   const { showError } = useToast();
 
-  // Load crawls on component mount
-  useEffect(() => {
-    const loadCrawls = async () => {
-      try {
-        const response = await crawlApi.getAllCrawlInfo();
-        const sortedCrawls = response.crawls.sort((a, b) => 
-          a.crawl_spec.name.localeCompare(b.crawl_spec.name)
-        );
-        setCrawls(sortedCrawls);
-        if (sortedCrawls.length > 0) {
-          setSelectedCrawlId(sortedCrawls[0].crawl_status.crawl_id);
-        }
-      } catch (error) {
-        showError('Load Error', 'Failed to load crawls');
-      }
-    };
-    loadCrawls();
-  }, [showError]);
-
-  // Update selected crawl if prop changes
-  useEffect(() => {
-    if (selectedCrawl) {
-      setSelectedCrawlId(selectedCrawl.crawl_status.crawl_id);
-    }
-  }, [selectedCrawl]);
-
   const handleGetRecords = async () => {
-    if (!selectedCrawlId) return;
+    if (!selectedCrawl) return;
     
     setLoading(true);
     try {
-      const response = await crawlApi.getCrawlRecordSummaries(selectedCrawlId, count, scoreType);
+      const response = await crawlApi.getCrawlRecordSummaries(selectedCrawl.crawl_status.crawl_id, count, scoreType);
       setRecordSummaries(response.records);
       setCurrentPage(1);
       setSelectedRecord(null);
+      setSelectedRecordId('');
     } catch (error) {
       showError('Fetch Error', 'Failed to fetch record summaries');
     } finally {
@@ -63,13 +37,14 @@ export const ResultsTab: React.FC<ResultsTabProps> = ({ selectedCrawl }) => {
   };
 
   const handleSelectRecord = async (summary: CrawlRecordSummary) => {
-    if (!selectedCrawlId) return;
+    if (!selectedCrawl) return;
+    
+    setSelectedRecordId(summary.id);
     
     try {
-      const response = await crawlApi.getCrawlRecords(selectedCrawlId, [summary.id]);
+      const response = await crawlApi.getCrawlRecords(selectedCrawl.crawl_status.crawl_id, [summary.id]);
       if (response.records.length > 0) {
         setSelectedRecord(response.records[0]);
-        setSelectedField('extracted_content');
       }
     } catch (error) {
       showError('Fetch Error', 'Failed to fetch record details');
