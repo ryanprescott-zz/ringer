@@ -911,6 +911,192 @@ class TestSeedsEndpoint:
         assert "Internal server error" in response.json()["detail"]
 
 
+class TestResultsEndpoint:
+    """Tests for the results endpoints."""
+    
+    def test_get_crawl_record_summaries_success(self, client, mock_ringer, sample_crawl_state):
+        """Test successful retrieval of crawl record summaries."""
+        from ringer.core.models import CrawlRecordSummary
+        
+        test_crawl_id = "test_crawl_123"
+        
+        # Mock record summaries
+        test_record_summaries = [
+            CrawlRecordSummary(
+                id="record_1",
+                url="https://example1.com",
+                score=0.95
+            ),
+            CrawlRecordSummary(
+                id="record_2", 
+                url="https://example2.com",
+                score=0.87
+            )
+        ]
+        
+        mock_ringer.get_crawl_record_summaries.return_value = test_record_summaries
+        mock_ringer.crawls = {test_crawl_id: sample_crawl_state}
+        
+        # Set the ringer in app state
+        app.state.ringer = mock_ringer
+        
+        request_data = {
+            "record_count": 10,
+            "score_type": "composite"
+        }
+        
+        response = client.post(
+            f"/api/v1/results/{test_crawl_id}/record_summaries",
+            json=request_data
+        )
+        
+        assert response.status_code == 200
+        data = response.json()
+        
+        assert "records" in data
+        records = data["records"]
+        assert len(records) == 2
+        
+        # Check first record
+        assert records[0]["id"] == "record_1"
+        assert records[0]["url"] == "https://example1.com"
+        assert records[0]["score"] == 0.95
+        
+        # Check second record
+        assert records[1]["id"] == "record_2"
+        assert records[1]["url"] == "https://example2.com"
+        assert records[1]["score"] == 0.87
+        
+        mock_ringer.get_crawl_record_summaries.assert_called_once_with(
+            crawl_id=test_crawl_id,
+            record_count=10,
+            score_type="composite"
+        )
+    
+    def test_get_crawl_record_summaries_not_found(self, client, mock_ringer):
+        """Test getting record summaries for non-existent crawl returns 404."""
+        mock_ringer.get_crawl_record_summaries.side_effect = ValueError("Crawl nonexistent_id not found")
+        
+        # Set the ringer in app state
+        app.state.ringer = mock_ringer
+        
+        request_data = {
+            "record_count": 10,
+            "score_type": "composite"
+        }
+        
+        response = client.post(
+            "/api/v1/results/nonexistent_id/record_summaries",
+            json=request_data
+        )
+        
+        assert response.status_code == 404
+        assert "Crawl nonexistent_id not found" in response.json()["detail"]
+    
+    def test_get_crawl_record_summaries_invalid_score_type(self, client, mock_ringer):
+        """Test getting record summaries with invalid score type returns 400."""
+        mock_ringer.get_crawl_record_summaries.side_effect = ValueError("Invalid score_type: invalid_type")
+        
+        # Set the ringer in app state
+        app.state.ringer = mock_ringer
+        
+        request_data = {
+            "record_count": 10,
+            "score_type": "invalid_type"
+        }
+        
+        response = client.post(
+            "/api/v1/results/test_crawl/record_summaries",
+            json=request_data
+        )
+        
+        assert response.status_code == 400
+        assert "Invalid score_type" in response.json()["detail"]
+    
+    def test_get_crawl_record_summaries_invalid_request(self, client, mock_ringer):
+        """Test getting record summaries with invalid request data returns 422."""
+        # Set the ringer in app state
+        app.state.ringer = mock_ringer
+        
+        # Missing required fields
+        request_data = {
+            "record_count": 10
+            # Missing score_type
+        }
+        
+        response = client.post(
+            "/api/v1/results/test_crawl/record_summaries",
+            json=request_data
+        )
+        
+        assert response.status_code == 422
+    
+    def test_get_crawl_record_summaries_internal_error(self, client, mock_ringer):
+        """Test internal server error during record summaries retrieval."""
+        mock_ringer.get_crawl_record_summaries.side_effect = Exception("Database connection failed")
+        
+        # Set the ringer in app state
+        app.state.ringer = mock_ringer
+        
+        request_data = {
+            "record_count": 10,
+            "score_type": "composite"
+        }
+        
+        response = client.post(
+            "/api/v1/results/test_crawl/record_summaries",
+            json=request_data
+        )
+        
+        assert response.status_code == 500
+        assert "Internal server error" in response.json()["detail"]
+    
+    def test_get_crawl_record_summaries_different_score_types(self, client, mock_ringer, sample_crawl_state):
+        """Test getting record summaries with different score types."""
+        from ringer.core.models import CrawlRecordSummary
+        
+        test_crawl_id = "test_crawl_123"
+        
+        # Mock record summaries for keyword analyzer
+        test_record_summaries = [
+            CrawlRecordSummary(
+                id="record_1",
+                url="https://example1.com",
+                score=0.75
+            )
+        ]
+        
+        mock_ringer.get_crawl_record_summaries.return_value = test_record_summaries
+        mock_ringer.crawls = {test_crawl_id: sample_crawl_state}
+        
+        # Set the ringer in app state
+        app.state.ringer = mock_ringer
+        
+        request_data = {
+            "record_count": 5,
+            "score_type": "KeywordScoreAnalyzer"
+        }
+        
+        response = client.post(
+            f"/api/v1/results/{test_crawl_id}/record_summaries",
+            json=request_data
+        )
+        
+        assert response.status_code == 200
+        data = response.json()
+        
+        assert "records" in data
+        records = data["records"]
+        assert len(records) == 1
+        assert records[0]["score"] == 0.75
+        
+        mock_ringer.get_crawl_record_summaries.assert_called_once_with(
+            crawl_id=test_crawl_id,
+            record_count=5,
+            score_type="KeywordScoreAnalyzer"
+        )
+
+
 class TestAPIModels:
     """Tests for API request/response models."""
     
