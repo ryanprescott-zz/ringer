@@ -29,7 +29,6 @@ from .score_analyzers import (
 from .scrapers import Scraper, PlaywrightScraper
 from .results_managers import (
     CrawlResultsManager,
-    FsCrawlResultsManager,
     DhCrawlResultsManager,
 )
 from .state_managers import (
@@ -56,7 +55,6 @@ __all__ = [
     "Scraper",
     "PlaywrightScraper",
     "CrawlResultsManager",
-    "FsCrawlResultsManager",
     "DhCrawlResultsManager",
     "CrawlStateManager",
     "MemoryCrawlStateManager",
