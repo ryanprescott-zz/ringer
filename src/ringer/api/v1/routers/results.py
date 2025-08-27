@@ -1,6 +1,6 @@
 """Results router for crawl record retrieval endpoints."""
 
-from fastapi import APIRouter, HTTPException, Path
+from fastapi import APIRouter, HTTPException, Path, Request
 from ringer.api.v1.models import CrawlRecordsRequest, CrawlRecordsResponse
 from ringer.core.ringer import Ringer
 
@@ -12,8 +12,9 @@ ringer = Ringer()
 
 @router.post("/{crawl_id}/records", response_model=CrawlRecordsResponse)
 async def get_crawl_records(
-    crawl_id: str = Path(..., description="ID of the crawl"),
-    request: CrawlRecordsRequest = ...
+    crawl_id: str,
+    request: CrawlRecordsRequest,
+    app_request: Request
 ) -> CrawlRecordsResponse:
     """
     Retrieve crawl records for a specific crawl.
@@ -29,6 +30,7 @@ async def get_crawl_records(
         HTTPException: 404 if crawl not found, 400 if score_type is invalid
     """
     try:
+        ringer = app_request.app.state.ringer
         records = ringer.get_crawl_records(
             crawl_id=crawl_id,
             record_count=request.record_count,
