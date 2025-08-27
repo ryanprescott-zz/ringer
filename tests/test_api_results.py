@@ -17,18 +17,15 @@ def mock_ringer():
 
 
 @pytest.fixture
-def test_client(mock_ringer):
-    """Create a test client with mocked Ringer."""
+def test_client():
+    """Create a test client."""
     from ringer.api.v1.routers.results import router
     from fastapi import FastAPI
     
     app = FastAPI()
     app.include_router(router)
     
-    # Patch the global ringer instance
-    with patch('ringer.api.v1.routers.results.ringer', mock_ringer):
-        client = TestClient(app)
-        yield client
+    return TestClient(app)
 
 
 @pytest.fixture
@@ -70,14 +67,15 @@ class TestGetCrawlRecordsEndpoint:
         # Mock the ringer method to return sample records
         mock_ringer.get_crawl_records.return_value = sample_crawl_records
         
-        # Make request
-        response = test_client.post(
-            "/results/test_crawl_id/records",
-            json={
-                "record_count": 3,
-                "score_type": "composite"
-            }
-        )
+        # Make request with patch context
+        with patch('ringer.api.v1.routers.results.ringer', mock_ringer):
+            response = test_client.post(
+                "/results/test_crawl_id/records",
+                json={
+                    "record_count": 3,
+                    "score_type": "composite"
+                }
+            )
         
         # Verify response
         assert response.status_code == 200
@@ -105,13 +103,14 @@ class TestGetCrawlRecordsEndpoint:
         """Test retrieval with specific analyzer score type."""
         mock_ringer.get_crawl_records.return_value = sample_crawl_records
         
-        response = test_client.post(
-            "/results/test_crawl_id/records",
-            json={
-                "record_count": 2,
-                "score_type": "KeywordScoreAnalyzer"
-            }
-        )
+        with patch('ringer.api.v1.routers.results.ringer', mock_ringer):
+            response = test_client.post(
+                "/results/test_crawl_id/records",
+                json={
+                    "record_count": 2,
+                    "score_type": "KeywordScoreAnalyzer"
+                }
+            )
         
         assert response.status_code == 200
         data = response.json()
@@ -128,13 +127,14 @@ class TestGetCrawlRecordsEndpoint:
         """Test when no records are found."""
         mock_ringer.get_crawl_records.return_value = []
         
-        response = test_client.post(
-            "/results/test_crawl_id/records",
-            json={
-                "record_count": 10,
-                "score_type": "composite"
-            }
-        )
+        with patch('ringer.api.v1.routers.results.ringer', mock_ringer):
+            response = test_client.post(
+                "/results/test_crawl_id/records",
+                json={
+                    "record_count": 10,
+                    "score_type": "composite"
+                }
+            )
         
         assert response.status_code == 200
         data = response.json()
@@ -144,13 +144,14 @@ class TestGetCrawlRecordsEndpoint:
         """Test when crawl ID is not found."""
         mock_ringer.get_crawl_records.side_effect = ValueError("Crawl nonexistent_id not found")
         
-        response = test_client.post(
-            "/results/nonexistent_id/records",
-            json={
-                "record_count": 10,
-                "score_type": "composite"
-            }
-        )
+        with patch('ringer.api.v1.routers.results.ringer', mock_ringer):
+            response = test_client.post(
+                "/results/nonexistent_id/records",
+                json={
+                    "record_count": 10,
+                    "score_type": "composite"
+                }
+            )
         
         assert response.status_code == 404
         data = response.json()
@@ -162,13 +163,14 @@ class TestGetCrawlRecordsEndpoint:
             "Invalid score_type 'invalid_analyzer' for crawl test_crawl_id. Available types: composite, KeywordScoreAnalyzer"
         )
         
-        response = test_client.post(
-            "/results/test_crawl_id/records",
-            json={
-                "record_count": 10,
-                "score_type": "invalid_analyzer"
-            }
-        )
+        with patch('ringer.api.v1.routers.results.ringer', mock_ringer):
+            response = test_client.post(
+                "/results/test_crawl_id/records",
+                json={
+                    "record_count": 10,
+                    "score_type": "invalid_analyzer"
+                }
+            )
         
         assert response.status_code == 400
         data = response.json()
@@ -231,13 +233,14 @@ class TestGetCrawlRecordsEndpoint:
         """Test handling of internal server errors."""
         mock_ringer.get_crawl_records.side_effect = Exception("Database connection failed")
         
-        response = test_client.post(
-            "/results/test_crawl_id/records",
-            json={
-                "record_count": 10,
-                "score_type": "composite"
-            }
-        )
+        with patch('ringer.api.v1.routers.results.ringer', mock_ringer):
+            response = test_client.post(
+                "/results/test_crawl_id/records",
+                json={
+                    "record_count": 10,
+                    "score_type": "composite"
+                }
+            )
         
         assert response.status_code == 500
         data = response.json()
@@ -247,13 +250,14 @@ class TestGetCrawlRecordsEndpoint:
         """Test with large record count."""
         mock_ringer.get_crawl_records.return_value = sample_crawl_records
         
-        response = test_client.post(
-            "/results/test_crawl_id/records",
-            json={
-                "record_count": 1000,
-                "score_type": "composite"
-            }
-        )
+        with patch('ringer.api.v1.routers.results.ringer', mock_ringer):
+            response = test_client.post(
+                "/results/test_crawl_id/records",
+                json={
+                    "record_count": 1000,
+                    "score_type": "composite"
+                }
+            )
         
         assert response.status_code == 200
         data = response.json()
@@ -271,13 +275,14 @@ class TestGetCrawlRecordsEndpoint:
         mock_ringer.get_crawl_records.return_value = sample_crawl_records
         
         crawl_id_with_special_chars = "crawl-123_test.id"
-        response = test_client.post(
-            f"/results/{crawl_id_with_special_chars}/records",
-            json={
-                "record_count": 5,
-                "score_type": "composite"
-            }
-        )
+        with patch('ringer.api.v1.routers.results.ringer', mock_ringer):
+            response = test_client.post(
+                f"/results/{crawl_id_with_special_chars}/records",
+                json={
+                    "record_count": 5,
+                    "score_type": "composite"
+                }
+            )
         
         assert response.status_code == 200
         mock_ringer.get_crawl_records.assert_called_once_with(
