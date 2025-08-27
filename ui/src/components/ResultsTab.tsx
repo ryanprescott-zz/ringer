@@ -78,6 +78,7 @@ export const ResultsTab: React.FC<ResultsTabProps> = ({ selectedCrawl }) => {
     setCurrentPage(Math.max(1, Math.min(page, totalPages)));
   };
 
+  return (
     <div className="space-y-6">
       {/* Controls Section */}
       <div className="flex gap-4 items-end mb-4">
