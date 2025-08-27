@@ -11,6 +11,7 @@ from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, Session
 from sqlalchemy.dialects.sqlite import JSON
 
+from typing import List
 from ringer.core.models import CrawlRecord, CrawlSpec, CrawlResultsId
 from ringer.core.settings import SQLiteCrawlResultsManagerSettings
 from .crawl_results_manager import CrawlResultsManager
@@ -255,16 +256,17 @@ class SQLiteCrawlResultsManager(CrawlResultsManager):
         finally:
             session.close()
     
-    def get_crawl_records(self, results_id: CrawlResultsId, limit: Optional[int] = None) -> list:
+    def get_crawl_records(self, results_id: CrawlResultsId, record_count: int, score_type: str) -> List[CrawlRecord]:
         """
-        Retrieve crawl records for a given results_id.
+        Get crawl records sorted by score type.
         
         Args:
-            results_id: Results ID to get records for
-            limit: Optional limit on number of records to return
+            results_id: Identifier for the crawl results data set
+            record_count: Number of records to return
+            score_type: Type of score to sort by ('composite' or analyzer name)
             
         Returns:
-            List of CrawlRecord objects
+            List of CrawlRecord objects sorted by score in descending order
         """
         if not hasattr(self, 'SessionLocal') or self.SessionLocal is None:
             raise RuntimeError("SQLiteCrawlResultsManager not properly initialized - database connection failed")
@@ -283,10 +285,18 @@ class SQLiteCrawlResultsManager(CrawlResultsManager):
             # Query records
             query = session.query(CrawlRecordTable).filter_by(crawl_spec_id=crawl_spec_record.id)
             
-            if limit:
-                query = query.limit(limit)
+            # Sort by score type in descending order
+            if score_type == "composite":
+                query = query.order_by(CrawlRecordTable.composite_score.desc())
+            else:
+                # For analyzer-specific scores, we need to extract from JSON and sort
+                # SQLite JSON functions to extract score and sort
+                from sqlalchemy import func, cast, Float
+                score_expr = func.json_extract(CrawlRecordTable.scores, f'$.{score_type}')
+                query = query.order_by(cast(score_expr, Float).desc())
             
-            records = query.all()
+            # Limit results
+            records = query.limit(record_count).all()
             
             # Convert to CrawlRecord objects
             crawl_records = []
@@ -305,7 +315,7 @@ class SQLiteCrawlResultsManager(CrawlResultsManager):
             return crawl_records
             
         except Exception as e:
-            logger.error(f"Failed to retrieve crawl records for {results_id.collection_id}/{results_id.data_id}: {e}")
+            logger.error(f"Failed to get crawl records for {results_id.collection_id}/{results_id.data_id}: {e}")
             raise
         finally:
             session.close()

@@ -1,7 +1,7 @@
 """Main API router for Ringer v1 endpoints."""
 
 from fastapi import APIRouter
-from ringer.api.v1.routers import crawl, seeds, analyzers
+from ringer.api.v1.routers import crawl, seeds, analyzers, results
 from ringer.core.settings import RingerServiceSettings
 
 # Load service settings
@@ -23,4 +23,9 @@ api_router.include_router(
 # Include the analyzers router
 api_router.include_router(
     analyzers.router,
+)
+
+# Include the results router
+api_router.include_router(
+    results.router,
 )

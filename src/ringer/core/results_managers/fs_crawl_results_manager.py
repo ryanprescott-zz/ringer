@@ -6,6 +6,7 @@ import uuid
 import shutil
 from pathlib import Path
 
+from typing import List
 from ringer.core.models import CrawlRecord, CrawlSpec, CrawlResultsId
 from ringer.core.settings import FsCrawlResultsManagerSettings
 from .crawl_results_manager import CrawlResultsManager
@@ -124,4 +125,48 @@ class FsCrawlResultsManager(CrawlResultsManager):
                 logger.warning(f"Crawl directory does not exist: {crawl_dir}")
         except Exception as e:
             logger.error(f"Failed to delete crawl directory for {results_id.collection_id}/{results_id.data_id}: {e}")
+            raise
+    
+    def get_crawl_records(self, results_id: CrawlResultsId, record_count: int, score_type: str) -> List[CrawlRecord]:
+        """
+        Get crawl records sorted by score type.
+        
+        Args:
+            results_id: Identifier for the crawl results data set
+            record_count: Number of records to return
+            score_type: Type of score to sort by ('composite' or analyzer name)
+            
+        Returns:
+            List of CrawlRecord objects sorted by score in descending order
+        """
+        try:
+            records_dir = self.base_dir / results_id.collection_id / results_id.data_id / "records"
+            
+            if not records_dir.exists():
+                return []
+            
+            # Load all records
+            records = []
+            for record_file in records_dir.glob("*.json"):
+                try:
+                    with open(record_file, 'r', encoding='utf-8') as f:
+                        record_data = json.load(f)
+                        record = CrawlRecord(**record_data)
+                        records.append(record)
+                except Exception as e:
+                    logger.warning(f"Failed to load record from {record_file}: {e}")
+                    continue
+            
+            # Sort records by score type in descending order
+            if score_type == "composite":
+                records.sort(key=lambda r: r.composite_score, reverse=True)
+            else:
+                # Sort by specific analyzer score
+                records.sort(key=lambda r: r.scores.get(score_type, 0.0), reverse=True)
+            
+            # Return top record_count records
+            return records[:record_count]
+            
+        except Exception as e:
+            logger.error(f"Failed to get crawl records for {results_id.collection_id}/{results_id.data_id}: {e}")
             raise

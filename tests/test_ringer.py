@@ -428,3 +428,42 @@ class TestRinger:
         with pytest.raises(ValueError, match="not found"):
             ringer.get_crawl_status("nonexistent_id")
     
+    def test_get_crawl_records(self, ringer, sample_crawl_spec):
+        """Test getting crawl records."""
+        from ringer.core.models import CrawlResultsId
+        
+        # Mock the results manager to avoid SQLite initialization issues
+        mock_results_manager = Mock()
+        mock_results_manager.get_crawl_records.return_value = []
+        ringer.results_manager = mock_results_manager
+        
+        results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
+        crawl_id, create_state = ringer.create(sample_crawl_spec, results_id)
+        
+        # Test getting records
+        records = ringer.get_crawl_records(crawl_id, record_count=10, score_type="composite")
+        
+        assert records == []
+        # Verify results manager was called with correct parameters
+        mock_results_manager.get_crawl_records.assert_called_once_with(results_id, 10, "composite")
+    
+    def test_get_crawl_records_invalid_score_type(self, ringer, sample_crawl_spec):
+        """Test getting crawl records with invalid score type."""
+        from ringer.core.models import CrawlResultsId
+        
+        # Mock the results manager to avoid SQLite initialization issues
+        mock_results_manager = Mock()
+        ringer.results_manager = mock_results_manager
+        
+        results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
+        crawl_id, create_state = ringer.create(sample_crawl_spec, results_id)
+        
+        # Test with invalid score type
+        with pytest.raises(ValueError, match="Invalid score_type"):
+            ringer.get_crawl_records(crawl_id, record_count=10, score_type="invalid_analyzer")
+    
+    def test_get_crawl_records_not_found(self, ringer):
+        """Test getting records for non-existent crawl raises error."""
+        with pytest.raises(ValueError, match="not found"):
+            ringer.get_crawl_records("nonexistent_id", record_count=10, score_type="composite")
+    

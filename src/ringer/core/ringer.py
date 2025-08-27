@@ -576,6 +576,49 @@ class Ringer:
         
         logger.info(f"Deleted crawl {crawl_id}")
     
+    def get_crawl_records(self, crawl_id: str, record_count: int, score_type: str) -> List[CrawlRecord]:
+        """
+        Get crawl records sorted by score type.
+        
+        Args:
+            crawl_id: ID of the crawl to get records for
+            record_count: Number of records to return
+            score_type: Type of score to sort by ('composite' or analyzer name)
+            
+        Returns:
+            List of CrawlRecord objects sorted by score in descending order
+            
+        Raises:
+            ValueError: If crawl ID not found or score_type is invalid
+        """
+        with self.crawls_lock:
+            if crawl_id not in self.crawls:
+                raise ValueError(f"Crawl {crawl_id} not found")
+            
+            crawl_state = self.crawls[crawl_id]
+            
+            # Validate score_type
+            valid_score_types = {"composite"}
+            # Add analyzer names as valid score types
+            for analyzer_name in crawl_state.analyzer_weights.keys():
+                valid_score_types.add(analyzer_name)
+            
+            if score_type not in valid_score_types:
+                available_types = ", ".join(sorted(valid_score_types))
+                raise ValueError(f"Invalid score_type '{score_type}' for crawl {crawl_id}. Available types: {available_types}")
+            
+            # Get records from results manager
+            try:
+                records = self.results_manager.get_crawl_records(
+                    results_id=crawl_state.results_id,
+                    record_count=record_count,
+                    score_type=score_type
+                )
+                logger.debug(f"Retrieved {len(records)} records for crawl {crawl_id} with score_type '{score_type}'")
+                return records
+            except Exception as e:
+                logger.error(f"Failed to get crawl records for crawl {crawl_id}: {e}")
+                raise
 
     def _initialize_analyzers(self, crawl_state: CrawlState, analyzer_specs: List[AnalyzerSpec]) -> None:
         """
