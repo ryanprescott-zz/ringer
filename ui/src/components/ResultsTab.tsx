@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CrawlInfo, CrawlRecordSummary, CrawlRecord } from '../types';
+import { CrawlInfo, CrawlRecordSummary, CrawlRecord, SortConfig } from '../types';
 import { crawlApi } from '../services/api';
 import { useToast } from '../hooks/useToast';
 
@@ -17,6 +17,7 @@ export const ResultsTab: React.FC<ResultsTabProps> = ({ selectedCrawl }) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [rowsPerPage, setRowsPerPage] = useState<number>(10);
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'score', direction: 'desc' });
   const { showError } = useToast();
 
   const handleGetRecords = async () => {
@@ -44,11 +45,44 @@ export const ResultsTab: React.FC<ResultsTabProps> = ({ selectedCrawl }) => {
     try {
       const response = await crawlApi.getCrawlRecords(selectedCrawl.crawl_status.crawl_id, [summary.id]);
       if (response.records.length > 0) {
-        setSelectedRecord(response.records[0]);
+        const record = response.records[0];
+        setSelectedRecord(record);
+        // Set default field if not already set or if field doesn't exist in record
+        if (!selectedField || !(selectedField in record)) {
+          setSelectedField('extracted_content');
+        }
       }
     } catch (error) {
       showError('Fetch Error', 'Failed to fetch record details');
     }
+  };
+
+  const handleSort = (key: string) => {
+    setSortConfig(prev => ({
+      key,
+      direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc',
+    }));
+  };
+
+  const sortRecords = (records: CrawlRecordSummary[]): CrawlRecordSummary[] => {
+    return [...records].sort((a, b) => {
+      let aValue: any = a[sortConfig.key as keyof CrawlRecordSummary];
+      let bValue: any = b[sortConfig.key as keyof CrawlRecordSummary];
+
+      // Handle different data types
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        aValue = aValue.toLowerCase();
+        bValue = bValue.toLowerCase();
+      }
+
+      if (aValue < bValue) {
+        return sortConfig.direction === 'asc' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return sortConfig.direction === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
   };
 
   const getFieldOptions = (): string[] => {
@@ -68,11 +102,12 @@ export const ResultsTab: React.FC<ResultsTabProps> = ({ selectedCrawl }) => {
     return String(value || '');
   };
 
-  // Pagination calculations
-  const totalPages = Math.ceil(recordSummaries.length / rowsPerPage);
+  // Sort and paginate records
+  const sortedRecords = sortRecords(recordSummaries);
+  const totalPages = Math.ceil(sortedRecords.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
   const endIndex = startIndex + rowsPerPage;
-  const currentRecords = recordSummaries.slice(startIndex, endIndex);
+  const currentRecords = sortedRecords.slice(startIndex, endIndex);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(Math.max(1, Math.min(page, totalPages)));
@@ -148,14 +183,23 @@ export const ResultsTab: React.FC<ResultsTabProps> = ({ selectedCrawl }) => {
               <table className="min-w-full">
                 <thead className="bg-table-header sticky top-0">
                   <tr>
-                    <th className="px-4 py-2 text-left text-sm font-medium text-black cursor-pointer hover:bg-gray-400">
-                      ID ↕
+                    <th 
+                      className="px-4 py-2 text-left text-sm font-medium text-black cursor-pointer hover:bg-gray-400"
+                      onClick={() => handleSort('id')}
+                    >
+                      ID
                     </th>
-                    <th className="px-4 py-2 text-left text-sm font-medium text-black cursor-pointer hover:bg-gray-400">
-                      URL ↕
+                    <th 
+                      className="px-4 py-2 text-left text-sm font-medium text-black cursor-pointer hover:bg-gray-400"
+                      onClick={() => handleSort('url')}
+                    >
+                      URL
                     </th>
-                    <th className="px-4 py-2 text-left text-sm font-medium text-black cursor-pointer hover:bg-gray-400">
-                      Composite Score ↕
+                    <th 
+                      className="px-4 py-2 text-left text-sm font-medium text-black cursor-pointer hover:bg-gray-400"
+                      onClick={() => handleSort('score')}
+                    >
+                      Composite Score
                     </th>
                   </tr>
                 </thead>
@@ -202,7 +246,7 @@ export const ResultsTab: React.FC<ResultsTabProps> = ({ selectedCrawl }) => {
                 <option value={100}>100</option>
               </select>
               <span className="text-sm text-gray-700">
-                Showing {startIndex + 1} - {Math.min(endIndex, recordSummaries.length)} of {recordSummaries.length}
+                Showing {startIndex + 1} - {Math.min(endIndex, sortedRecords.length)} of {sortedRecords.length}
               </span>
             </div>
 
@@ -232,7 +276,7 @@ export const ResultsTab: React.FC<ResultsTabProps> = ({ selectedCrawl }) => {
               
               <button
                 onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
+                disabled={currentPage === totalPages || totalPages === 0}
                 className="px-2 py-1 text-sm border border-gray-300 rounded disabled:opacity-50"
               >
                 &gt;
