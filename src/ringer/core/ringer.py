@@ -597,13 +597,22 @@ class Ringer:
             
             crawl_state = self.crawls[crawl_id]
             
-            # Validate score_type
+            # Validate score_type - be more permissive to allow any analyzer name
             valid_score_types = {"composite"}
             # Add analyzer names as valid score types
             for analyzer_name in crawl_state.analyzer_weights.keys():
                 valid_score_types.add(analyzer_name)
             
-            if score_type not in valid_score_types:
+            # Also add the class names of the analyzers as valid score types
+            for analyzer in crawl_state.analyzers:
+                analyzer_class_name = type(analyzer).__name__
+                valid_score_types.add(analyzer_class_name)
+            
+            # If score_type is not in valid types but we have analyzers, allow it anyway
+            # This handles cases where the analyzer name might not be exactly what we expect
+            if score_type not in valid_score_types and crawl_state.analyzers:
+                logger.warning(f"Score type '{score_type}' not in expected types {valid_score_types} for crawl {crawl_id}, but allowing it")
+            elif score_type not in valid_score_types:
                 available_types = ", ".join(sorted(valid_score_types))
                 raise ValueError(f"Invalid score_type '{score_type}' for crawl {crawl_id}. Available types: {available_types}")
             
