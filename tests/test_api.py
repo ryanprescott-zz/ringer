@@ -1095,6 +1095,329 @@ class TestResultsEndpoint:
             record_count=5,
             score_type="KeywordScoreAnalyzer"
         )
+    
+    def test_get_crawl_records_success(self, client, mock_ringer, sample_crawl_state):
+        """Test successful retrieval of crawl records."""
+        from ringer.core.models import CrawlRecord
+        
+        test_crawl_id = "test_crawl_123"
+        
+        # Mock full crawl records
+        test_records = [
+            CrawlRecord(
+                url="https://example1.com",
+                page_source="<html><body>Content 1</body></html>",
+                extracted_content="Content 1 about python programming",
+                links=["https://example1.com/link1"],
+                scores={"KeywordScoreAnalyzer": 0.95},
+                composite_score=0.95
+            ),
+            CrawlRecord(
+                url="https://example2.com", 
+                page_source="<html><body>Content 2</body></html>",
+                extracted_content="Content 2 about web development",
+                links=["https://example2.com/link1", "https://example2.com/link2"],
+                scores={"KeywordScoreAnalyzer": 0.87},
+                composite_score=0.87
+            )
+        ]
+        
+        mock_ringer.get_crawl_records.return_value = test_records
+        mock_ringer.crawls = {test_crawl_id: sample_crawl_state}
+        
+        # Set the ringer in app state
+        app.state.ringer = mock_ringer
+        
+        request_data = {
+            "record_ids": ["record_1", "record_2"]
+        }
+        
+        response = client.post(
+            f"/api/v1/results/{test_crawl_id}/records",
+            json=request_data
+        )
+        
+        assert response.status_code == 200
+        data = response.json()
+        
+        assert "records" in data
+        records = data["records"]
+        assert len(records) == 2
+        
+        # Check first record
+        assert records[0]["url"] == "https://example1.com"
+        assert records[0]["page_source"] == "<html><body>Content 1</body></html>"
+        assert records[0]["extracted_content"] == "Content 1 about python programming"
+        assert records[0]["links"] == ["https://example1.com/link1"]
+        assert records[0]["scores"]["KeywordScoreAnalyzer"] == 0.95
+        assert records[0]["composite_score"] == 0.95
+        
+        # Check second record
+        assert records[1]["url"] == "https://example2.com"
+        assert records[1]["page_source"] == "<html><body>Content 2</body></html>"
+        assert records[1]["extracted_content"] == "Content 2 about web development"
+        assert records[1]["links"] == ["https://example2.com/link1", "https://example2.com/link2"]
+        assert records[1]["scores"]["KeywordScoreAnalyzer"] == 0.87
+        assert records[1]["composite_score"] == 0.87
+        
+        mock_ringer.get_crawl_records.assert_called_once_with(
+            crawl_id=test_crawl_id,
+            record_ids=["record_1", "record_2"]
+        )
+    
+    def test_get_crawl_records_not_found(self, client, mock_ringer):
+        """Test getting records for non-existent crawl returns 404."""
+        mock_ringer.get_crawl_records.side_effect = ValueError("Crawl nonexistent_id not found")
+        
+        # Set the ringer in app state
+        app.state.ringer = mock_ringer
+        
+        request_data = {
+            "record_ids": ["record_1", "record_2"]
+        }
+        
+        response = client.post(
+            "/api/v1/results/nonexistent_id/records",
+            json=request_data
+        )
+        
+        assert response.status_code == 404
+        assert "Crawl nonexistent_id not found" in response.json()["detail"]
+    
+    def test_get_crawl_records_no_records_found(self, client, mock_ringer, sample_crawl_state):
+        """Test getting records when no records exist for given IDs returns 404."""
+        test_crawl_id = "test_crawl_123"
+        
+        # Mock empty result
+        mock_ringer.get_crawl_records.return_value = []
+        mock_ringer.crawls = {test_crawl_id: sample_crawl_state}
+        
+        # Set the ringer in app state
+        app.state.ringer = mock_ringer
+        
+        request_data = {
+            "record_ids": ["nonexistent_record_1", "nonexistent_record_2"]
+        }
+        
+        response = client.post(
+            f"/api/v1/results/{test_crawl_id}/records",
+            json=request_data
+        )
+        
+        assert response.status_code == 404
+        assert "No records found for the provided record IDs" in response.json()["detail"]
+        assert test_crawl_id in response.json()["detail"]
+    
+    def test_get_crawl_records_partial_results(self, client, mock_ringer, sample_crawl_state):
+        """Test getting records when only some records exist for given IDs."""
+        from ringer.core.models import CrawlRecord
+        
+        test_crawl_id = "test_crawl_123"
+        
+        # Mock partial result - only one record found out of three requested
+        test_records = [
+            CrawlRecord(
+                url="https://example1.com",
+                page_source="<html><body>Content 1</body></html>",
+                extracted_content="Content 1 about python programming",
+                links=["https://example1.com/link1"],
+                scores={"KeywordScoreAnalyzer": 0.95},
+                composite_score=0.95
+            )
+        ]
+        
+        mock_ringer.get_crawl_records.return_value = test_records
+        mock_ringer.crawls = {test_crawl_id: sample_crawl_state}
+        
+        # Set the ringer in app state
+        app.state.ringer = mock_ringer
+        
+        request_data = {
+            "record_ids": ["record_1", "nonexistent_record_1", "nonexistent_record_2"]
+        }
+        
+        response = client.post(
+            f"/api/v1/results/{test_crawl_id}/records",
+            json=request_data
+        )
+        
+        assert response.status_code == 200
+        data = response.json()
+        
+        assert "records" in data
+        records = data["records"]
+        assert len(records) == 1  # Only one record found
+        assert records[0]["url"] == "https://example1.com"
+        
+        mock_ringer.get_crawl_records.assert_called_once_with(
+            crawl_id=test_crawl_id,
+            record_ids=["record_1", "nonexistent_record_1", "nonexistent_record_2"]
+        )
+    
+    def test_get_crawl_records_invalid_request(self, client, mock_ringer):
+        """Test getting records with invalid request data returns 422."""
+        # Set the ringer in app state
+        app.state.ringer = mock_ringer
+        
+        # Missing required fields
+        request_data = {
+            # Missing record_ids
+        }
+        
+        response = client.post(
+            "/api/v1/results/test_crawl/records",
+            json=request_data
+        )
+        
+        assert response.status_code == 422
+    
+    def test_get_crawl_records_empty_record_ids(self, client, mock_ringer, sample_crawl_state):
+        """Test getting records with empty record_ids list returns 404."""
+        test_crawl_id = "test_crawl_123"
+        
+        # Mock empty result for empty input
+        mock_ringer.get_crawl_records.return_value = []
+        mock_ringer.crawls = {test_crawl_id: sample_crawl_state}
+        
+        # Set the ringer in app state
+        app.state.ringer = mock_ringer
+        
+        request_data = {
+            "record_ids": []
+        }
+        
+        response = client.post(
+            f"/api/v1/results/{test_crawl_id}/records",
+            json=request_data
+        )
+        
+        assert response.status_code == 404
+        assert "No records found for the provided record IDs" in response.json()["detail"]
+    
+    def test_get_crawl_records_internal_error(self, client, mock_ringer):
+        """Test internal server error during records retrieval."""
+        mock_ringer.get_crawl_records.side_effect = Exception("Database connection failed")
+        
+        # Set the ringer in app state
+        app.state.ringer = mock_ringer
+        
+        request_data = {
+            "record_ids": ["record_1", "record_2"]
+        }
+        
+        response = client.post(
+            "/api/v1/results/test_crawl/records",
+            json=request_data
+        )
+        
+        assert response.status_code == 500
+        assert "Internal server error" in response.json()["detail"]
+    
+    def test_get_crawl_records_single_record(self, client, mock_ringer, sample_crawl_state):
+        """Test getting a single record by ID."""
+        from ringer.core.models import CrawlRecord
+        
+        test_crawl_id = "test_crawl_123"
+        
+        # Mock single record result
+        test_records = [
+            CrawlRecord(
+                url="https://example.com",
+                page_source="<html><body>Single record content</body></html>",
+                extracted_content="Single record about machine learning",
+                links=["https://example.com/ml", "https://example.com/ai"],
+                scores={"KeywordScoreAnalyzer": 0.92, "DhLlmScoreAnalyzer": 0.88},
+                composite_score=0.90
+            )
+        ]
+        
+        mock_ringer.get_crawl_records.return_value = test_records
+        mock_ringer.crawls = {test_crawl_id: sample_crawl_state}
+        
+        # Set the ringer in app state
+        app.state.ringer = mock_ringer
+        
+        request_data = {
+            "record_ids": ["single_record_id"]
+        }
+        
+        response = client.post(
+            f"/api/v1/results/{test_crawl_id}/records",
+            json=request_data
+        )
+        
+        assert response.status_code == 200
+        data = response.json()
+        
+        assert "records" in data
+        records = data["records"]
+        assert len(records) == 1
+        
+        record = records[0]
+        assert record["url"] == "https://example.com"
+        assert record["extracted_content"] == "Single record about machine learning"
+        assert len(record["links"]) == 2
+        assert record["scores"]["KeywordScoreAnalyzer"] == 0.92
+        assert record["scores"]["DhLlmScoreAnalyzer"] == 0.88
+        assert record["composite_score"] == 0.90
+        
+        mock_ringer.get_crawl_records.assert_called_once_with(
+            crawl_id=test_crawl_id,
+            record_ids=["single_record_id"]
+        )
+    
+    def test_get_crawl_records_large_batch(self, client, mock_ringer, sample_crawl_state):
+        """Test getting a large batch of records."""
+        from ringer.core.models import CrawlRecord
+        
+        test_crawl_id = "test_crawl_123"
+        
+        # Mock large batch of records
+        test_records = []
+        for i in range(50):
+            record = CrawlRecord(
+                url=f"https://example{i}.com",
+                page_source=f"<html><body>Content {i}</body></html>",
+                extracted_content=f"Content {i} about topic {i}",
+                links=[f"https://example{i}.com/link1", f"https://example{i}.com/link2"],
+                scores={"KeywordScoreAnalyzer": 0.5 + (i * 0.01)},
+                composite_score=0.5 + (i * 0.01)
+            )
+            test_records.append(record)
+        
+        mock_ringer.get_crawl_records.return_value = test_records
+        mock_ringer.crawls = {test_crawl_id: sample_crawl_state}
+        
+        # Set the ringer in app state
+        app.state.ringer = mock_ringer
+        
+        # Request 50 record IDs
+        record_ids = [f"record_{i}" for i in range(50)]
+        request_data = {
+            "record_ids": record_ids
+        }
+        
+        response = client.post(
+            f"/api/v1/results/{test_crawl_id}/records",
+            json=request_data
+        )
+        
+        assert response.status_code == 200
+        data = response.json()
+        
+        assert "records" in data
+        records = data["records"]
+        assert len(records) == 50
+        
+        # Check first and last records
+        assert records[0]["url"] == "https://example0.com"
+        assert records[49]["url"] == "https://example49.com"
+        assert records[49]["composite_score"] == 0.99  # 0.5 + (49 * 0.01)
+        
+        mock_ringer.get_crawl_records.assert_called_once_with(
+            crawl_id=test_crawl_id,
+            record_ids=record_ids
+        )
 
 
 class TestAPIModels:
@@ -1128,6 +1451,66 @@ class TestAPIModels:
         # Invalid request - missing search_engine_seeds
         with pytest.raises(ValueError):
             SeedUrlScrapeRequest()
+    
+    def test_crawl_record_request_validation(self):
+        """Test CrawlRecordRequest model validation."""
+        from ringer.api.v1.models import CrawlRecordRequest
+        
+        # Valid request
+        request = CrawlRecordRequest(record_ids=["record_1", "record_2", "record_3"])
+        assert len(request.record_ids) == 3
+        assert request.record_ids == ["record_1", "record_2", "record_3"]
+        
+        # Valid request with single record
+        single_request = CrawlRecordRequest(record_ids=["single_record"])
+        assert len(single_request.record_ids) == 1
+        
+        # Valid request with empty list
+        empty_request = CrawlRecordRequest(record_ids=[])
+        assert len(empty_request.record_ids) == 0
+        
+        # Invalid request - missing record_ids
+        with pytest.raises(ValueError):
+            CrawlRecordRequest()
+    
+    def test_crawl_record_response_validation(self):
+        """Test CrawlRecordResponse model validation."""
+        from ringer.api.v1.models import CrawlRecordResponse
+        from ringer.core.models import CrawlRecord
+        
+        # Create test records
+        test_records = [
+            CrawlRecord(
+                url="https://example1.com",
+                page_source="<html><body>Content 1</body></html>",
+                extracted_content="Content 1 about python",
+                links=["https://example1.com/link1"],
+                scores={"KeywordScoreAnalyzer": 0.8},
+                composite_score=0.8
+            ),
+            CrawlRecord(
+                url="https://example2.com",
+                page_source="<html><body>Content 2</body></html>",
+                extracted_content="Content 2 about programming",
+                links=["https://example2.com/link1", "https://example2.com/link2"],
+                scores={"KeywordScoreAnalyzer": 0.9},
+                composite_score=0.9
+            )
+        ]
+        
+        # Valid response
+        response = CrawlRecordResponse(records=test_records)
+        assert len(response.records) == 2
+        assert response.records[0].url == "https://example1.com"
+        assert response.records[1].url == "https://example2.com"
+        
+        # Valid response with empty records
+        empty_response = CrawlRecordResponse(records=[])
+        assert len(empty_response.records) == 0
+        
+        # Invalid response - missing records
+        with pytest.raises(ValueError):
+            CrawlRecordResponse()
     
 
 

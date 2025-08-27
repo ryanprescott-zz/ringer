@@ -428,3 +428,169 @@ class TestRinger:
         with pytest.raises(ValueError, match="not found"):
             ringer.get_crawl_status("nonexistent_id")
     
+    def test_get_crawl_records_success(self, ringer, sample_crawl_spec):
+        """Test getting crawl records by IDs."""
+        from ringer.core.models import CrawlResultsId, CrawlRecord
+        
+        # Mock the results manager
+        mock_results_manager = Mock()
+        ringer.results_manager = mock_results_manager
+        
+        # Create test records
+        test_records = [
+            CrawlRecord(
+                url="https://example1.com",
+                page_source="<html><body>Content 1</body></html>",
+                extracted_content="Content 1 about python",
+                links=["https://example1.com/link1"],
+                scores={"KeywordScoreAnalyzer": 0.8},
+                composite_score=0.8
+            ),
+            CrawlRecord(
+                url="https://example2.com",
+                page_source="<html><body>Content 2</body></html>",
+                extracted_content="Content 2 about programming",
+                links=["https://example2.com/link1", "https://example2.com/link2"],
+                scores={"KeywordScoreAnalyzer": 0.9},
+                composite_score=0.9
+            )
+        ]
+        
+        mock_results_manager.get_crawl_records.return_value = test_records
+        
+        results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
+        crawl_id, create_state = ringer.create(sample_crawl_spec, results_id)
+        
+        # Get records by IDs
+        record_ids = ["record_1", "record_2"]
+        records = ringer.get_crawl_records(crawl_id, record_ids)
+        
+        assert len(records) == 2
+        assert records[0].url == "https://example1.com"
+        assert records[0].extracted_content == "Content 1 about python"
+        assert records[1].url == "https://example2.com"
+        assert records[1].extracted_content == "Content 2 about programming"
+        
+        # Verify results manager was called correctly
+        mock_results_manager.get_crawl_records.assert_called_once_with(
+            results_id=results_id,
+            record_ids=record_ids
+        )
+    
+    def test_get_crawl_records_not_found(self, ringer):
+        """Test getting records for non-existent crawl raises error."""
+        with pytest.raises(ValueError, match="not found"):
+            ringer.get_crawl_records("nonexistent_id", ["record_1", "record_2"])
+    
+    def test_get_crawl_records_empty_result(self, ringer, sample_crawl_spec):
+        """Test getting records when no records exist for given IDs."""
+        from ringer.core.models import CrawlResultsId
+        
+        # Mock the results manager to return empty list
+        mock_results_manager = Mock()
+        mock_results_manager.get_crawl_records.return_value = []
+        ringer.results_manager = mock_results_manager
+        
+        results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
+        crawl_id, create_state = ringer.create(sample_crawl_spec, results_id)
+        
+        # Get records by IDs
+        record_ids = ["nonexistent_record_1", "nonexistent_record_2"]
+        records = ringer.get_crawl_records(crawl_id, record_ids)
+        
+        assert records == []
+        
+        # Verify results manager was called correctly
+        mock_results_manager.get_crawl_records.assert_called_once_with(
+            results_id=results_id,
+            record_ids=record_ids
+        )
+    
+    def test_get_crawl_records_partial_results(self, ringer, sample_crawl_spec):
+        """Test getting records when only some records exist for given IDs."""
+        from ringer.core.models import CrawlResultsId, CrawlRecord
+        
+        # Mock the results manager to return partial results
+        mock_results_manager = Mock()
+        test_records = [
+            CrawlRecord(
+                url="https://example1.com",
+                page_source="<html><body>Content 1</body></html>",
+                extracted_content="Content 1 about python",
+                links=["https://example1.com/link1"],
+                scores={"KeywordScoreAnalyzer": 0.8},
+                composite_score=0.8
+            )
+        ]
+        mock_results_manager.get_crawl_records.return_value = test_records
+        ringer.results_manager = mock_results_manager
+        
+        results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
+        crawl_id, create_state = ringer.create(sample_crawl_spec, results_id)
+        
+        # Request multiple IDs but only one exists
+        record_ids = ["record_1", "nonexistent_record_1", "nonexistent_record_2"]
+        records = ringer.get_crawl_records(crawl_id, record_ids)
+        
+        assert len(records) == 1
+        assert records[0].url == "https://example1.com"
+        
+        # Verify results manager was called with all requested IDs
+        mock_results_manager.get_crawl_records.assert_called_once_with(
+            results_id=results_id,
+            record_ids=record_ids
+        )
+    
+    def test_get_crawl_records_results_manager_error(self, ringer, sample_crawl_spec):
+        """Test handling of results manager errors during record retrieval."""
+        from ringer.core.models import CrawlResultsId
+        
+        # Mock the results manager to raise an exception
+        mock_results_manager = Mock()
+        mock_results_manager.get_crawl_records.side_effect = Exception("Database connection failed")
+        ringer.results_manager = mock_results_manager
+        
+        results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
+        crawl_id, create_state = ringer.create(sample_crawl_spec, results_id)
+        
+        # Should propagate the exception
+        with pytest.raises(Exception, match="Database connection failed"):
+            ringer.get_crawl_records(crawl_id, ["record_1", "record_2"])
+    
+    def test_get_crawl_records_single_record(self, ringer, sample_crawl_spec):
+        """Test getting a single record by ID."""
+        from ringer.core.models import CrawlResultsId, CrawlRecord
+        
+        # Mock the results manager
+        mock_results_manager = Mock()
+        test_record = CrawlRecord(
+            url="https://single-example.com",
+            page_source="<html><body>Single record content</body></html>",
+            extracted_content="Single record about machine learning",
+            links=["https://single-example.com/ml", "https://single-example.com/ai"],
+            scores={"KeywordScoreAnalyzer": 0.92, "DhLlmScoreAnalyzer": 0.88},
+            composite_score=0.90
+        )
+        mock_results_manager.get_crawl_records.return_value = [test_record]
+        ringer.results_manager = mock_results_manager
+        
+        results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
+        crawl_id, create_state = ringer.create(sample_crawl_spec, results_id)
+        
+        # Get single record
+        records = ringer.get_crawl_records(crawl_id, ["single_record_id"])
+        
+        assert len(records) == 1
+        record = records[0]
+        assert record.url == "https://single-example.com"
+        assert record.extracted_content == "Single record about machine learning"
+        assert len(record.links) == 2
+        assert record.scores["KeywordScoreAnalyzer"] == 0.92
+        assert record.scores["DhLlmScoreAnalyzer"] == 0.88
+        assert record.composite_score == 0.90
+        
+        mock_results_manager.get_crawl_records.assert_called_once_with(
+            results_id=results_id,
+            record_ids=["single_record_id"]
+        )
+    
