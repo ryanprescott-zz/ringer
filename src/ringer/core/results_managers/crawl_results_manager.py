@@ -38,7 +38,8 @@ class CrawlResultsManager(ABC):
             score_type: Type of score to sort by ('composite' or analyzer name) (default: 'composite')
             
         Returns:
-            List of CrawlRecordSummary objects sorted by score in descending order
+            List of CrawlRecordSummary objects sorted by score in descending order, 
+            with score field containing the value used for sorting
             
         Raises:
             NotImplementedError: If not implemented by subclass

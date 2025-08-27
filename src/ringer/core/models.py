@@ -191,6 +191,7 @@ class CrawlRecordSummary(BaseModel):
     """Summary of a crawled web page record."""
     id: str = Field(..., description="The record ID")
     url: str = Field(..., description="The crawled URL")
+    score: float = Field(..., description="The score value used for sorting")
 
 
 class CrawlStatus(BaseModel):

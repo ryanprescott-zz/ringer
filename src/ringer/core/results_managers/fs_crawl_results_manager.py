@@ -197,15 +197,17 @@ class FsCrawlResultsManager(CrawlResultsManager):
                         record_data = json.load(f)
                         # Create a minimal CrawlRecord to get the sorting score
                         record = CrawlRecord(**record_data)
-                        record_summary = CrawlRecordSummary(
-                            id=record.id,
-                            url=record.url
-                        )
-                        # Store the score for sorting
+                        # Get the score for sorting
                         if score_type == "composite":
                             sort_score = record.composite_score
                         else:
                             sort_score = record.scores.get(score_type, 0.0)
+                        
+                        record_summary = CrawlRecordSummary(
+                            id=record.id,
+                            url=record.url,
+                            score=sort_score
+                        )
                         record_summaries.append((sort_score, record_summary))
                 except Exception as e:
                     logger.warning(f"Failed to load record from {record_file}: {e}")

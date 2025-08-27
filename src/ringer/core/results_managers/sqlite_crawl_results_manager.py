@@ -391,17 +391,23 @@ class SQLiteCrawlResultsManager(CrawlResultsManager):
             if not crawl_spec_record:
                 return []
             
-            # Query records - only select id and url for efficiency
-            query = session.query(CrawlRecordTable.id, CrawlRecordTable.url).filter_by(crawl_spec_id=crawl_spec_record.id)
-            
-            # Sort by score type in descending order
+            # Query records - select id, url, and score fields
             if score_type == "composite":
+                query = session.query(
+                    CrawlRecordTable.id, 
+                    CrawlRecordTable.url,
+                    CrawlRecordTable.composite_score
+                ).filter_by(crawl_spec_id=crawl_spec_record.id)
                 query = query.order_by(CrawlRecordTable.composite_score.desc())
             else:
                 # For analyzer-specific scores, we need to extract from JSON and sort
-                # SQLite JSON functions to extract score and sort
                 from sqlalchemy import func, cast, Float
                 score_expr = func.json_extract(CrawlRecordTable.scores, f'$.{score_type}')
+                query = session.query(
+                    CrawlRecordTable.id, 
+                    CrawlRecordTable.url,
+                    score_expr.label('score_value')
+                ).filter_by(crawl_spec_id=crawl_spec_record.id)
                 query = query.order_by(cast(score_expr, Float).desc())
             
             # Limit results
@@ -410,9 +416,15 @@ class SQLiteCrawlResultsManager(CrawlResultsManager):
             # Convert to CrawlRecordSummary objects
             record_summaries = []
             for record in records:
+                if score_type == "composite":
+                    score_value = record.composite_score
+                else:
+                    score_value = float(record.score_value) if record.score_value is not None else 0.0
+                
                 record_summary = CrawlRecordSummary(
                     id=record.id,
-                    url=record.url
+                    url=record.url,
+                    score=score_value
                 )
                 record_summaries.append(record_summary)
             
