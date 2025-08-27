@@ -12,7 +12,7 @@ from sqlalchemy.orm import sessionmaker, relationship, Session
 from sqlalchemy.dialects.sqlite import JSON
 
 from typing import List
-from ringer.core.models import CrawlRecordSummary, CrawlSpec, CrawlResultsId
+from ringer.core.models import CrawlRecord, CrawlRecordSummary, CrawlSpec, CrawlResultsId
 from ringer.core.settings import SQLiteCrawlResultsManagerSettings
 from .crawl_results_manager import CrawlResultsManager
 
