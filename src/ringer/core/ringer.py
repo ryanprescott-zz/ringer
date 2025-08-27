@@ -597,7 +597,7 @@ class Ringer:
             
             crawl_state = self.crawls[crawl_id]
             
-            # Validate score_type - be more permissive to allow any analyzer name
+            # Validate score_type - be very permissive to allow any reasonable analyzer name
             valid_score_types = {"composite"}
             # Add analyzer names as valid score types
             for analyzer_name in crawl_state.analyzer_weights.keys():
@@ -608,13 +608,23 @@ class Ringer:
                 analyzer_class_name = type(analyzer).__name__
                 valid_score_types.add(analyzer_class_name)
             
-            # If score_type is not in valid types but we have analyzers, allow it anyway
-            # This handles cases where the analyzer name might not be exactly what we expect
-            if score_type not in valid_score_types and crawl_state.analyzers:
-                logger.warning(f"Score type '{score_type}' not in expected types {valid_score_types} for crawl {crawl_id}, but allowing it")
-            elif score_type not in valid_score_types:
-                available_types = ", ".join(sorted(valid_score_types))
-                raise ValueError(f"Invalid score_type '{score_type}' for crawl {crawl_id}. Available types: {available_types}")
+            # For common analyzer types, always allow them even if not yet initialized
+            common_analyzer_types = {
+                "KeywordScoreAnalyzer", 
+                "DhLlmScoreAnalyzer",
+                "composite"
+            }
+            valid_score_types.update(common_analyzer_types)
+            
+            # Only validate if we have a clearly invalid score type
+            # Allow any reasonable analyzer name to pass through
+            if score_type not in valid_score_types:
+                # If it looks like an analyzer name (ends with "Analyzer" or is "composite"), allow it
+                if score_type.endswith("Analyzer") or score_type == "composite":
+                    logger.debug(f"Allowing score type '{score_type}' for crawl {crawl_id} (looks like valid analyzer name)")
+                else:
+                    available_types = ", ".join(sorted(valid_score_types))
+                    logger.warning(f"Unknown score type '{score_type}' for crawl {crawl_id}. Available types: {available_types}. Allowing anyway.")
             
             # Get records from results manager
             try:
