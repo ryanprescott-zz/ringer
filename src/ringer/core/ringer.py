@@ -646,6 +646,43 @@ class Ringer:
                 logger.error(f"Failed to get crawl record summaries for crawl {crawl_id}: {e}")
                 raise
 
+    def get_crawl_records(self, crawl_id: str, record_ids: List[str]) -> List[CrawlRecord]:
+        """
+        Get crawl records by their IDs.
+        
+        Args:
+            crawl_id: ID of the crawl to get records for
+            record_ids: List of record IDs to retrieve
+            
+        Returns:
+            List of CrawlRecord objects for the found record IDs
+            
+        Raises:
+            ValueError: If crawl ID not found
+        """
+        with self.crawls_lock:
+            if crawl_id not in self.crawls:
+                raise ValueError(f"Crawl {crawl_id} not found")
+            
+            crawl_state = self.crawls[crawl_id]
+            
+            # Get records from results manager
+            try:
+                records = self.results_manager.get_crawl_records(
+                    results_id=crawl_state.results_id,
+                    record_ids=record_ids
+                )
+                # Safely get length for logging, handling Mock objects in tests
+                try:
+                    record_count_str = str(len(records))
+                except (TypeError, AttributeError):
+                    record_count_str = "unknown"
+                logger.debug(f"Retrieved {record_count_str} records for crawl {crawl_id}")
+                return records
+            except Exception as e:
+                logger.error(f"Failed to get crawl records for crawl {crawl_id}: {e}")
+                raise
+
     def _initialize_analyzers(self, crawl_state: CrawlState, analyzer_specs: List[AnalyzerSpec]) -> None:
         """
         Initialize analyzers for a crawl based on specifications.

@@ -371,6 +371,60 @@ class SQLiteCrawlResultsManager(CrawlResultsManager):
             raise
         finally:
             session.close()
+
+    def get_crawl_records(self, results_id: CrawlResultsId, record_ids: List[str]) -> List[CrawlRecord]:
+        """
+        Get crawl records by their IDs.
+        
+        Args:
+            results_id: Identifier for the crawl results data set
+            record_ids: List of record IDs to retrieve
+            
+        Returns:
+            List of CrawlRecord objects for the found record IDs
+        """
+        if not hasattr(self, 'SessionLocal') or self.SessionLocal is None:
+            raise RuntimeError("SQLiteCrawlResultsManager not properly initialized - database connection failed")
+            
+        session = self.SessionLocal()
+        try:
+            # Find the crawl spec
+            crawl_spec_record = session.query(CrawlSpecTable).filter_by(
+                collection_id=results_id.collection_id,
+                data_id=results_id.data_id
+            ).first()
+            
+            if not crawl_spec_record:
+                return []
+            
+            # Query records by IDs
+            records = session.query(CrawlRecordTable).filter(
+                CrawlRecordTable.crawl_spec_id == crawl_spec_record.id,
+                CrawlRecordTable.id.in_(record_ids)
+            ).all()
+            
+            # Convert to CrawlRecord objects
+            crawl_records = []
+            for record in records:
+                from ringer.core.models import CrawlRecord
+                crawl_record = CrawlRecord(
+                    url=record.url,
+                    page_source=record.page_source,
+                    extracted_content=record.extracted_content,
+                    links=record.links,
+                    scores=record.scores,
+                    composite_score=record.composite_score,
+                    timestamp=record.timestamp
+                )
+                crawl_records.append(crawl_record)
+            
+            return crawl_records
+            
+        except Exception as e:
+            logger.error(f"Failed to get crawl records for {results_id.collection_id}/{results_id.data_id}: {e}")
+            raise
+        finally:
+            session.close()
     
     def __del__(self):
         """Cleanup database connections on deletion."""

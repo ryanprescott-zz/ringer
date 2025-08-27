@@ -159,6 +159,22 @@ class DhCrawlResultsManager(CrawlResultsManager):
         logger.warning("DH service doesn't support crawl record summary retrieval")
         return []
 
+    def get_crawl_records(self, results_id: CrawlResultsId, record_ids: List[str]) -> List[CrawlRecord]:
+        """
+        Get crawl records by their IDs.
+        
+        Note: DH service doesn't support retrieving full records, so this returns empty list.
+        
+        Args:
+            results_id: Identifier for the crawl results data set
+            record_ids: List of record IDs to retrieve
+            
+        Returns:
+            Empty list (DH service doesn't support full record retrieval)
+        """
+        logger.warning("DH service doesn't support crawl record retrieval")
+        return []
+
     def __del__(self):
         """Cleanup the requests session on deletion."""
         if hasattr(self, 'session'):
