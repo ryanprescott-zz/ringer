@@ -583,7 +583,7 @@ class TestSQLiteCrawlResultsManager:
     
     def test_get_crawl_stats_success(self, sample_crawl_record, sample_crawl_spec):
         """Test getting crawl statistics."""
-        from ringer.core.models import CrawlResultsId
+        from ringer.core.models import CrawlResultsId, CrawlRecord
         
         with tempfile.TemporaryDirectory() as temp_dir:
             db_path = Path(temp_dir) / "test.db"
@@ -623,7 +623,6 @@ class TestSQLiteCrawlResultsManager:
                 )
                 manager.store_record(record2, results_id, "test_crawl_id")
                 
-                from ringer.core.models import CrawlRecord
                 record3 = CrawlRecord(
                     url="https://example3.com",
                     page_source="<html></html>",
@@ -712,9 +711,9 @@ class TestSQLiteCrawlResultsManager:
                 assert stats["max_score"] == 0.0
                 assert stats["min_score"] == 0.0
     
-    def test_get_crawl_records_sorted_by_composite_score(self, sample_crawl_record, sample_crawl_spec):
-        """Test retrieving crawl records sorted by composite score."""
-        from ringer.core.models import CrawlResultsId
+    def test_get_crawl_record_summaries_sorted_by_composite_score(self, sample_crawl_record, sample_crawl_spec):
+        """Test retrieving crawl record summaries sorted by composite score."""
+        from ringer.core.models import CrawlResultsId, CrawlRecord
         
         with tempfile.TemporaryDirectory() as temp_dir:
             db_path = Path(temp_dir) / "test.db"
@@ -743,7 +742,6 @@ class TestSQLiteCrawlResultsManager:
                 manager.create_crawl(sample_crawl_spec, results_id)
                 
                 # Create records with different composite scores
-                from ringer.core.models import CrawlRecord
                 record1 = CrawlRecord(
                     url="https://example1.com",
                     page_source="<html></html>",
@@ -773,21 +771,21 @@ class TestSQLiteCrawlResultsManager:
                 manager.store_record(record2, results_id, "test_crawl_id")
                 manager.store_record(record3, results_id, "test_crawl_id")
                 
-                # Retrieve records sorted by composite score
-                records = manager.get_crawl_records(results_id, record_count=3, score_type="composite")
+                # Retrieve record summaries sorted by composite score
+                record_summaries = manager.get_crawl_record_summaries(results_id, record_count=3, score_type="composite")
                 
-                assert len(records) == 3
+                assert len(record_summaries) == 3
                 # Should be sorted by composite score descending
-                assert records[0].composite_score == 0.9
-                assert records[1].composite_score == 0.6
-                assert records[2].composite_score == 0.3
-                assert records[0].url == "https://example2.com"
-                assert records[1].url == "https://example3.com"
-                assert records[2].url == "https://example1.com"
+                assert record_summaries[0].score == 0.9
+                assert record_summaries[1].score == 0.6
+                assert record_summaries[2].score == 0.3
+                assert record_summaries[0].url == "https://example2.com"
+                assert record_summaries[1].url == "https://example3.com"
+                assert record_summaries[2].url == "https://example1.com"
     
-    def test_get_crawl_records_sorted_by_analyzer_score(self, sample_crawl_record, sample_crawl_spec):
-        """Test retrieving crawl records sorted by specific analyzer score."""
-        from ringer.core.models import CrawlResultsId
+    def test_get_crawl_record_summaries_sorted_by_analyzer_score(self, sample_crawl_record, sample_crawl_spec):
+        """Test retrieving crawl record summaries sorted by specific analyzer score."""
+        from ringer.core.models import CrawlResultsId, CrawlRecord
         
         with tempfile.TemporaryDirectory() as temp_dir:
             db_path = Path(temp_dir) / "test.db"
@@ -816,7 +814,6 @@ class TestSQLiteCrawlResultsManager:
                 manager.create_crawl(sample_crawl_spec, results_id)
                 
                 # Create records with different KeywordScoreAnalyzer scores
-                from ringer.core.models import CrawlRecord
                 record1 = CrawlRecord(
                     url="https://example1.com",
                     page_source="<html></html>",
@@ -846,21 +843,21 @@ class TestSQLiteCrawlResultsManager:
                 manager.store_record(record2, results_id, "test_crawl_id")
                 manager.store_record(record3, results_id, "test_crawl_id")
                 
-                # Retrieve records sorted by KeywordScoreAnalyzer score
-                records = manager.get_crawl_records(results_id, record_count=3, score_type="KeywordScoreAnalyzer")
+                # Retrieve record summaries sorted by KeywordScoreAnalyzer score
+                record_summaries = manager.get_crawl_record_summaries(results_id, record_count=3, score_type="KeywordScoreAnalyzer")
                 
-                assert len(records) == 3
+                assert len(record_summaries) == 3
                 # Should be sorted by KeywordScoreAnalyzer score descending
-                assert records[0].scores["KeywordScoreAnalyzer"] == 0.7
-                assert records[1].scores["KeywordScoreAnalyzer"] == 0.5
-                assert records[2].scores["KeywordScoreAnalyzer"] == 0.2
-                assert records[0].url == "https://example2.com"
-                assert records[1].url == "https://example3.com"
-                assert records[2].url == "https://example1.com"
+                assert record_summaries[0].score == 0.7
+                assert record_summaries[1].score == 0.5
+                assert record_summaries[2].score == 0.2
+                assert record_summaries[0].url == "https://example2.com"
+                assert record_summaries[1].url == "https://example3.com"
+                assert record_summaries[2].url == "https://example1.com"
     
-    def test_get_crawl_records_with_limit(self, sample_crawl_record, sample_crawl_spec):
-        """Test retrieving crawl records with record count limit."""
-        from ringer.core.models import CrawlResultsId
+    def test_get_crawl_record_summaries_with_limit(self, sample_crawl_record, sample_crawl_spec):
+        """Test retrieving crawl record summaries with record count limit."""
+        from ringer.core.models import CrawlResultsId, CrawlRecord
         
         with tempfile.TemporaryDirectory() as temp_dir:
             db_path = Path(temp_dir) / "test.db"
@@ -889,7 +886,6 @@ class TestSQLiteCrawlResultsManager:
                 manager.create_crawl(sample_crawl_spec, results_id)
                 
                 # Store 5 records
-                from ringer.core.models import CrawlRecord
                 for i in range(5):
                     record = CrawlRecord(
                         url=f"https://example{i}.com",
@@ -901,16 +897,16 @@ class TestSQLiteCrawlResultsManager:
                     )
                     manager.store_record(record, results_id, "test_crawl_id")
                 
-                # Retrieve only top 2 records
-                records = manager.get_crawl_records(results_id, record_count=2, score_type="composite")
+                # Retrieve only top 2 record summaries
+                record_summaries = manager.get_crawl_record_summaries(results_id, record_count=2, score_type="composite")
                 
-                assert len(records) == 2
+                assert len(record_summaries) == 2
                 # Should get the 2 highest scoring records
-                assert abs(records[0].composite_score - 0.4) < 0.001  # example4.com
-                assert abs(records[1].composite_score - 0.3) < 0.001  # example3.com
+                assert abs(record_summaries[0].score - 0.4) < 0.001  # example4.com
+                assert abs(record_summaries[1].score - 0.3) < 0.001  # example3.com
     
-    def test_get_crawl_records_empty_crawl(self, sample_crawl_spec):
-        """Test retrieving records from crawl with no records."""
+    def test_get_crawl_record_summaries_empty_crawl(self, sample_crawl_spec):
+        """Test retrieving record summaries from crawl with no records."""
         from ringer.core.models import CrawlResultsId
         
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -939,13 +935,13 @@ class TestSQLiteCrawlResultsManager:
                 results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
                 manager.create_crawl(sample_crawl_spec, results_id)
                 
-                # Try to retrieve records
-                records = manager.get_crawl_records(results_id, record_count=10, score_type="composite")
+                # Try to retrieve record summaries
+                record_summaries = manager.get_crawl_record_summaries(results_id, record_count=10, score_type="composite")
                 
-                assert records == []
+                assert record_summaries == []
     
-    def test_get_crawl_records_nonexistent_crawl(self):
-        """Test retrieving records from non-existent crawl."""
+    def test_get_crawl_record_summaries_nonexistent_crawl(self):
+        """Test retrieving record summaries from non-existent crawl."""
         from ringer.core.models import CrawlResultsId
         
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -970,19 +966,19 @@ class TestSQLiteCrawlResultsManager:
                 Base.metadata.create_all(manager.engine)
                 manager.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=manager.engine)
                 
-                # Try to retrieve records from non-existent crawl
+                # Try to retrieve record summaries from non-existent crawl
                 results_id = CrawlResultsId(collection_id="nonexistent", data_id="crawl")
-                records = manager.get_crawl_records(results_id, record_count=10, score_type="composite")
+                record_summaries = manager.get_crawl_record_summaries(results_id, record_count=10, score_type="composite")
                 
-                assert records == []
+                assert record_summaries == []
 
 
 class TestFsCrawlResultsManagerGetRecords:
     """Tests for FsCrawlResultsManager get_crawl_records method."""
     
-    def test_get_crawl_records_sorted_by_composite_score(self, sample_crawl_spec):
-        """Test retrieving crawl records sorted by composite score."""
-        from ringer.core.models import CrawlResultsId
+    def test_get_crawl_record_summaries_sorted_by_composite_score(self, sample_crawl_spec):
+        """Test retrieving crawl record summaries sorted by composite score."""
+        from ringer.core.models import CrawlResultsId, CrawlRecord
         
         with tempfile.TemporaryDirectory() as temp_dir:
             with patch.object(FsCrawlResultsManager, '__init__', lambda x: None):
@@ -1026,21 +1022,21 @@ class TestFsCrawlResultsManagerGetRecords:
                 manager.store_record(record2, results_id, "test_crawl_id")
                 manager.store_record(record3, results_id, "test_crawl_id")
                 
-                # Retrieve records sorted by composite score
-                records = manager.get_crawl_records(results_id, record_count=3, score_type="composite")
+                # Retrieve record summaries sorted by composite score
+                record_summaries = manager.get_crawl_record_summaries(results_id, record_count=3, score_type="composite")
                 
-                assert len(records) == 3
+                assert len(record_summaries) == 3
                 # Should be sorted by composite score descending
-                assert records[0].composite_score == 0.9
-                assert records[1].composite_score == 0.6
-                assert records[2].composite_score == 0.3
-                assert records[0].url == "https://example2.com"
-                assert records[1].url == "https://example3.com"
-                assert records[2].url == "https://example1.com"
+                assert record_summaries[0].score == 0.9
+                assert record_summaries[1].score == 0.6
+                assert record_summaries[2].score == 0.3
+                assert record_summaries[0].url == "https://example2.com"
+                assert record_summaries[1].url == "https://example3.com"
+                assert record_summaries[2].url == "https://example1.com"
     
-    def test_get_crawl_records_sorted_by_analyzer_score(self, sample_crawl_spec):
-        """Test retrieving crawl records sorted by specific analyzer score."""
-        from ringer.core.models import CrawlResultsId
+    def test_get_crawl_record_summaries_sorted_by_analyzer_score(self, sample_crawl_spec):
+        """Test retrieving crawl record summaries sorted by specific analyzer score."""
+        from ringer.core.models import CrawlResultsId, CrawlRecord
         
         with tempfile.TemporaryDirectory() as temp_dir:
             with patch.object(FsCrawlResultsManager, '__init__', lambda x: None):
@@ -1084,21 +1080,21 @@ class TestFsCrawlResultsManagerGetRecords:
                 manager.store_record(record2, results_id, "test_crawl_id")
                 manager.store_record(record3, results_id, "test_crawl_id")
                 
-                # Retrieve records sorted by KeywordScoreAnalyzer score
-                records = manager.get_crawl_records(results_id, record_count=3, score_type="KeywordScoreAnalyzer")
+                # Retrieve record summaries sorted by KeywordScoreAnalyzer score
+                record_summaries = manager.get_crawl_record_summaries(results_id, record_count=3, score_type="KeywordScoreAnalyzer")
                 
-                assert len(records) == 3
+                assert len(record_summaries) == 3
                 # Should be sorted by KeywordScoreAnalyzer score descending
-                assert records[0].scores["KeywordScoreAnalyzer"] == 0.7
-                assert records[1].scores["KeywordScoreAnalyzer"] == 0.5
-                assert records[2].scores["KeywordScoreAnalyzer"] == 0.2
-                assert records[0].url == "https://example2.com"
-                assert records[1].url == "https://example3.com"
-                assert records[2].url == "https://example1.com"
+                assert record_summaries[0].score == 0.7
+                assert record_summaries[1].score == 0.5
+                assert record_summaries[2].score == 0.2
+                assert record_summaries[0].url == "https://example2.com"
+                assert record_summaries[1].url == "https://example3.com"
+                assert record_summaries[2].url == "https://example1.com"
     
-    def test_get_crawl_records_with_limit(self, sample_crawl_spec):
-        """Test retrieving crawl records with record count limit."""
-        from ringer.core.models import CrawlResultsId
+    def test_get_crawl_record_summaries_with_limit(self, sample_crawl_spec):
+        """Test retrieving crawl record summaries with record count limit."""
+        from ringer.core.models import CrawlResultsId, CrawlRecord
         
         with tempfile.TemporaryDirectory() as temp_dir:
             with patch.object(FsCrawlResultsManager, '__init__', lambda x: None):
@@ -1113,7 +1109,6 @@ class TestFsCrawlResultsManagerGetRecords:
                 manager.create_crawl(sample_crawl_spec, results_id)
                 
                 # Store 5 records
-                from ringer.core.models import CrawlRecord
                 for i in range(5):
                     record = CrawlRecord(
                         url=f"https://example{i}.com",
@@ -1125,16 +1120,16 @@ class TestFsCrawlResultsManagerGetRecords:
                     )
                     manager.store_record(record, results_id, "test_crawl_id")
                 
-                # Retrieve only top 2 records
-                records = manager.get_crawl_records(results_id, record_count=2, score_type="composite")
+                # Retrieve only top 2 record summaries
+                record_summaries = manager.get_crawl_record_summaries(results_id, record_count=2, score_type="composite")
                 
-                assert len(records) == 2
+                assert len(record_summaries) == 2
                 # Should get the 2 highest scoring records
-                assert abs(records[0].composite_score - 0.4) < 0.001  # example4.com
-                assert abs(records[1].composite_score - 0.3) < 0.001  # example3.com
+                assert abs(record_summaries[0].score - 0.4) < 0.001  # example4.com
+                assert abs(record_summaries[1].score - 0.3) < 0.001  # example3.com
     
-    def test_get_crawl_records_empty_crawl(self, sample_crawl_spec):
-        """Test retrieving records from crawl with no records."""
+    def test_get_crawl_record_summaries_empty_crawl(self, sample_crawl_spec):
+        """Test retrieving record summaries from crawl with no records."""
         from ringer.core.models import CrawlResultsId
         
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -1149,13 +1144,13 @@ class TestFsCrawlResultsManagerGetRecords:
                 results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
                 manager.create_crawl(sample_crawl_spec, results_id)
                 
-                # Try to retrieve records
-                records = manager.get_crawl_records(results_id, record_count=10, score_type="composite")
+                # Try to retrieve record summaries
+                record_summaries = manager.get_crawl_record_summaries(results_id, record_count=10, score_type="composite")
                 
-                assert records == []
+                assert record_summaries == []
     
-    def test_get_crawl_records_nonexistent_crawl(self):
-        """Test retrieving records from non-existent crawl."""
+    def test_get_crawl_record_summaries_nonexistent_crawl(self):
+        """Test retrieving record summaries from non-existent crawl."""
         from ringer.core.models import CrawlResultsId
         
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -1166,15 +1161,15 @@ class TestFsCrawlResultsManagerGetRecords:
                 })()
                 manager.base_dir = Path(temp_dir)
                 
-                # Try to retrieve records from non-existent crawl
+                # Try to retrieve record summaries from non-existent crawl
                 results_id = CrawlResultsId(collection_id="nonexistent", data_id="crawl")
-                records = manager.get_crawl_records(results_id, record_count=10, score_type="composite")
+                record_summaries = manager.get_crawl_record_summaries(results_id, record_count=10, score_type="composite")
                 
-                assert records == []
+                assert record_summaries == []
     
-    def test_get_crawl_records_missing_analyzer_score(self, sample_crawl_spec):
-        """Test retrieving records sorted by analyzer score that doesn't exist."""
-        from ringer.core.models import CrawlResultsId
+    def test_get_crawl_record_summaries_missing_analyzer_score(self, sample_crawl_spec):
+        """Test retrieving record summaries sorted by analyzer score that doesn't exist."""
+        from ringer.core.models import CrawlResultsId, CrawlRecord
         
         with tempfile.TemporaryDirectory() as temp_dir:
             with patch.object(FsCrawlResultsManager, '__init__', lambda x: None):
@@ -1189,7 +1184,6 @@ class TestFsCrawlResultsManagerGetRecords:
                 manager.create_crawl(sample_crawl_spec, results_id)
                 
                 # Create records without the requested analyzer score
-                from ringer.core.models import CrawlRecord
                 record1 = CrawlRecord(
                     url="https://example1.com",
                     page_source="<html></html>",
@@ -1210,29 +1204,29 @@ class TestFsCrawlResultsManagerGetRecords:
                 manager.store_record(record1, results_id, "test_crawl_id")
                 manager.store_record(record2, results_id, "test_crawl_id")
                 
-                # Retrieve records sorted by non-existent analyzer score
-                records = manager.get_crawl_records(results_id, record_count=2, score_type="NonExistentAnalyzer")
+                # Retrieve record summaries sorted by non-existent analyzer score
+                record_summaries = manager.get_crawl_record_summaries(results_id, record_count=2, score_type="NonExistentAnalyzer")
                 
-                assert len(records) == 2
+                assert len(record_summaries) == 2
                 # Should be sorted by 0.0 (default for missing scores), so original order
                 # Both records will have score 0.0 for the missing analyzer
-                assert records[0].scores.get("NonExistentAnalyzer", 0.0) == 0.0
-                assert records[1].scores.get("NonExistentAnalyzer", 0.0) == 0.0
+                assert record_summaries[0].score == 0.0
+                assert record_summaries[1].score == 0.0
 
 
 class TestDhCrawlResultsManagerGetRecords:
     """Tests for DhCrawlResultsManager get_crawl_records method."""
     
-    def test_get_crawl_records_returns_empty_list(self):
-        """Test that DH manager returns empty list for get_crawl_records."""
+    def test_get_crawl_record_summaries_returns_empty_list(self):
+        """Test that DH manager returns empty list for get_crawl_record_summaries."""
         from ringer.core.models import CrawlResultsId
         
         manager = DhCrawlResultsManager()
         results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
         
-        records = manager.get_crawl_records(results_id, record_count=10, score_type="composite")
+        record_summaries = manager.get_crawl_record_summaries(results_id, record_count=10, score_type="composite")
         
-        assert records == []
+        assert record_summaries == []
     
     def test_database_persistence(self, sample_crawl_record, sample_crawl_spec):
         """Test that data persists across manager instances."""
@@ -1290,10 +1284,10 @@ class TestDhCrawlResultsManagerGetRecords:
                 manager2.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=manager2.engine)
                 
                 # Verify data persists
-                records = manager2.get_crawl_records(results_id, record_count=10, score_type="composite")
-                assert len(records) == 1
-                assert records[0].url == sample_crawl_record.url
-                assert records[0].extracted_content == sample_crawl_record.extracted_content
+                record_summaries = manager2.get_crawl_record_summaries(results_id, record_count=10, score_type="composite")
+                assert len(record_summaries) == 1
+                assert record_summaries[0].url == sample_crawl_record.url
+                assert record_summaries[0].score == sample_crawl_record.composite_score
                 
                 stats = manager2.get_crawl_stats(results_id)
                 assert stats["total_records"] == 1
@@ -1304,7 +1298,7 @@ class TestDhCrawlResultsManagerGetRecords:
     
     def test_concurrent_access(self, sample_crawl_record, sample_crawl_spec):
         """Test concurrent access to the database."""
-        from ringer.core.models import CrawlResultsId
+        from ringer.core.models import CrawlResultsId, CrawlRecord
         import threading
         import time
         
@@ -1341,7 +1335,6 @@ class TestDhCrawlResultsManagerGetRecords:
             # Function to store records concurrently
             def store_records(thread_id):
                 thread_manager = create_manager()
-                from ringer.core.models import CrawlRecord
                 for i in range(3):
                     record = CrawlRecord(
                         url=f"https://thread{thread_id}-example{i}.com",
@@ -1367,11 +1360,11 @@ class TestDhCrawlResultsManagerGetRecords:
                 thread.join()
             
             # Verify all records were stored
-            records = manager.get_crawl_records(results_id, record_count=20, score_type="composite")
-            assert len(records) == 9  # 3 threads * 3 records each
+            record_summaries = manager.get_crawl_record_summaries(results_id, record_count=20, score_type="composite")
+            assert len(record_summaries) == 9  # 3 threads * 3 records each
             
             # Verify unique URLs
-            urls = [record.url for record in records]
+            urls = [record_summary.url for record_summary in record_summaries]
             assert len(set(urls)) == 9  # All URLs should be unique
             
             manager.engine.dispose()
