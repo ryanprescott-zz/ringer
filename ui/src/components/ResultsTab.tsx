@@ -68,8 +68,6 @@ export const ResultsTab: React.FC<ResultsTabProps> = ({ selectedCrawl }) => {
     return String(value || '');
   };
 
-  const selectedCrawlName = crawls.find(c => c.crawl_status.crawl_id === selectedCrawlId)?.crawl_spec.name || '';
-  
   // Pagination calculations
   const totalPages = Math.ceil(recordSummaries.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
@@ -80,6 +78,7 @@ export const ResultsTab: React.FC<ResultsTabProps> = ({ selectedCrawl }) => {
     setCurrentPage(Math.max(1, Math.min(page, totalPages)));
   };
 
+  return (
     <div className="space-y-6">
       {/* Controls Section */}
       <div className="flex gap-4 items-end mb-4">
