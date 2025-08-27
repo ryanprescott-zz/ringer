@@ -180,14 +180,11 @@ class SQLiteCrawlResultsManager(CrawlResultsManager):
                 logger.error(f"Available crawl specs: {[(spec.id, spec.collection_id, spec.data_id) for spec in all_specs]}")
                 raise ValueError(f"Crawl spec not found for results_id: {results_id.collection_id}/{results_id.data_id}")
             
-            # Check if record already exists
-            existing_record = session.query(CrawlRecordTable).filter_by(
-                id=crawl_record.id,
-                crawl_spec_id=crawl_spec_record.id
-            ).first()
+            # Check if record already exists (by ID only, since ID is unique across all crawls)
+            existing_record = session.query(CrawlRecordTable).filter_by(id=crawl_record.id).first()
             
             if existing_record:
-                logger.debug(f"Crawl record {crawl_record.id} already exists, updating")
+                logger.debug(f"Crawl record {crawl_record.id} already exists for URL {crawl_record.url}, updating")
                 # Update existing record
                 existing_record.url = crawl_record.url
                 existing_record.page_source = crawl_record.page_source
@@ -197,6 +194,8 @@ class SQLiteCrawlResultsManager(CrawlResultsManager):
                 existing_record.composite_score = crawl_record.composite_score
                 existing_record.timestamp = crawl_record.timestamp
                 existing_record.crawl_id = crawl_id
+                # Update the crawl_spec_id in case the record is being moved to a different crawl
+                existing_record.crawl_spec_id = crawl_spec_record.id
             else:
                 # Create new record
                 record = CrawlRecordTable(
