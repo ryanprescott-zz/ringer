@@ -8,6 +8,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_excep
 
 from ringer.core.models import (
     CrawlRecord,
+    CrawlRecordSummary,
     CrawlSpec,
     CrawlResultsId,
     StoreCrawlRecordRequest,
@@ -156,6 +157,23 @@ class DhCrawlResultsManager(CrawlResultsManager):
             Empty list (DH service doesn't support record retrieval)
         """
         logger.warning("DH service doesn't support crawl record retrieval")
+        return []
+
+    def get_crawl_record_summaries(self, results_id: CrawlResultsId, record_count: int = 10, score_type: str = "composite") -> List[CrawlRecordSummary]:
+        """
+        Get crawl record summaries sorted by score type.
+        
+        Note: DH service doesn't support retrieving record summaries, so this returns empty list.
+        
+        Args:
+            results_id: Identifier for the crawl results data set
+            record_count: Number of record summaries to return
+            score_type: Type of score to sort by ('composite' or analyzer name)
+            
+        Returns:
+            Empty list (DH service doesn't support record summary retrieval)
+        """
+        logger.warning("DH service doesn't support crawl record summary retrieval")
         return []
 
     def __del__(self):
