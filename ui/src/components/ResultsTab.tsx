@@ -1,9 +1,300 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { CrawlInfo, CrawlRecordSummary, CrawlRecord } from '../types';
+import { crawlApi } from '../services/api';
+import { useToast } from '../hooks/useToast';
 
-export const ResultsTab: React.FC = () => {
+interface ResultsTabProps {
+  selectedCrawl?: CrawlInfo | null;
+}
+
+export const ResultsTab: React.FC<ResultsTabProps> = ({ selectedCrawl }) => {
+  const [crawls, setCrawls] = useState<CrawlInfo[]>([]);
+  const [selectedCrawlId, setSelectedCrawlId] = useState<string>('');
+  const [scoreType, setScoreType] = useState<string>('composite');
+  const [count, setCount] = useState<number>(500);
+  const [recordSummaries, setRecordSummaries] = useState<CrawlRecordSummary[]>([]);
+  const [selectedRecord, setSelectedRecord] = useState<CrawlRecord | null>(null);
+  const [selectedField, setSelectedField] = useState<string>('extracted_content');
+  const [loading, setLoading] = useState<boolean>(false);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [rowsPerPage, setRowsPerPage] = useState<number>(20);
+  const { showError } = useToast();
+
+  // Load crawls on component mount
+  useEffect(() => {
+    const loadCrawls = async () => {
+      try {
+        const response = await crawlApi.getAllCrawlInfo();
+        const sortedCrawls = response.crawls.sort((a, b) => 
+          a.crawl_spec.name.localeCompare(b.crawl_spec.name)
+        );
+        setCrawls(sortedCrawls);
+        if (sortedCrawls.length > 0) {
+          setSelectedCrawlId(sortedCrawls[0].crawl_status.crawl_id);
+        }
+      } catch (error) {
+        showError('Load Error', 'Failed to load crawls');
+      }
+    };
+    loadCrawls();
+  }, [showError]);
+
+  // Update selected crawl if prop changes
+  useEffect(() => {
+    if (selectedCrawl) {
+      setSelectedCrawlId(selectedCrawl.crawl_status.crawl_id);
+    }
+  }, [selectedCrawl]);
+
+  const handleGetRecords = async () => {
+    if (!selectedCrawlId) return;
+    
+    setLoading(true);
+    try {
+      const response = await crawlApi.getCrawlRecordSummaries(selectedCrawlId, count, scoreType);
+      setRecordSummaries(response.records);
+      setCurrentPage(1);
+      setSelectedRecord(null);
+    } catch (error) {
+      showError('Fetch Error', 'Failed to fetch record summaries');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSelectRecord = async (summary: CrawlRecordSummary) => {
+    if (!selectedCrawlId) return;
+    
+    try {
+      const response = await crawlApi.getCrawlRecords(selectedCrawlId, [summary.id]);
+      if (response.records.length > 0) {
+        setSelectedRecord(response.records[0]);
+        setSelectedField('extracted_content');
+      }
+    } catch (error) {
+      showError('Fetch Error', 'Failed to fetch record details');
+    }
+  };
+
+  const getFieldOptions = (): string[] => {
+    if (!selectedRecord) return [];
+    return Object.keys(selectedRecord).filter(key => 
+      typeof selectedRecord[key as keyof CrawlRecord] === 'string' ||
+      Array.isArray(selectedRecord[key as keyof CrawlRecord])
+    );
+  };
+
+  const getFieldValue = (): string => {
+    if (!selectedRecord || !selectedField) return '';
+    const value = selectedRecord[selectedField as keyof CrawlRecord];
+    if (Array.isArray(value)) {
+      return value.join('\n');
+    }
+    return String(value || '');
+  };
+
+  const selectedCrawlName = crawls.find(c => c.crawl_status.crawl_id === selectedCrawlId)?.crawl_spec.name || '';
+  
+  // Pagination calculations
+  const totalPages = Math.ceil(recordSummaries.length / rowsPerPage);
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const endIndex = startIndex + rowsPerPage;
+  const currentRecords = recordSummaries.slice(startIndex, endIndex);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+  };
+
   return (
-    <div className="text-center py-12 text-gray-500">
-      <p>Results tab will be implemented in the future.</p>
+    <div className="space-y-6">
+      {/* Controls Section */}
+      <div className="grid grid-cols-4 gap-4 items-end">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Crawl
+          </label>
+          <select
+            value={selectedCrawlId}
+            onChange={(e) => setSelectedCrawlId(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            {crawls.map((crawl) => (
+              <option key={crawl.crawl_status.crawl_id} value={crawl.crawl_status.crawl_id}>
+                {crawl.crawl_spec.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Score Type
+          </label>
+          <select
+            value={scoreType}
+            onChange={(e) => setScoreType(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="composite">Composite</option>
+            <option value="keyword">Keyword</option>
+            <option value="dh llm">DH LLM</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Count
+          </label>
+          <input
+            type="number"
+            value={count}
+            onChange={(e) => setCount(parseInt(e.target.value) || 500)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <div className="text-xs text-gray-500 mt-1">
+            / {recordSummaries.length > 0 ? recordSummaries.length : '212032'}
+          </div>
+        </div>
+
+        <div>
+          <button
+            onClick={handleGetRecords}
+            disabled={loading || !selectedCrawlId}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Loading...' : 'Get Records'}
+          </button>
+        </div>
+      </div>
+
+      {/* Results Section */}
+      <div className="grid grid-cols-2 gap-6">
+        {/* Left Column - Table */}
+        <div className="space-y-4">
+          {/* Field Selector */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Field
+            </label>
+            <select
+              value={selectedField}
+              onChange={(e) => setSelectedField(e.target.value)}
+              disabled={!selectedRecord}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+            >
+              {getFieldOptions().map((field) => (
+                <option key={field} value={field}>
+                  {field}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Records Table */}
+          <div className="border border-gray-300 rounded-md overflow-hidden">
+            <table className="min-w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
+                    ID ↕
+                  </th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
+                    URL ↕
+                  </th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
+                    Composite Score ↕
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {currentRecords.map((record) => (
+                  <tr
+                    key={record.id}
+                    onClick={() => handleSelectRecord(record)}
+                    className="cursor-pointer hover:bg-gray-50 border-b border-gray-200"
+                  >
+                    <td className="px-4 py-2 text-sm text-gray-900">
+                      {record.id}
+                    </td>
+                    <td className="px-4 py-2 text-sm text-blue-600 underline">
+                      {record.url}
+                    </td>
+                    <td className="px-4 py-2 text-sm text-gray-900">
+                      {record.score.toFixed(3)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination Controls */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-700">Show</span>
+              <select
+                value={rowsPerPage}
+                onChange={(e) => {
+                  setRowsPerPage(parseInt(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="px-2 py-1 border border-gray-300 rounded text-sm"
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+              <span className="text-sm text-gray-700">
+                Showing {startIndex + 1} - {Math.min(endIndex, recordSummaries.length)} of {recordSummaries.length}
+              </span>
+            </div>
+
+            <div className="flex items-center space-x-1">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="px-2 py-1 text-sm border border-gray-300 rounded disabled:opacity-50"
+              >
+                &lt;
+              </button>
+              
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                const page = i + 1;
+                return (
+                  <button
+                    key={page}
+                    onClick={() => handlePageChange(page)}
+                    className={`px-2 py-1 text-sm border border-gray-300 rounded ${
+                      currentPage === page ? 'bg-blue-600 text-white' : 'hover:bg-gray-50'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                );
+              })}
+              
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="px-2 py-1 text-sm border border-gray-300 rounded disabled:opacity-50"
+              >
+                &gt;
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column - Field Content */}
+        <div>
+          <textarea
+            value={getFieldValue()}
+            readOnly
+            className="w-full h-96 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm font-mono resize-none"
+            placeholder={selectedRecord ? "Select a field to view its content" : "Select a record to view details"}
+          />
+        </div>
+      </div>
     </div>
   );
 };

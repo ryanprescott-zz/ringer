@@ -102,4 +102,21 @@ export const crawlApi = {
     const response = await api.get(`/api/v1/crawls/${crawlId}`);
     return response.data;
   },
+
+  // Get crawl record summaries
+  getCrawlRecordSummaries: async (crawlId: string, recordCount: number, scoreType: string) => {
+    const response = await api.post(`/api/v1/results/${crawlId}/record_summaries`, {
+      record_count: recordCount,
+      score_type: scoreType
+    });
+    return response.data;
+  },
+
+  // Get crawl records
+  getCrawlRecords: async (crawlId: string, recordIds: string[]) => {
+    const response = await api.post(`/api/v1/results/${crawlId}/records`, {
+      record_ids: recordIds
+    });
+    return response.data;
+  },
 };

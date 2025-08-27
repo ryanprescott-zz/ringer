@@ -135,7 +135,7 @@ function App() {
                 />
               )}
               {activeTab === 'results' && (
-                <ResultsTab />
+                <ResultsTab selectedCrawl={selectedCrawl} />
               )}
             </div>
           </div>

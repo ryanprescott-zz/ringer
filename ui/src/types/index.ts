@@ -131,3 +131,35 @@ export interface OutputField {
   name: string;
   type: string;
 }
+
+export interface CrawlRecordSummary {
+  id: string;
+  url: string;
+  score: number;
+}
+
+export interface CrawlRecord {
+  url: string;
+  page_source: string;
+  extracted_content: string;
+  links: string[];
+  scores: { [key: string]: number };
+  composite_score: number;
+}
+
+export interface CrawlRecordSummaryRequest {
+  record_count: number;
+  score_type: string;
+}
+
+export interface CrawlRecordSummaryResponse {
+  records: CrawlRecordSummary[];
+}
+
+export interface CrawlRecordRequest {
+  record_ids: string[];
+}
+
+export interface CrawlRecordResponse {
+  records: CrawlRecord[];
+}
