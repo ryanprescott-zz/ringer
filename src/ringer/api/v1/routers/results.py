@@ -94,6 +94,9 @@ async def get_crawl_records(
         
         return CrawlRecordResponse(records=records)
         
+    except HTTPException:
+        # Re-raise HTTPExceptions as-is (don't convert to 500)
+        raise
     except ValueError as e:
         error_msg = str(e)
         if "not found" in error_msg.lower():
