@@ -7,6 +7,7 @@ from typing import List
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 from ringer.core.models import (
+    CrawlRecord,
     CrawlRecordSummary,
     CrawlSpec,
     CrawlResultsId,
