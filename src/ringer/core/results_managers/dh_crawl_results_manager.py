@@ -3,6 +3,7 @@
 import logging
 import requests
 import uuid
+from typing import List
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 from ringer.core.models import (
@@ -140,6 +141,23 @@ class DhCrawlResultsManager(CrawlResultsManager):
         # Execute with retry logic
         _do_send()
     
+    def get_crawl_records(self, results_id: CrawlResultsId, record_count: int, score_type: str) -> List[CrawlRecord]:
+        """
+        Get crawl records sorted by score type.
+        
+        Note: DH service doesn't support retrieving records, so this returns empty list.
+        
+        Args:
+            results_id: Identifier for the crawl results data set
+            record_count: Number of records to return
+            score_type: Type of score to sort by ('composite' or analyzer name)
+            
+        Returns:
+            Empty list (DH service doesn't support record retrieval)
+        """
+        logger.warning("DH service doesn't support crawl record retrieval")
+        return []
+
     def __del__(self):
         """Cleanup the requests session on deletion."""
         if hasattr(self, 'session'):
