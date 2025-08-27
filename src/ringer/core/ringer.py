@@ -483,6 +483,7 @@ class Ringer:
             ValueError: If crawl ID not found
         """
         with self.crawls_lock:
+            logger.info(f"Crawls: {self.crawls.keys()}")
             if crawl_id not in self.crawls:
                 raise ValueError(f"Crawl {crawl_id} not found")
             
@@ -591,7 +592,10 @@ class Ringer:
         Raises:
             ValueError: If crawl ID not found or score_type is invalid
         """
+        logger.info(f"Crawls: {self.crawls.keys()}")
         with self.crawls_lock:
+            logger.info(f"Crawls: {self.crawls.keys()}")
+
             if crawl_id not in self.crawls:
                 raise ValueError(f"Crawl {crawl_id} not found")
             
