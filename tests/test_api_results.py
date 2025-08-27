@@ -10,7 +10,10 @@ from ringer.core.models import CrawlRecord, CrawlResultsId
 @pytest.fixture
 def mock_ringer():
     """Create a mock Ringer instance."""
-    return Mock()
+    mock = Mock()
+    # Ensure get_crawl_records returns an empty list by default
+    mock.get_crawl_records.return_value = []
+    return mock
 
 
 @pytest.fixture
@@ -24,7 +27,8 @@ def test_client(mock_ringer):
     
     # Patch the global ringer instance
     with patch('ringer.api.v1.routers.results.ringer', mock_ringer):
-        yield TestClient(app)
+        client = TestClient(app)
+        yield client
 
 
 @pytest.fixture
@@ -282,8 +286,11 @@ class TestGetCrawlRecordsEndpoint:
             score_type="composite"
         )
     
-    def test_get_crawl_records_response_model_validation(self, test_client, mock_ringer):
+    def test_get_crawl_records_response_model_validation(self, mock_ringer):
         """Test that response follows the expected model structure."""
+        from ringer.api.v1.routers.results import router
+        from fastapi import FastAPI
+        
         # Create a record with all required fields
         test_record = CrawlRecord(
             url="https://test.com",
@@ -296,13 +303,19 @@ class TestGetCrawlRecordsEndpoint:
         
         mock_ringer.get_crawl_records.return_value = [test_record]
         
-        response = test_client.post(
-            "/results/test_crawl_id/records",
-            json={
-                "record_count": 1,
-                "score_type": "composite"
-            }
-        )
+        app = FastAPI()
+        app.include_router(router)
+        
+        # Use patch context manager directly in the test
+        with patch('ringer.api.v1.routers.results.ringer', mock_ringer):
+            test_client = TestClient(app)
+            response = test_client.post(
+                "/results/test_crawl_id/records",
+                json={
+                    "record_count": 1,
+                    "score_type": "composite"
+                }
+            )
         
         assert response.status_code == 200
         data = response.json()
