@@ -23,37 +23,37 @@ const api = axios.create({
 export const crawlApi = {
   // Get all crawl information
   getAllCrawlInfo: async (): Promise<CrawlInfoResponse> => {
-    const response = await api.get('/api/v1/crawl/info');
+    const response = await api.get('/api/v1/crawls');
     return response.data;
   },
 
   // Create a new crawl
   createCrawl: async (request: CreateCrawlRequest): Promise<CreateCrawlResponse> => {
-    const response = await api.post('/api/v1/crawl/create', request);
+    const response = await api.post('/api/v1/crawls', request);
     return response.data;
   },
 
   // Start a crawl
   startCrawl: async (request: StartCrawlRequest): Promise<StartCrawlResponse> => {
-    const response = await api.post('/api/v1/crawl/start', request);
+    const response = await api.post(`/api/v1/crawls/${request.crawl_id}/start`);
     return response.data;
   },
 
   // Stop a crawl
   stopCrawl: async (request: StopCrawlRequest): Promise<StopCrawlResponse> => {
-    const response = await api.post('/api/v1/crawl/stop', request);
+    const response = await api.post(`/api/v1/crawls/${request.crawl_id}/stop`);
     return response.data;
   },
 
   // Delete a crawl
   deleteCrawl: async (request: DeleteCrawlRequest): Promise<DeleteCrawlResponse> => {
-    const response = await api.post('/api/v1/crawl/delete', request);
+    const response = await api.delete(`/api/v1/crawls/${request.crawl_id}`);
     return response.data;
   },
 
   // Export crawl spec
   exportCrawlSpec: async (crawlId: string): Promise<void> => {
-    const response = await api.get(`/api/v1/crawl/${crawlId}/spec/export`, {
+    const response = await api.get(`/api/v1/crawls/${crawlId}/spec/export`, {
       responseType: 'blob',
     });
     
@@ -82,6 +82,24 @@ export const crawlApi = {
   // Collect seed URLs from search engines
   collectSeedUrls: async (request: SeedUrlScrapeRequest): Promise<SeedUrlScrapeResponse> => {
     const response = await api.post('/api/v1/seeds/collect', request);
+    return response.data;
+  },
+
+  // Get crawl status
+  getCrawlStatus: async (crawlId: string) => {
+    const response = await api.get(`/api/v1/crawls/${crawlId}/status`);
+    return response.data;
+  },
+
+  // Get all crawl statuses
+  getAllCrawlStatuses: async () => {
+    const response = await api.get('/api/v1/crawls/status');
+    return response.data;
+  },
+
+  // Get specific crawl info
+  getCrawlInfo: async (crawlId: string) => {
+    const response = await api.get(`/api/v1/crawls/${crawlId}`);
     return response.data;
   },
 };

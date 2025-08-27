@@ -59,6 +59,10 @@ export interface CrawlInfoResponse {
   crawls: CrawlInfo[];
 }
 
+export interface CrawlInfoListResponse {
+  crawls: CrawlInfo[];
+}
+
 export interface CreateCrawlRequest {
   crawl_spec: CrawlSpec;
 }
