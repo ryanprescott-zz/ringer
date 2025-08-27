@@ -75,12 +75,17 @@ async def get_crawl_records(
     """
     try:
         ringer = app_request.app.state.ringer
+        
+        # If empty record_ids list provided, return empty response
+        if not request.record_ids:
+            return CrawlRecordResponse(records=[])
+        
         records = ringer.get_crawl_records(
             crawl_id=crawl_id,
             record_ids=request.record_ids
         )
         
-        # If no records found, return 404
+        # If no records found for non-empty record_ids list, return 404
         if not records:
             raise HTTPException(
                 status_code=404, 

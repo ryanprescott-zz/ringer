@@ -1272,11 +1272,10 @@ class TestResultsEndpoint:
         assert response.status_code == 422
     
     def test_get_crawl_records_empty_record_ids(self, client, mock_ringer, sample_crawl_state):
-        """Test getting records with empty record_ids list returns 404."""
+        """Test getting records with empty record_ids list returns empty list."""
         test_crawl_id = "test_crawl_123"
         
-        # Mock empty result for empty input
-        mock_ringer.get_crawl_records.return_value = []
+        # Mock setup (though get_crawl_records won't be called for empty input)
         mock_ringer.crawls = {test_crawl_id: sample_crawl_state}
         
         # Set the ringer in app state
@@ -1291,8 +1290,13 @@ class TestResultsEndpoint:
             json=request_data
         )
         
-        assert response.status_code == 404
-        assert "No records found for the provided record IDs" in response.json()["detail"]
+        assert response.status_code == 200
+        data = response.json()
+        assert "records" in data
+        assert data["records"] == []
+        
+        # Verify get_crawl_records was not called for empty input
+        mock_ringer.get_crawl_records.assert_not_called()
     
     def test_get_crawl_records_internal_error(self, client, mock_ringer):
         """Test internal server error during records retrieval."""
