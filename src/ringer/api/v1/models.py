@@ -2,7 +2,7 @@
 
 from typing import List, Optional
 from pydantic import BaseModel, Field
-from ringer.core.models import CrawlSpec, RunState, SearchEngineSeed, CrawlResultsId, CrawlRecord
+from ringer.core.models import CrawlSpec, RunState, SearchEngineSeed, CrawlResultsId, CrawlRecord, CrawlRecordSummary
 import uuid
 
 
@@ -142,3 +142,16 @@ class CrawlRecordsResponse(BaseModel):
     """Response model for crawl records."""
     
     records: List[CrawlRecord]
+
+
+class CrawlRecordSummaryRequest(BaseModel):
+    """Request model for retrieving crawl record summaries."""
+    
+    record_count: int = Field(gt=0, description="Number of record summaries to return")
+    score_type: str = Field(description="Type of score to use for sorting (e.g., 'composite', 'keyword')")
+
+
+class CrawlRecordSummaryResponse(BaseModel):
+    """Response model for crawl record summaries."""
+    
+    records: List[CrawlRecordSummary]

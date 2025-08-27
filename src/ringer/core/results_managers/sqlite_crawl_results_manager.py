@@ -12,7 +12,7 @@ from sqlalchemy.orm import sessionmaker, relationship, Session
 from sqlalchemy.dialects.sqlite import JSON
 
 from typing import List
-from ringer.core.models import CrawlRecord, CrawlSpec, CrawlResultsId
+from ringer.core.models import CrawlRecord, CrawlRecordSummary, CrawlSpec, CrawlResultsId
 from ringer.core.settings import SQLiteCrawlResultsManagerSettings
 from .crawl_results_manager import CrawlResultsManager
 
@@ -361,6 +361,65 @@ class SQLiteCrawlResultsManager(CrawlResultsManager):
             
         except Exception as e:
             logger.error(f"Failed to get crawl stats for {results_id.collection_id}/{results_id.data_id}: {e}")
+            raise
+        finally:
+            session.close()
+
+    def get_crawl_record_summaries(self, results_id: CrawlResultsId, record_count: int = 10, score_type: str = "composite") -> List[CrawlRecordSummary]:
+        """
+        Get crawl record summaries sorted by score type.
+        
+        Args:
+            results_id: Identifier for the crawl results data set
+            record_count: Number of record summaries to return
+            score_type: Type of score to sort by ('composite' or analyzer name)
+            
+        Returns:
+            List of CrawlRecordSummary objects sorted by score in descending order
+        """
+        if not hasattr(self, 'SessionLocal') or self.SessionLocal is None:
+            raise RuntimeError("SQLiteCrawlResultsManager not properly initialized - database connection failed")
+            
+        session = self.SessionLocal()
+        try:
+            # Find the crawl spec
+            crawl_spec_record = session.query(CrawlSpecTable).filter_by(
+                collection_id=results_id.collection_id,
+                data_id=results_id.data_id
+            ).first()
+            
+            if not crawl_spec_record:
+                return []
+            
+            # Query records - only select id and url for efficiency
+            query = session.query(CrawlRecordTable.id, CrawlRecordTable.url).filter_by(crawl_spec_id=crawl_spec_record.id)
+            
+            # Sort by score type in descending order
+            if score_type == "composite":
+                query = query.order_by(CrawlRecordTable.composite_score.desc())
+            else:
+                # For analyzer-specific scores, we need to extract from JSON and sort
+                # SQLite JSON functions to extract score and sort
+                from sqlalchemy import func, cast, Float
+                score_expr = func.json_extract(CrawlRecordTable.scores, f'$.{score_type}')
+                query = query.order_by(cast(score_expr, Float).desc())
+            
+            # Limit results
+            records = query.limit(record_count).all()
+            
+            # Convert to CrawlRecordSummary objects
+            record_summaries = []
+            for record in records:
+                record_summary = CrawlRecordSummary(
+                    id=record.id,
+                    url=record.url
+                )
+                record_summaries.append(record_summary)
+            
+            return record_summaries
+            
+        except Exception as e:
+            logger.error(f"Failed to get crawl record summaries for {results_id.collection_id}/{results_id.data_id}: {e}")
             raise
         finally:
             session.close()

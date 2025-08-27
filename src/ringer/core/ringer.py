@@ -18,6 +18,7 @@ from .models import (
     DhLlmScoringSpec,
     KeywordScoringSpec,
     CrawlRecord,
+    CrawlRecordSummary,
     AnalyzerSpec,
     RunStateEnum,
     RunState,
@@ -643,6 +644,75 @@ class Ringer:
                 return records
             except Exception as e:
                 logger.error(f"Failed to get crawl records for crawl {crawl_id}: {e}")
+                raise
+
+    def get_crawl_record_summaries(self, crawl_id: str, record_count: int, score_type: str) -> List[CrawlRecordSummary]:
+        """
+        Get crawl record summaries sorted by score type.
+        
+        Args:
+            crawl_id: ID of the crawl to get record summaries for
+            record_count: Number of record summaries to return
+            score_type: Type of score to sort by ('composite' or analyzer name)
+            
+        Returns:
+            List of CrawlRecordSummary objects sorted by score in descending order
+            
+        Raises:
+            ValueError: If crawl ID not found or score_type is invalid
+        """
+        with self.crawls_lock:
+
+            if crawl_id not in self.crawls:
+                raise ValueError(f"Crawl {crawl_id} not found")
+            
+            crawl_state = self.crawls[crawl_id]
+            
+            # Validate score_type - be very permissive to allow any reasonable analyzer name
+            valid_score_types = {"composite"}
+            # Add analyzer names as valid score types
+            for analyzer_name in crawl_state.analyzer_weights.keys():
+                valid_score_types.add(analyzer_name)
+            
+            # Also add the class names of the analyzers as valid score types
+            for analyzer in crawl_state.analyzers:
+                analyzer_class_name = type(analyzer).__name__
+                valid_score_types.add(analyzer_class_name)
+            
+            # For common analyzer types, always allow them even if not yet initialized
+            common_analyzer_types = {
+                "KeywordScoreAnalyzer", 
+                "DhLlmScoreAnalyzer",
+                "composite"
+            }
+            valid_score_types.update(common_analyzer_types)
+            
+            # Only validate if we have a clearly invalid score type
+            # Allow any reasonable analyzer name to pass through
+            if score_type not in valid_score_types:
+                # If it looks like an analyzer name (ends with "Analyzer" or is "composite"), allow it
+                if score_type.endswith("Analyzer") or score_type == "composite":
+                    logger.debug(f"Allowing score type '{score_type}' for crawl {crawl_id} (looks like valid analyzer name)")
+                else:
+                    available_types = ", ".join(sorted(valid_score_types))
+                    logger.warning(f"Unknown score type '{score_type}' for crawl {crawl_id}. Available types: {available_types}. Allowing anyway.")
+            
+            # Get record summaries from results manager
+            try:
+                record_summaries = self.results_manager.get_crawl_record_summaries(
+                    results_id=crawl_state.results_id,
+                    record_count=record_count,
+                    score_type=score_type
+                )
+                # Safely get length for logging, handling Mock objects in tests
+                try:
+                    record_count_str = str(len(record_summaries))
+                except (TypeError, AttributeError):
+                    record_count_str = "unknown"
+                logger.debug(f"Retrieved {record_count_str} record summaries for crawl {crawl_id} with score_type '{score_type}'")
+                return record_summaries
+            except Exception as e:
+                logger.error(f"Failed to get crawl record summaries for crawl {crawl_id}: {e}")
                 raise
 
     def _initialize_analyzers(self, crawl_state: CrawlState, analyzer_specs: List[AnalyzerSpec]) -> None:

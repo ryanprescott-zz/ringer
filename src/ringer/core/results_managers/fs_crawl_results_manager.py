@@ -7,7 +7,7 @@ import shutil
 from pathlib import Path
 
 from typing import List
-from ringer.core.models import CrawlRecord, CrawlSpec, CrawlResultsId
+from ringer.core.models import CrawlRecord, CrawlRecordSummary, CrawlSpec, CrawlResultsId
 from ringer.core.settings import FsCrawlResultsManagerSettings
 from .crawl_results_manager import CrawlResultsManager
 
@@ -169,4 +169,54 @@ class FsCrawlResultsManager(CrawlResultsManager):
             
         except Exception as e:
             logger.error(f"Failed to get crawl records for {results_id.collection_id}/{results_id.data_id}: {e}")
+            raise
+
+    def get_crawl_record_summaries(self, results_id: CrawlResultsId, record_count: int = 10, score_type: str = "composite") -> List[CrawlRecordSummary]:
+        """
+        Get crawl record summaries sorted by score type.
+        
+        Args:
+            results_id: Identifier for the crawl results data set
+            record_count: Number of record summaries to return
+            score_type: Type of score to sort by ('composite' or analyzer name)
+            
+        Returns:
+            List of CrawlRecordSummary objects sorted by score in descending order
+        """
+        try:
+            records_dir = self.base_dir / results_id.collection_id / results_id.data_id / "records"
+            
+            if not records_dir.exists():
+                return []
+            
+            # Load all records but only extract id and url for summaries
+            record_summaries = []
+            for record_file in records_dir.glob("*.json"):
+                try:
+                    with open(record_file, 'r', encoding='utf-8') as f:
+                        record_data = json.load(f)
+                        # Create a minimal CrawlRecord to get the sorting score
+                        record = CrawlRecord(**record_data)
+                        record_summary = CrawlRecordSummary(
+                            id=record.id,
+                            url=record.url
+                        )
+                        # Store the score for sorting
+                        if score_type == "composite":
+                            sort_score = record.composite_score
+                        else:
+                            sort_score = record.scores.get(score_type, 0.0)
+                        record_summaries.append((sort_score, record_summary))
+                except Exception as e:
+                    logger.warning(f"Failed to load record from {record_file}: {e}")
+                    continue
+            
+            # Sort by score in descending order and extract summaries
+            record_summaries.sort(key=lambda x: x[0], reverse=True)
+            sorted_summaries = [summary for _, summary in record_summaries[:record_count]]
+            
+            return sorted_summaries
+            
+        except Exception as e:
+            logger.error(f"Failed to get crawl record summaries for {results_id.collection_id}/{results_id.data_id}: {e}")
             raise
