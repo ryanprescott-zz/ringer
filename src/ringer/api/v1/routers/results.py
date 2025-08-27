@@ -1,13 +1,16 @@
 """Results router for crawl record retrieval endpoints."""
 
 from fastapi import APIRouter, HTTPException, Path, Request
-from ringer.api.v1.models import CrawlRecordSummaryRequest, CrawlRecordSummaryResponse, CrawlRecordRequest, CrawlRecordResponse
+from ringer.api.v1.models import (
+    CrawlRecordSummaryRequest, 
+    CrawlRecordSummaryResponse, 
+    CrawlRecordRequest, 
+    CrawlRecordResponse
+)
 from ringer.core.ringer import Ringer
 
 router = APIRouter(prefix="/results", tags=["results"])
 
-# Global Ringer instance
-ringer = Ringer()
 
 
 @router.post("/{crawl_id}/record_summaries", response_model=CrawlRecordSummaryResponse)
