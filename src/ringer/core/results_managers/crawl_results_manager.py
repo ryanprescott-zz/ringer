@@ -4,7 +4,6 @@ from abc import ABC, abstractmethod
 
 from typing import List
 from ringer.core.models import (
-    CrawlRecord,
     CrawlRecordSummary,
     CrawlSpec,
     CrawlResultsId
@@ -46,9 +45,8 @@ class CrawlResultsManager(ABC):
         """
         raise NotImplementedError
 
-
     @abstractmethod
-    def store_record(self, crawl_record: CrawlRecord, results_id: CrawlResultsId, crawl_id: str) -> None:
+    def store_record(self, crawl_record, results_id: CrawlResultsId, crawl_id: str) -> None:
         """
         Store a crawl record.
         
@@ -77,20 +75,3 @@ class CrawlResultsManager(ABC):
         
         raise NotImplementedError
 
-    @abstractmethod
-    def get_crawl_records(self, results_id: CrawlResultsId, record_count: int = 10, score_type: str = "composite") -> List[CrawlRecord]:
-        """
-        Get crawl records sorted by score type.
-        
-        Args:
-            results_id: Identifier for the crawl results data set
-            record_count: Number of records to return (default: 10)
-            score_type: Type of score to sort by ('composite' or analyzer name) (default: 'composite')
-            
-        Returns:
-            List of CrawlRecord objects sorted by score in descending order
-            
-        Raises:
-            NotImplementedError: If not implemented by subclass
-        """
-        raise NotImplementedError

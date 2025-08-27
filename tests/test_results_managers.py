@@ -12,7 +12,6 @@ from ringer.core.results_managers import (
     DhCrawlResultsManager,
     SQLiteCrawlResultsManager,
 )
-from ringer.core import CrawlRecord
 
 
 class TestDhCrawlResultsManager:
@@ -206,6 +205,7 @@ class TestFsCrawlResultsManager:
                 manager.create_crawl(sample_crawl_spec, results_id)
                 manager.store_record(sample_crawl_record, results_id, "test_crawl_id")
                 
+                from ringer.core.models import CrawlRecord
                 record2 = CrawlRecord(
                     url="https://example2.com",
                     page_source="<html></html>",
@@ -437,6 +437,7 @@ class TestSQLiteCrawlResultsManager:
                 manager.store_record(sample_crawl_record, results_id, "test_crawl_id")
                 
                 # Update the record with new content
+                from ringer.core.models import CrawlRecord
                 updated_record = CrawlRecord(
                     url=sample_crawl_record.url,  # Same URL to get same ID
                     page_source="<html><body>Updated content</body></html>",
@@ -580,134 +581,6 @@ class TestSQLiteCrawlResultsManager:
                 results_id = CrawlResultsId(collection_id="nonexistent", data_id="crawl")
                 manager.delete_crawl(results_id)  # Should complete without error
     
-    def test_get_crawl_records_success(self, sample_crawl_record, sample_crawl_spec):
-        """Test retrieving crawl records."""
-        from ringer.core.models import CrawlResultsId
-        
-        with tempfile.TemporaryDirectory() as temp_dir:
-            db_path = Path(temp_dir) / "test.db"
-            
-            with patch.object(SQLiteCrawlResultsManager, '__init__', lambda x: None):
-                manager = SQLiteCrawlResultsManager()
-                manager.settings = type('Settings', (), {
-                    'database_path': str(db_path),
-                    'echo_sql': False,
-                    'pool_size': 5,
-                    'max_overflow': 10
-                })()
-                
-                # Initialize the actual components
-                from sqlalchemy import create_engine
-                from sqlalchemy.orm import sessionmaker
-                from ringer.core.results_managers.sqlite_crawl_results_manager import Base
-                
-                database_url = f"sqlite:///{db_path}"
-                manager.engine = create_engine(database_url, connect_args={"check_same_thread": False})
-                Base.metadata.create_all(manager.engine)
-                manager.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=manager.engine)
-                
-                # Create crawl and store records
-                results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
-                manager.create_crawl(sample_crawl_spec, results_id)
-                manager.store_record(sample_crawl_record, results_id, "test_crawl_id")
-                
-                # Create a second record
-                record2 = CrawlRecord(
-                    url="https://example2.com",
-                    page_source="<html></html>",
-                    extracted_content="Different content",
-                    links=[],
-                    scores={"KeywordScoreAnalyzer": 0.5},
-                    composite_score=0.5
-                )
-                manager.store_record(record2, results_id, "test_crawl_id")
-                
-                # Retrieve records
-                records = manager.get_crawl_records(results_id, record_count=10, score_type="composite")
-                assert len(records) == 2
-                
-                # Check record content
-                urls = [record.url for record in records]
-                assert sample_crawl_record.url in urls
-                assert record2.url in urls
-    
-    def test_get_crawl_records_with_limit(self, sample_crawl_record, sample_crawl_spec):
-        """Test retrieving crawl records with limit."""
-        from ringer.core.models import CrawlResultsId
-        
-        with tempfile.TemporaryDirectory() as temp_dir:
-            db_path = Path(temp_dir) / "test.db"
-            
-            with patch.object(SQLiteCrawlResultsManager, '__init__', lambda x: None):
-                manager = SQLiteCrawlResultsManager()
-                manager.settings = type('Settings', (), {
-                    'database_path': str(db_path),
-                    'echo_sql': False,
-                    'pool_size': 5,
-                    'max_overflow': 10
-                })()
-                
-                # Initialize the actual components
-                from sqlalchemy import create_engine
-                from sqlalchemy.orm import sessionmaker
-                from ringer.core.results_managers.sqlite_crawl_results_manager import Base
-                
-                database_url = f"sqlite:///{db_path}"
-                manager.engine = create_engine(database_url, connect_args={"check_same_thread": False})
-                Base.metadata.create_all(manager.engine)
-                manager.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=manager.engine)
-                
-                # Create crawl and store multiple records
-                results_id = CrawlResultsId(collection_id="test_collection", data_id="test_data")
-                manager.create_crawl(sample_crawl_spec, results_id)
-                
-                # Store 3 records
-                for i in range(3):
-                    record = CrawlRecord(
-                        url=f"https://example{i}.com",
-                        page_source="<html></html>",
-                        extracted_content=f"Content {i}",
-                        links=[],
-                        scores={"KeywordScoreAnalyzer": 0.5},
-                        composite_score=0.5
-                    )
-                    manager.store_record(record, results_id, "test_crawl_id")
-                
-                # Retrieve with limit
-                records = manager.get_crawl_records(results_id, record_count=2, score_type="composite")
-                assert len(records) == 2
-    
-    def test_get_crawl_records_not_found(self):
-        """Test retrieving records for non-existent crawl."""
-        from ringer.core.models import CrawlResultsId
-        
-        with tempfile.TemporaryDirectory() as temp_dir:
-            db_path = Path(temp_dir) / "test.db"
-            
-            with patch.object(SQLiteCrawlResultsManager, '__init__', lambda x: None):
-                manager = SQLiteCrawlResultsManager()
-                manager.settings = type('Settings', (), {
-                    'database_path': str(db_path),
-                    'echo_sql': False,
-                    'pool_size': 5,
-                    'max_overflow': 10
-                })()
-                
-                # Initialize the actual components
-                from sqlalchemy import create_engine
-                from sqlalchemy.orm import sessionmaker
-                from ringer.core.results_managers.sqlite_crawl_results_manager import Base
-                
-                database_url = f"sqlite:///{db_path}"
-                manager.engine = create_engine(database_url, connect_args={"check_same_thread": False})
-                Base.metadata.create_all(manager.engine)
-                manager.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=manager.engine)
-                
-                # Try to get records for non-existent crawl
-                results_id = CrawlResultsId(collection_id="nonexistent", data_id="crawl")
-                records = manager.get_crawl_records(results_id, record_count=10, score_type="composite")
-                assert records == []
-    
     def test_get_crawl_stats_success(self, sample_crawl_record, sample_crawl_spec):
         """Test getting crawl statistics."""
         from ringer.core.models import CrawlResultsId
@@ -750,6 +623,7 @@ class TestSQLiteCrawlResultsManager:
                 )
                 manager.store_record(record2, results_id, "test_crawl_id")
                 
+                from ringer.core.models import CrawlRecord
                 record3 = CrawlRecord(
                     url="https://example3.com",
                     page_source="<html></html>",
@@ -869,6 +743,7 @@ class TestSQLiteCrawlResultsManager:
                 manager.create_crawl(sample_crawl_spec, results_id)
                 
                 # Create records with different composite scores
+                from ringer.core.models import CrawlRecord
                 record1 = CrawlRecord(
                     url="https://example1.com",
                     page_source="<html></html>",
@@ -941,6 +816,7 @@ class TestSQLiteCrawlResultsManager:
                 manager.create_crawl(sample_crawl_spec, results_id)
                 
                 # Create records with different KeywordScoreAnalyzer scores
+                from ringer.core.models import CrawlRecord
                 record1 = CrawlRecord(
                     url="https://example1.com",
                     page_source="<html></html>",
@@ -1013,6 +889,7 @@ class TestSQLiteCrawlResultsManager:
                 manager.create_crawl(sample_crawl_spec, results_id)
                 
                 # Store 5 records
+                from ringer.core.models import CrawlRecord
                 for i in range(5):
                     record = CrawlRecord(
                         url=f"https://example{i}.com",
@@ -1236,6 +1113,7 @@ class TestFsCrawlResultsManagerGetRecords:
                 manager.create_crawl(sample_crawl_spec, results_id)
                 
                 # Store 5 records
+                from ringer.core.models import CrawlRecord
                 for i in range(5):
                     record = CrawlRecord(
                         url=f"https://example{i}.com",
@@ -1311,6 +1189,7 @@ class TestFsCrawlResultsManagerGetRecords:
                 manager.create_crawl(sample_crawl_spec, results_id)
                 
                 # Create records without the requested analyzer score
+                from ringer.core.models import CrawlRecord
                 record1 = CrawlRecord(
                     url="https://example1.com",
                     page_source="<html></html>",
@@ -1462,6 +1341,7 @@ class TestDhCrawlResultsManagerGetRecords:
             # Function to store records concurrently
             def store_records(thread_id):
                 thread_manager = create_manager()
+                from ringer.core.models import CrawlRecord
                 for i in range(3):
                     record = CrawlRecord(
                         url=f"https://thread{thread_id}-example{i}.com",

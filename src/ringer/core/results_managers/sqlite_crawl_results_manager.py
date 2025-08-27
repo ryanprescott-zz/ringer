@@ -12,7 +12,7 @@ from sqlalchemy.orm import sessionmaker, relationship, Session
 from sqlalchemy.dialects.sqlite import JSON
 
 from typing import List
-from ringer.core.models import CrawlRecord, CrawlRecordSummary, CrawlSpec, CrawlResultsId
+from ringer.core.models import CrawlRecordSummary, CrawlSpec, CrawlResultsId
 from ringer.core.settings import SQLiteCrawlResultsManagerSettings
 from .crawl_results_manager import CrawlResultsManager
 
@@ -146,7 +146,7 @@ class SQLiteCrawlResultsManager(CrawlResultsManager):
         finally:
             session.close()
     
-    def store_record(self, crawl_record: CrawlRecord, results_id: CrawlResultsId, crawl_id: str) -> None:
+    def store_record(self, crawl_record, results_id: CrawlResultsId, crawl_id: str) -> None:
         """
         Store a crawl record in the database.
         
@@ -251,70 +251,6 @@ class SQLiteCrawlResultsManager(CrawlResultsManager):
         except Exception as e:
             session.rollback()
             logger.error(f"Failed to delete crawl from database for {results_id.collection_id}/{results_id.data_id}: {e}")
-            raise
-        finally:
-            session.close()
-    
-    def get_crawl_records(self, results_id: CrawlResultsId, record_count: int = 10, score_type: str = "composite") -> List[CrawlRecord]:
-        """
-        Get crawl records sorted by score type.
-        
-        Args:
-            results_id: Identifier for the crawl results data set
-            record_count: Number of records to return
-            score_type: Type of score to sort by ('composite' or analyzer name)
-            
-        Returns:
-            List of CrawlRecord objects sorted by score in descending order
-        """
-        if not hasattr(self, 'SessionLocal') or self.SessionLocal is None:
-            raise RuntimeError("SQLiteCrawlResultsManager not properly initialized - database connection failed")
-            
-        session = self.SessionLocal()
-        try:
-            # Find the crawl spec
-            crawl_spec_record = session.query(CrawlSpecTable).filter_by(
-                collection_id=results_id.collection_id,
-                data_id=results_id.data_id
-            ).first()
-            
-            if not crawl_spec_record:
-                return []
-            
-            # Query records
-            query = session.query(CrawlRecordTable).filter_by(crawl_spec_id=crawl_spec_record.id)
-            
-            # Sort by score type in descending order
-            if score_type == "composite":
-                query = query.order_by(CrawlRecordTable.composite_score.desc())
-            else:
-                # For analyzer-specific scores, we need to extract from JSON and sort
-                # SQLite JSON functions to extract score and sort
-                from sqlalchemy import func, cast, Float
-                score_expr = func.json_extract(CrawlRecordTable.scores, f'$.{score_type}')
-                query = query.order_by(cast(score_expr, Float).desc())
-            
-            # Limit results
-            records = query.limit(record_count).all()
-            
-            # Convert to CrawlRecord objects
-            crawl_records = []
-            for record in records:
-                crawl_record = CrawlRecord(
-                    url=record.url,
-                    page_source=record.page_source,
-                    extracted_content=record.extracted_content,
-                    links=record.links,
-                    scores=record.scores,
-                    composite_score=record.composite_score,
-                    timestamp=record.timestamp
-                )
-                crawl_records.append(crawl_record)
-            
-            return crawl_records
-            
-        except Exception as e:
-            logger.error(f"Failed to get crawl records for {results_id.collection_id}/{results_id.data_id}: {e}")
             raise
         finally:
             session.close()
