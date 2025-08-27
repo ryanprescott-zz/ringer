@@ -1,7 +1,6 @@
 """Factory for creating crawl results manager instances."""
 
 from .crawl_results_manager import CrawlResultsManager
-from .fs_crawl_results_manager import FsCrawlResultsManager
 from .dh_crawl_results_manager import DhCrawlResultsManager
 from .sqlite_crawl_results_manager import SQLiteCrawlResultsManager
 from ..settings import CrawlResultsManagerSettings, ResultsManagerType
@@ -17,7 +16,7 @@ def create_crawl_results_manager() -> CrawlResultsManager:
     settings = CrawlResultsManagerSettings()
     
     if settings.manager_type == ResultsManagerType.FILE_SYSTEM:
-        return FsCrawlResultsManager()
+        raise ValueError("FILE_SYSTEM results manager type is deprecated. Use SQLITE instead.")
     elif settings.manager_type == ResultsManagerType.DH:
         return DhCrawlResultsManager()
     elif settings.manager_type == ResultsManagerType.SQLITE:
