@@ -80,27 +80,9 @@ export const ResultsTab: React.FC<ResultsTabProps> = ({ selectedCrawl }) => {
     setCurrentPage(Math.max(1, Math.min(page, totalPages)));
   };
 
-  return (
     <div className="space-y-6">
       {/* Controls Section */}
-      <div className="grid grid-cols-4 gap-4 items-end">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Crawl
-          </label>
-          <select
-            value={selectedCrawlId}
-            onChange={(e) => setSelectedCrawlId(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            {crawls.map((crawl) => (
-              <option key={crawl.crawl_status.crawl_id} value={crawl.crawl_status.crawl_id}>
-                {crawl.crawl_spec.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
+      <div className="flex gap-4 items-end mb-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Score Type
@@ -108,7 +90,7 @@ export const ResultsTab: React.FC<ResultsTabProps> = ({ selectedCrawl }) => {
           <select
             value={scoreType}
             onChange={(e) => setScoreType(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="composite">Composite</option>
             <option value="keyword">Keyword</option>
@@ -123,19 +105,16 @@ export const ResultsTab: React.FC<ResultsTabProps> = ({ selectedCrawl }) => {
           <input
             type="number"
             value={count}
-            onChange={(e) => setCount(parseInt(e.target.value) || 500)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onChange={(e) => setCount(parseInt(e.target.value) || 400)}
+            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <div className="text-xs text-gray-500 mt-1">
-            / {recordSummaries.length > 0 ? recordSummaries.length : '212032'}
-          </div>
         </div>
 
         <div>
           <button
             onClick={handleGetRecords}
-            disabled={loading || !selectedCrawlId}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={loading || !selectedCrawl}
+            className="px-4 py-2 bg-ringer-blue text-white rounded hover:bg-ringer-dark-blue disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Loading...' : 'Get Records'}
           </button>
@@ -146,37 +125,18 @@ export const ResultsTab: React.FC<ResultsTabProps> = ({ selectedCrawl }) => {
       <div className="grid grid-cols-2 gap-6">
         {/* Left Column - Table */}
         <div className="space-y-4">
-          {/* Field Selector */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Field
-            </label>
-            <select
-              value={selectedField}
-              onChange={(e) => setSelectedField(e.target.value)}
-              disabled={!selectedRecord}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-            >
-              {getFieldOptions().map((field) => (
-                <option key={field} value={field}>
-                  {field}
-                </option>
-              ))}
-            </select>
-          </div>
-
           {/* Records Table */}
-          <div className="border border-gray-300 rounded-md overflow-hidden">
+          <div className="border border-gray-300 rounded-md overflow-auto" style={{ height: '400px' }}>
             <table className="min-w-full">
-              <thead className="bg-gray-50">
+              <thead className="bg-table-header sticky top-0">
                 <tr>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
+                  <th className="px-4 py-2 text-left text-sm font-medium text-black">
                     ID ↕
                   </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
+                  <th className="px-4 py-2 text-left text-sm font-medium text-black">
                     URL ↕
                   </th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">
+                  <th className="px-4 py-2 text-left text-sm font-medium text-black">
                     Composite Score ↕
                   </th>
                 </tr>
@@ -186,7 +146,9 @@ export const ResultsTab: React.FC<ResultsTabProps> = ({ selectedCrawl }) => {
                   <tr
                     key={record.id}
                     onClick={() => handleSelectRecord(record)}
-                    className="cursor-pointer hover:bg-gray-50 border-b border-gray-200"
+                    className={`cursor-pointer hover:bg-gray-50 border-b border-gray-200 ${
+                      selectedRecordId === record.id ? 'bg-table-selected' : ''
+                    }`}
                   >
                     <td className="px-4 py-2 text-sm text-gray-900">
                       {record.id}
@@ -261,11 +223,31 @@ export const ResultsTab: React.FC<ResultsTabProps> = ({ selectedCrawl }) => {
         </div>
 
         {/* Right Column - Field Content */}
-        <div>
+        <div className="space-y-4">
+          {/* Field Selector */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Field
+            </label>
+            <select
+              value={selectedField}
+              onChange={(e) => setSelectedField(e.target.value)}
+              disabled={!selectedRecord}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+            >
+              {getFieldOptions().map((field) => (
+                <option key={field} value={field}>
+                  {field}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <textarea
             value={getFieldValue()}
             readOnly
-            className="w-full h-96 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm font-mono resize-none"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm font-mono resize-none"
+            style={{ height: '350px' }}
             placeholder={selectedRecord ? "Select a field to view its content" : "Select a record to view details"}
           />
         </div>
