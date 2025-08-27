@@ -7,3 +7,4 @@ prospector-debug.log
 MagicMock/
 datastore/crawl_results.db
 ringer-debug.log
+ui/node_modules/
