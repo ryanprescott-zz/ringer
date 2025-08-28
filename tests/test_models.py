@@ -10,7 +10,6 @@ from ringer.core.models import (
     KeywordScoringSpec,
     DhLlmScoringSpec,
     PromptInput,
-    TopicListInput,
     WeightedKeyword,
     WeightedRegex,
     AnalyzerSpec,
@@ -80,18 +79,6 @@ class TestPromptInput:
             PromptInput(prompt="   ")
 
 
-class TestTopicListInput:
-    """Tests for TopicListInput model."""
-    
-    def test_valid_topic_list_input(self):
-        """Test creating valid topic list input."""
-        input_obj = TopicListInput(topics=["python", "programming", "code"])
-        assert input_obj.topics == ["python", "programming", "code"]
-    
-    def test_empty_topics_validation(self):
-        """Test empty topics list validation."""
-        with pytest.raises(ValueError, match="Topics list cannot be empty"):
-            TopicListInput(topics=[])
 
 
 class TestKeywordScoringSpec:
@@ -168,24 +155,12 @@ class TestDhLlmScoringSpec:
         spec = DhLlmScoringSpec(
             name="DhLlmScoreAnalyzer",
             composite_weight=0.7,
-            scoring_input=PromptInput(prompt="Score this content:")
+            prompt_input=PromptInput(prompt="Score this content:")
         )
         
         assert spec.name == "DhLlmScoreAnalyzer"
         assert spec.composite_weight == 0.7
-        assert isinstance(spec.scoring_input, PromptInput)
-    
-    def test_valid_llm_scoring_spec_with_topics(self):
-        """Test creating valid LLM scoring spec with topics."""
-        spec = DhLlmScoringSpec(
-            name="DhLlmScoreAnalyzer",
-            composite_weight=0.9,
-            scoring_input=TopicListInput(topics=["python", "programming"])
-        )
-        
-        assert spec.name == "DhLlmScoreAnalyzer"
-        assert spec.composite_weight == 0.9
-        assert isinstance(spec.scoring_input, TopicListInput)
+        assert isinstance(spec.prompt_input, PromptInput)
 
 
 class TestAnalyzerSpec:

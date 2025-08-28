@@ -16,7 +16,7 @@ from ringer.core import (
 from ringer.core.models import (
     KeywordScoringSpec,
     DhLlmScoringSpec,
-    TopicListInput,
+    PromptInput,
 )
 
 
@@ -254,7 +254,7 @@ class TestRinger:
         llm_spec = DhLlmScoringSpec(
             name="DhLlmScoreAnalyzer",
             composite_weight=0.5,
-            scoring_input=TopicListInput(topics=["test", "example"])
+            prompt_input=PromptInput(prompt="Score this content about test and example topics")
         )
         
         crawl_spec = CrawlSpec(

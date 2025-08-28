@@ -12,7 +12,6 @@ from ringer.core.models import (
     KeywordScoringSpec,
     DhLlmScoringSpec,
     PromptInput,
-    TopicListInput,
 )
 
 
@@ -205,7 +204,7 @@ class TestDhLlmScoreAnalyzer:
         spec = DhLlmScoringSpec(
             name="DhLlmScoreAnalyzer",
             composite_weight=1.0,
-            scoring_input=TopicListInput(topics=["test", "example"])
+            prompt_input=PromptInput(prompt="Score this content about test and example topics")
         )
         analyzer = DhLlmScoreAnalyzer(spec)
         assert analyzer.settings is not None
@@ -226,7 +225,7 @@ class TestDhLlmScoreAnalyzer:
         spec = DhLlmScoringSpec(
             name="DhLlmScoreAnalyzer",
             composite_weight=1.0,
-            scoring_input=TopicListInput(topics=["python", "programming"])
+            prompt_input=PromptInput(prompt="Score this content about python and programming topics")
         )
         analyzer = DhLlmScoreAnalyzer(spec)
         content = "Test content about python programming"
@@ -240,9 +239,10 @@ class TestDhLlmScoreAnalyzer:
         call_args = mock_post.call_args
         assert call_args[1]['timeout'] == analyzer.settings.request_timeout
         request_data = call_args[1]['json']
-        assert 'generation_input' in request_data
+        assert 'prompt_input' in request_data
         assert 'text_inputs' in request_data
-        assert "Test content about python programming" in request_data['text_inputs']
+        assert len(request_data['text_inputs']) == 1
+        assert request_data['text_inputs'][0]['text'] == "Test content about python programming"
     
     @patch('ringer.core.score_analyzers.dh_llm_score_analyzer.requests.Session.post')
     def test_score_with_custom_prompt(self, mock_post):
@@ -257,7 +257,7 @@ class TestDhLlmScoreAnalyzer:
         spec = DhLlmScoringSpec(
             name="DhLlmScoreAnalyzer",
             composite_weight=1.0,
-            scoring_input=PromptInput(prompt="Custom scoring prompt:")
+            prompt_input=PromptInput(prompt="Custom scoring prompt:")
         )
         analyzer = DhLlmScoreAnalyzer(spec)
         content = "Test content"
@@ -269,42 +269,15 @@ class TestDhLlmScoreAnalyzer:
         # Verify custom prompt was used
         call_args = mock_post.call_args
         request_data = call_args[1]['json']
-        assert "Custom scoring prompt:" in request_data['generation_input']['prompt']
+        assert request_data['prompt_input']['prompt'] == "Custom scoring prompt:"
     
-    @patch('ringer.core.score_analyzers.dh_llm_score_analyzer.requests.Session.post')
-    def test_score_with_default_prompt(self, mock_post):
-        """Test scoring with default prompt when using topics."""
-        # Mock successful response
-        mock_response = Mock()
-        mock_response.json.return_value = {"score": "0.65"}
-        mock_response.raise_for_status.return_value = None
-        mock_response.status_code = 200
-        mock_post.return_value = mock_response
-        
-        spec = DhLlmScoringSpec(
-            name="DhLlmScoreAnalyzer",
-            composite_weight=1.0,
-            scoring_input=TopicListInput(topics=["test", "content"])
-        )
-        analyzer = DhLlmScoreAnalyzer(spec)
-        content = "Test content"
-        
-        score = analyzer.score(content)
-        
-        assert score == 0.65
-        
-        # Verify default prompt was built from topics
-        call_args = mock_post.call_args
-        request_data = call_args[1]['json']
-        prompt = request_data['generation_input']['prompt']
-        assert "test" in prompt and "content" in prompt
     
     def test_score_with_invalid_content_type(self):
         """Test scoring with invalid content type raises error."""
         spec = DhLlmScoringSpec(
             name="DhLlmScoreAnalyzer",
             composite_weight=1.0,
-            scoring_input=TopicListInput(topics=["test"])
+            prompt_input=PromptInput(prompt="Score this test content")
         )
         analyzer = DhLlmScoreAnalyzer(spec)
         
@@ -322,7 +295,7 @@ class TestDhLlmScoreAnalyzer:
         spec = DhLlmScoringSpec(
             name="DhLlmScoreAnalyzer",
             composite_weight=1.0,
-            scoring_input=TopicListInput(topics=["test"])
+            prompt_input=PromptInput(prompt="Score this test content")
         )
         analyzer = DhLlmScoreAnalyzer(spec)
         content = "Test content"
@@ -342,7 +315,7 @@ class TestDhLlmScoreAnalyzer:
         spec = DhLlmScoringSpec(
             name="DhLlmScoreAnalyzer",
             composite_weight=1.0,
-            scoring_input=TopicListInput(topics=["test"])
+            prompt_input=PromptInput(prompt="Score this test content")
         )
         analyzer = DhLlmScoreAnalyzer(spec)
         content = "Test content"
@@ -365,7 +338,7 @@ class TestDhLlmScoreAnalyzer:
         spec = DhLlmScoringSpec(
             name="DhLlmScoreAnalyzer",
             composite_weight=1.0,
-            scoring_input=TopicListInput(topics=["test"])
+            prompt_input=PromptInput(prompt="Score this test content")
         )
         analyzer = DhLlmScoreAnalyzer(spec)
         content = "Test content"
@@ -386,7 +359,7 @@ class TestDhLlmScoreAnalyzer:
         spec = DhLlmScoringSpec(
             name="DhLlmScoreAnalyzer",
             composite_weight=1.0,
-            scoring_input=TopicListInput(topics=["test"])
+            prompt_input=PromptInput(prompt="Score this test content")
         )
         analyzer = DhLlmScoreAnalyzer(spec)
         content = "Test content"
