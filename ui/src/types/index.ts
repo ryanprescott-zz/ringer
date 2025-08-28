@@ -14,8 +14,13 @@ export interface WeightedRegex {
   flags: number;
 }
 
-export interface ScoringInput {
+export interface PromptInput {
   prompt: string;
+}
+
+export interface TextInput {
+  id: string;
+  text: string;
 }
 
 export interface FieldMap {
@@ -27,7 +32,8 @@ export interface AnalyzerSpec {
   composite_weight: number;
   keywords?: WeightedKeyword[];
   regexes?: WeightedRegex[];
-  scoring_input?: ScoringInput;
+  prompt_input?: PromptInput;
+  text_inputs?: TextInput[];
   field_map?: FieldMap;
 }
 

@@ -39,7 +39,8 @@ export const AnalyzersTab: React.FC<AnalyzersTabProps> = ({
       return {
         name: 'DhLlmScoreAnalyzer',
         composite_weight: 1.0,
-        scoring_input: { prompt: '' },
+        prompt_input: { prompt: '' },
+        text_inputs: [],
         field_map: { Score: 'string' },
       };
     }
@@ -121,7 +122,7 @@ export const AnalyzersTab: React.FC<AnalyzersTabProps> = ({
     const analyzer = getOrCreateAnalyzer('DhLlmScoreAnalyzer');
     updateAnalyzer({
       ...analyzer,
-      scoring_input: { prompt },
+      prompt_input: { prompt },
     });
   };
 
@@ -355,7 +356,7 @@ export const AnalyzersTab: React.FC<AnalyzersTabProps> = ({
             {/* Prompt */}
             <div>
               <textarea
-                value={currentAnalyzer.scoring_input?.prompt || ''}
+                value={currentAnalyzer.prompt_input?.prompt || ''}
                 onChange={(e) => handlePromptChange(e.target.value)}
                 disabled={!isNewCrawl}
                 rows={6}
