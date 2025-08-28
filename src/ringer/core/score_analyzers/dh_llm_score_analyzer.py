@@ -105,12 +105,22 @@ class DhLlmScoreAnalyzer(ScoreAnalyzer):
                 raise
             
             # Extract score from response
-            if 'score' not in response_data:
-                logger.error(f"LLM service response missing 'score' field: {response_data}")
+            if 'scored_responses_json' not in response_data:
+                logger.error(f"LLM service response missing 'scored_responses_json' field: {response_data}")
+                return 0.0
+            
+            scored_responses = response_data['scored_responses_json']
+            if not isinstance(scored_responses, list) or len(scored_responses) == 0:
+                logger.error(f"LLM service response 'scored_responses_json' is not a non-empty list: {scored_responses}")
+                return 0.0
+            
+            first_response = scored_responses[0]
+            if 'score' not in first_response:
+                logger.error(f"LLM service response missing 'score' field in first scored response: {first_response}")
                 return 0.0
             
             try:
-                score = float(response_data['score'])
+                score = float(first_response['score'])
                 logger.debug(f"Extracted score from LLM service response: {score}")
                 
                 # Validate score is in range 0-1
@@ -122,7 +132,7 @@ class DhLlmScoreAnalyzer(ScoreAnalyzer):
                 return score
                 
             except (ValueError, TypeError) as e:
-                logger.error(f"Could not parse score value '{response_data['score']}': {e}")
+                logger.error(f"Could not parse score value '{first_response['score']}': {e}")
                 return 0.0
         
         except requests.exceptions.Timeout as e:
