@@ -847,12 +847,12 @@ class TestAnalyzersEndpoint:
         field_names = [field["name"] for field in llm_analyzer["spec_fields"]]
         assert "name" in field_names
         assert "composite_weight" in field_names
-        assert "scoring_input" in field_names
+        assert "prompt_input" in field_names
         
-        # Check scoring_input field shows union type
-        scoring_input_field = next(field for field in llm_analyzer["spec_fields"] if field["name"] == "scoring_input")
-        assert "PromptInput" in scoring_input_field["type"]
-        assert "TopicListInput" in scoring_input_field["type"]
+        # Check prompt_input field type
+        prompt_input_field = next(field for field in llm_analyzer["spec_fields"] if field["name"] == "prompt_input")
+        assert "PromptInput" in prompt_input_field["type"]
+        assert prompt_input_field["required"]
 
 
 class TestSeedsEndpoint:
