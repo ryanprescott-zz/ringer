@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from pydantic.fields import FieldInfo
 
 from ..score_analyzers import KeywordScoreAnalyzer, DhLlmScoreAnalyzer
-from ..models import KeywordScoringSpec, DhLlmScoringSpec, PromptInput, TopicListInput
+from ..models import KeywordScoringSpec, DhLlmScoringSpec, PromptInput
 
 
 class FieldDescriptor:
