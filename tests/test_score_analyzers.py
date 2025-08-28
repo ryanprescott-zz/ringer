@@ -217,7 +217,11 @@ class TestDhLlmScoreAnalyzer:
         """Test scoring with valid LLM service response."""
         # Mock successful response
         mock_response = Mock()
-        mock_response.json.return_value = {"score": "0.85"}
+        mock_response.json.return_value = {
+            "scored_responses_json": [
+                {"score": "0.85"}
+            ]
+        }
         mock_response.raise_for_status.return_value = None
         mock_response.status_code = 200
         mock_post.return_value = mock_response
@@ -249,7 +253,11 @@ class TestDhLlmScoreAnalyzer:
         """Test scoring with custom prompt."""
         # Mock successful response
         mock_response = Mock()
-        mock_response.json.return_value = {"score": "0.75"}
+        mock_response.json.return_value = {
+            "scored_responses_json": [
+                {"score": "0.75"}
+            ]
+        }
         mock_response.raise_for_status.return_value = None
         mock_response.status_code = 200
         mock_post.return_value = mock_response
@@ -352,7 +360,11 @@ class TestDhLlmScoreAnalyzer:
         """Test scoring with missing score field in response returns 0.0."""
         # Mock response missing score field
         mock_response = Mock()
-        mock_response.json.return_value = {"result": "success"}  # No score field
+        mock_response.json.return_value = {
+            "scored_responses_json": [
+                {"result": "success"}  # No score field
+            ]
+        }
         mock_response.raise_for_status.return_value = None
         mock_post.return_value = mock_response
         
