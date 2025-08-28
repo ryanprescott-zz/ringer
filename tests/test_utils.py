@@ -61,13 +61,12 @@ class TestScoreAnalyzerInfoUtil:
         field_names = [field.name for field in llm_info.spec_fields]
         assert "name" in field_names
         assert "composite_weight" in field_names
-        assert "scoring_input" in field_names
+        assert "prompt_input" in field_names
         
-        # Check scoring_input field shows union type
-        scoring_input_field = next(field for field in llm_info.spec_fields if field.name == "scoring_input")
-        assert "PromptInput" in scoring_input_field.type_str
-        assert "TopicListInput" in scoring_input_field.type_str
-        assert scoring_input_field.required
+        # Check prompt_input field type
+        prompt_input_field = next(field for field in llm_info.spec_fields if field.name == "prompt_input")
+        assert "PromptInput" in prompt_input_field.type_str
+        assert prompt_input_field.required
     
     def test_extract_class_description(self):
         """Test extracting class description from docstring."""
@@ -82,15 +81,15 @@ class TestScoreAnalyzerInfoUtil:
     
     def test_get_field_type_string_union(self):
         """Test getting field type string for union types."""
-        from ringer.core.models import PromptInput, TopicListInput
+        from ringer.core.models import PromptInput, TextInput
         from typing import Union
         
-        union_type = Union[PromptInput, TopicListInput]
+        union_type = Union[PromptInput, TextInput]
         type_str = ScoreAnalyzerInfoUtil._get_field_type_string(union_type)
         
         # Should show both types
         assert "PromptInput" in type_str
-        assert "TopicListInput" in type_str
+        assert "TextInput" in type_str
         assert "|" in type_str
     
     def test_get_field_type_string_list(self):
