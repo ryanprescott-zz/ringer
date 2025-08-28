@@ -7,10 +7,8 @@ import requests
 from ringer.core.models import (
     DhLlmScoringSpec,
     PromptInput,
-    TopicListInput,
-    DhLlmGenerationInput,
-    FieldMap,
-    DhLlmGenerationRequest
+    TextInput,
+    DhLlmScoreRequest
 )
 from ringer.core.settings import DhLlmScoreAnalyzerSettings
 from .score_analyzer import ScoreAnalyzer
@@ -39,35 +37,11 @@ class DhLlmScoreAnalyzer(ScoreAnalyzer):
             'Accept': 'application/json'
         })
 
-        # Get a prompt string based on the scoring input
-        scoring_input = spec.scoring_input
-        prompt_str = (
-            scoring_input.prompt if isinstance(scoring_input, PromptInput)
-            else self._build_default_prompt(scoring_input.topics) if isinstance(scoring_input, TopicListInput)
-            else None
-        )
+        # Store the prompt input for scoring
+        self._scoring_prompt_input = spec.prompt_input
 
-        logger.info(f"Scoring prompt: {prompt_str}")
-
-        # Create the generation input for the DH LLM service
-        self._generation_input = DhLlmGenerationInput(
-            prompt=prompt_str,
-            output_format=FieldMap(name_to_type=self.settings.output_format)
-        )
+        logger.info(f"Scoring prompt: {self._scoring_prompt_input.prompt}")
     
-    def _build_default_prompt(self, topics: list[str]) -> str:
-        """
-        Build a default prompt string based on the provided topics.
-        
-        Args:
-            topics: List of topics to include in the prompt
-            
-        Returns:
-            str: Formatted prompt string
-        """
-        
-        topics_str = ', '.join(topics)
-        return f"{self.settings.default_prompt_template} {topics_str}"
 
     def score(self, content: str) -> float:
         """
@@ -93,9 +67,9 @@ class DhLlmScoreAnalyzer(ScoreAnalyzer):
         try:
             # Create the request payload
             try:
-                request_data = DhLlmGenerationRequest(
-                    generation_input=self._generation_input,
-                    text_inputs=[content],  # Wrap text in a list for processing
+                request_data = DhLlmScoreRequest(
+                    prompt_input=self._scoring_prompt_input,
+                    text_inputs=[TextInput(id="1", text=content)],
                 )
                 logger.debug("Created LLM service request payload")
             except Exception as e:

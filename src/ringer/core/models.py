@@ -53,43 +53,17 @@ class PromptInput(BaseModel):
             raise ValueError("Prompt cannot be empty")
         return value
 
-class TopicListInput(BaseModel):
-    """Input for a list of topics to score against."""
+class TextInput(BaseModel):
+    """Input text with an identifier."""
     
-    topics: List[str] = Field(..., description="List of topics to score against")
+    id: str = Field(..., description="Identifier for the text input")
+    text: str = Field(..., description="The text content")
 
-    @field_validator('topics')
-    @classmethod
-    def check_topics_not_empty(cls, value: List[str]) -> List[str]:
-        """Ensure the topics list is not empty."""
-        if not value:
-            raise ValueError("Topics list cannot be empty")
-        return value
+class DhLlmScoreRequest(BaseModel):
+    """Request object for LLM scoring service."""
 
-class FieldMap(BaseModel):
-    """Mapping of field names to their types."""
-    
-    name_to_type: Dict[str, str] = Field(..., description="Mapping of field names to their types")
-
-    @field_validator('name_to_type')
-    @classmethod
-    def check_map_not_empty(cls, value: Dict[str, str]) -> Dict[str, str]:
-        """Ensure the field map is not empty."""
-        if not value:
-            raise ValueError("Field map cannot be empty")
-        return value
-
-class DhLlmGenerationInput(BaseModel):
-    """Input for text generation."""
-    
-    prompt: str = Field(..., description="The prompt to generate text from")
-    output_format: FieldMap = Field(..., description="Mapping of output fields to types")
-
-class DhLlmGenerationRequest(BaseModel):
-    """Request object for LLM generation service."""
-
-    generation_input: DhLlmGenerationInput = Field(..., description="Input for text generation")
-    text_inputs: List[str] = Field(..., description="List of text inputs to process")
+    prompt_input: PromptInput = Field(..., description="Input prompt for scoring")
+    text_inputs: List[TextInput] = Field(..., description="List of text inputs to process")
 
 class StoreCrawlRecordRequest(BaseModel):
     """Request object for crawl record storage service."""
@@ -119,7 +93,7 @@ class KeywordScoringSpec(AnalyzerSpec):
 class DhLlmScoringSpec(AnalyzerSpec):
     """Input for LLM service score analyzer."""
 
-    scoring_input: PromptInput | TopicListInput = Field(..., description="Scoring input - either prompt or topics")
+    prompt_input: PromptInput = Field(..., description="Prompt input for scoring")
 
 
 class CrawlResultsId(BaseModel):
