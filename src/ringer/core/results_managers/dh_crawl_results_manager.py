@@ -40,12 +40,9 @@ class DhCrawlResultsManager(CrawlResultsManager):
             crawl_spec: Specification of the crawl to create.
             results_id: Identifier for the crawl results data set.
         """
-        logger.debug(f"Creating crawl with results_id: collection_id={results_id.collection_id}, data_id={results_id.data_id}")
         
-        error_msg = "Create functionality is not implemented for DhCrawlResultsManager"
-        logger.error(f"{error_msg} for results_id: {results_id.collection_id}/{results_id.data_id}")
-        raise NotImplementedError(error_msg)
-        # TODO send HTTP post to dh create endpoint using the results_id.
+        # TODO: Implement creation call to DH service with crawl spec as metadata when available
+        logger.warning(f"DH Crawl Results Manager does not support crawl creation. Received results_id: {results_id}")
 
     
     def store_record(self, crawl_record, results_id: CrawlResultsId, crawl_id: str) -> None:
@@ -74,12 +71,8 @@ class DhCrawlResultsManager(CrawlResultsManager):
         Args:
             results_id: the results ID of the crawl to delete.
         """
-        logger.debug(f"Attempting to delete crawl with results_id: collection_id={results_id.collection_id}, data_id={results_id.data_id}")
-        
-        error_msg = "Delete functionality is not implemented for DhCrawlResultsManager"
-        logger.error(f"{error_msg} for results_id: {results_id.collection_id}/{results_id.data_id}")
-        raise NotImplementedError(error_msg)
-        # TODO implement deletion logic by calling the DH service.
+        logger.warning(f"DH Crawl Results Manager does not support crawl deletion. Received results_id: {results_id}")
+
     
     def _send_record_with_retry(self, crawl_record: CrawlRecord, results_id: CrawlResultsId, crawl_id: str) -> None:
         """
@@ -111,7 +104,7 @@ class DhCrawlResultsManager(CrawlResultsManager):
             )
             
             # Construct the URL
-            url = f"{self.settings.service_url}workbook/{results_id.collection_id}/bin/{results_id.data_id}"
+            url = f"{self.settings.service_url}/workbook/{results_id.collection_id}/bin/{results_id.data_id}"
             
             try:
                 # Make the HTTP PATCH request
