@@ -7,6 +7,7 @@ interface OverviewTabProps {
   crawlSpec: CrawlSpec | null;
   isNewCrawl: boolean;
   selectedCrawl: CrawlInfo | null;
+  existingCrawls: CrawlInfo[];
   onCrawlSpecChange: (spec: CrawlSpec) => void;
   onCrawlCreated: () => void;
 }
@@ -15,6 +16,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   crawlSpec,
   isNewCrawl,
   selectedCrawl,
+  existingCrawls,
   onCrawlSpecChange,
   onCrawlCreated,
 }) => {
@@ -37,6 +39,16 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   const handleSubmitCrawl = async () => {
     if (!crawlSpec || !crawlSpec.name.trim()) {
       showError('Validation Error', 'Crawl name is required');
+      return;
+    }
+
+    // Check for duplicate names
+    const isDuplicateName = existingCrawls.some(
+      (crawl) => crawl.crawl_spec.name.toLowerCase() === crawlSpec.name.toLowerCase()
+    );
+    
+    if (isDuplicateName) {
+      showError('Validation Error', 'A crawl with this name already exists. Please choose a different name.');
       return;
     }
 

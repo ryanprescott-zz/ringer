@@ -9,6 +9,8 @@ import { SourcesTab } from './components/SourcesTab';
 import { AnalyzersTab } from './components/AnalyzersTab';
 import { ResultsTab } from './components/ResultsTab';
 import { ToastContainer } from './components/ToastContainer';
+import { DropdownButton } from './components/DropdownButton';
+import { CloneExistingModal } from './components/CloneExistingModal';
 
 const tabs = [
   { id: 'overview', label: 'Overview' },
@@ -19,10 +21,11 @@ const tabs = [
 
 function App() {
   const { crawls, loading, error } = useCrawlData();
-  const { toasts, removeToast, showError } = useToast();
+  const { toasts, removeToast, showError, showSuccess } = useToast();
   const [selectedCrawl, setSelectedCrawl] = useState<CrawlInfo | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [isNewCrawl, setIsNewCrawl] = useState(false);
+  const [isCloneModalOpen, setIsCloneModalOpen] = useState(false);
   const [newCrawlSpec, setNewCrawlSpec] = useState<CrawlSpec>({
     name: '',
     seeds: [],
@@ -62,6 +65,21 @@ function App() {
     setSelectedCrawl(null);
   };
 
+  const handleCloneExisting = (crawlToClone: CrawlInfo) => {
+    const clonedSpec: CrawlSpec = {
+      ...crawlToClone.crawl_spec,
+      name: `${crawlToClone.crawl_spec.name} (Copy)`,
+    };
+    
+    setNewCrawlSpec(clonedSpec);
+    setIsNewCrawl(true);
+    setSelectedCrawl(null);
+    setActiveTab('overview');
+    setIsCloneModalOpen(false);
+    
+    showSuccess('Crawl Cloned', `Cloned "${crawlToClone.crawl_spec.name}" successfully`);
+  };
+
   const currentCrawlSpec = isNewCrawl ? newCrawlSpec : selectedCrawl?.crawl_spec || null;
 
   if (loading && crawls.length === 0) {
@@ -84,12 +102,19 @@ function App() {
       <div className="container mx-auto px-6 py-6">
         {/* New Crawl Button */}
         <div className="mb-6">
-          <button
-            onClick={handleNewCrawl}
-            className="px-4 py-2 bg-ringer-blue text-white rounded hover:bg-ringer-dark-blue"
+          <DropdownButton
+            onMainClick={handleNewCrawl}
+            items={[
+              {
+                id: 'clone-existing',
+                label: 'Clone Existing',
+                disabled: crawls.length === 0,
+                onClick: () => setIsCloneModalOpen(true),
+              },
+            ]}
           >
             New Crawl
-          </button>
+          </DropdownButton>
         </div>
 
         {/* Crawl Table */}
@@ -116,6 +141,7 @@ function App() {
                   crawlSpec={currentCrawlSpec}
                   isNewCrawl={isNewCrawl}
                   selectedCrawl={selectedCrawl}
+                  existingCrawls={crawls}
                   onCrawlSpecChange={setNewCrawlSpec}
                   onCrawlCreated={handleCrawlCreated}
                 />
@@ -142,6 +168,13 @@ function App() {
         )}
         
         <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
+        
+        <CloneExistingModal
+          isOpen={isCloneModalOpen}
+          crawls={crawls}
+          onClose={() => setIsCloneModalOpen(false)}
+          onClone={handleCloneExisting}
+        />
       </div>
     </div>
   );
