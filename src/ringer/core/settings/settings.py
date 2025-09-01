@@ -54,6 +54,10 @@ class CrawlResultsManagerSettings(BaseSettings):
     
     manager_type: ResultsManagerType = ResultsManagerType.SQLITE
 
+    model_config = {
+        "env_prefix": "crawl_results_manager_"
+    }
+
 
 class FsCrawlResultsManagerSettings(BaseSettings):
     """Settings for Filesystem data storage handling of crawl records."""
@@ -69,7 +73,7 @@ class DhCrawlResultsManagerSettings(BaseSettings):
     """Settings for service call storage of crawl records."""
 
     # DH crawl results manager settings
-    service_url: str = "http://localhost:8000/handle_record"
+    service_url: str = "http://localhost:8000/"
     service_timeout_sec: int = 30
     service_max_retries: int = 3
     service_retry_exponential_base: int = 2
