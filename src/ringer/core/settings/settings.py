@@ -101,7 +101,7 @@ class SearchEngineSettings(BaseSettings):
     
     google_base_url: str = "https://www.google.com/search"
     bing_base_url: str = "https://www.bing.com/search"
-    duckduckgo_base_url: str = "https://duckduckgo.com/"
+    duckduckgo_base_url: str = "https://duckduckgo.com/html/"
     
     request_timeout: int = 30
     rate_limit_delay: float = 2.0

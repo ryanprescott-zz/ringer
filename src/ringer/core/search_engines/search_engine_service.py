@@ -1,14 +1,16 @@
 """Search engine service for generating seed URLs."""
 
 import asyncio
+import base64
 import logging
 import re
 from abc import ABC, abstractmethod
 from typing import List, Set
-from urllib.parse import urljoin, urlparse, unquote
+from urllib.parse import urljoin, urlparse, unquote, parse_qs
 
 import aiohttp
 from bs4 import BeautifulSoup
+from playwright.async_api import async_playwright
 
 from ..models import SearchEngineSeed
 from ..settings import SearchEngineSettings
@@ -135,24 +137,109 @@ class BingParser(SearchEngineParser):
         soup = BeautifulSoup(html_content, 'html.parser')
         urls = []
         
-        # Bing results are typically in <a> tags with class containing 'b_algo'
-        for result in soup.find_all('li', class_=re.compile(r'b_algo')):
-            link = result.find('a', href=True)
-            if link:
-                href = link['href']
-                if self._is_valid_url(href):
-                    urls.append(href)
-                    
+        logger.debug(f"Parsing Bing results, HTML length: {len(html_content)}")
+        
+        # Save HTML for debugging if no results found
+        if logger.isEnabledFor(logging.DEBUG):
+            with open('/tmp/bing_debug_parser.html', 'w', encoding='utf-8') as f:
+                f.write(html_content)
+            logger.debug("Saved Bing HTML to /tmp/bing_debug_parser.html for debugging")
+        
+        # Try multiple selectors for Bing results as they change frequently
+        selectors = [
+            'li.b_algo a[href]',  # Standard organic results
+            'ol.b_algo li a[href]',  # Results in ordered list
+            '.b_algo a[href]',  # Any element with b_algo class
+            'h2 a[href]',  # Header links
+            'h3 a[href]',  # Another common header structure
+            '[data-h] a[href]',  # Elements with data-h attribute containing links
+            '.b_title a[href]',  # Title links
+            '.b_algoheader a[href]',  # Algorithm header links
+            '.b_attribution a[href]',  # Attribution links (but we'll filter these)
+        ]
+        
+        for i, selector in enumerate(selectors):
+            links = soup.select(selector)
+            logger.debug(f"Selector {i+1} '{selector}' found {len(links)} links")
+            
+            for link in links:
+                href = link.get('href', '')
+                logger.debug(f"Processing href: {href[:100]}...")
+                
+                # Handle Bing redirect URLs
+                actual_url = self._extract_actual_url(href)
+                if actual_url and self._is_valid_url(actual_url):
+                    urls.append(actual_url)
+                    logger.debug(f"Added valid URL: {actual_url}")
+                
+                if len(urls) >= result_count:
+                    break
+            
             if len(urls) >= result_count:
                 break
         
-        return urls[:result_count]
+        logger.info(f"Bing parser found {len(urls)} URLs before deduplication")
+        
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_urls = []
+        for url in urls:
+            if url not in seen:
+                seen.add(url)
+                unique_urls.append(url)
+        
+        logger.info(f"Bing parser returning {len(unique_urls)} unique URLs")
+        return unique_urls[:result_count]
+    
+    def _extract_actual_url(self, href: str) -> str:
+        """Extract the actual URL from Bing's redirect URL."""
+        if not href:
+            return None
+            
+        # Handle Bing redirect URLs like:
+        # https://www.bing.com/ck/a?!&&p=...&u=a1aHR0cHM6Ly9lbi53aWtpcGVkaWEub3JnL3dpa2kvRG9n&ntb=1
+        if 'bing.com/ck/a' in href and 'u=' in href:
+            try:
+                # Parse the URL to get query parameters
+                parsed = urlparse(href)
+                query_params = parse_qs(parsed.query)
+                
+                # Get the 'u' parameter which contains the base64-encoded actual URL
+                if 'u' in query_params and query_params['u']:
+                    encoded_url = query_params['u'][0]
+                    
+                    # The URL is base64 encoded with a prefix (usually 'a1')
+                    # Remove the prefix and decode
+                    if encoded_url.startswith('a1'):
+                        encoded_url = encoded_url[2:]  # Remove 'a1' prefix
+                        try:
+                            # Add padding if necessary
+                            missing_padding = len(encoded_url) % 4
+                            if missing_padding:
+                                encoded_url += '=' * (4 - missing_padding)
+                            
+                            actual_url = base64.b64decode(encoded_url).decode('utf-8')
+                            logger.debug(f"Decoded Bing redirect URL: {href[:50]}... -> {actual_url}")
+                            return actual_url
+                        except Exception as e:
+                            logger.debug(f"Failed to decode base64 URL: {e}")
+                            
+            except Exception as e:
+                logger.debug(f"Failed to parse Bing redirect URL: {e}")
+        
+        # If it's not a redirect URL or we can't decode it, return as-is
+        return href
     
     def _is_valid_url(self, url: str) -> bool:
         """Check if URL is valid HTTP/HTTPS."""
         try:
             parsed = urlparse(url)
-            return parsed.scheme in ('http', 'https') and parsed.netloc
+            is_valid = (parsed.scheme in ('http', 'https') and 
+                       parsed.netloc and 
+                       not parsed.netloc.endswith('.bing.com') and
+                       not parsed.netloc.endswith('.microsoft.com'))
+            logger.debug(f"URL validation for {url}: {is_valid}")
+            return is_valid
         except Exception:
             return False
 
@@ -165,22 +252,95 @@ class DuckDuckGoParser(SearchEngineParser):
         soup = BeautifulSoup(html_content, 'html.parser')
         urls = []
         
-        # DuckDuckGo results are typically in <a> tags with specific classes
-        for link in soup.find_all('a', class_=re.compile(r'result__a')):
-            href = link.get('href')
-            if href and self._is_valid_url(href):
-                urls.append(href)
+        logger.debug(f"Parsing DuckDuckGo results, HTML length: {len(html_content)}")
+        
+        # Save HTML for debugging if needed
+        if logger.isEnabledFor(logging.DEBUG):
+            with open('/tmp/duckduckgo_debug_parser.html', 'w', encoding='utf-8') as f:
+                f.write(html_content)
+            logger.debug("Saved DuckDuckGo HTML to /tmp/duckduckgo_debug_parser.html for debugging")
+        
+        # Try multiple selectors for DuckDuckGo results
+        selectors = [
+            'a.result__a',  # Main result links
+            '.result a[href]',  # Any links in result containers
+            '.results_links a.result__a',  # Links in results_links containers
+            'div.result a[href]',  # Links in result divs
+        ]
+        
+        for i, selector in enumerate(selectors):
+            links = soup.select(selector)
+            logger.debug(f"Selector {i+1} '{selector}' found {len(links)} links")
+            
+            for link in links:
+                href = link.get('href', '')
+                logger.debug(f"Processing href: {href[:100]}...")
                 
+                # Handle DuckDuckGo redirect URLs
+                actual_url = self._extract_actual_url(href)
+                if actual_url and self._is_valid_url(actual_url):
+                    urls.append(actual_url)
+                    logger.debug(f"Added valid URL: {actual_url}")
+                
+                if len(urls) >= result_count:
+                    break
+            
             if len(urls) >= result_count:
                 break
         
-        return urls[:result_count]
+        logger.info(f"DuckDuckGo parser found {len(urls)} URLs before deduplication")
+        
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_urls = []
+        for url in urls:
+            if url not in seen:
+                seen.add(url)
+                unique_urls.append(url)
+        
+        logger.info(f"DuckDuckGo parser returning {len(unique_urls)} unique URLs")
+        return unique_urls[:result_count]
+    
+    def _extract_actual_url(self, href: str) -> str:
+        """Extract the actual URL from DuckDuckGo's redirect URL."""
+        if not href:
+            return None
+            
+        # Handle DuckDuckGo redirect URLs like:
+        # //duckduckgo.com/l/?uddg=https%3A%2F%2Fen.wikipedia.org%2Fwiki%2FDog&rut=...
+        if 'duckduckgo.com/l/' in href and 'uddg=' in href:
+            try:
+                # Parse the URL to get query parameters
+                if href.startswith('//'):
+                    href = 'https:' + href  # Add protocol for proper parsing
+                parsed = urlparse(href)
+                query_params = parse_qs(parsed.query)
+                
+                # Get the 'uddg' parameter which contains the URL-encoded actual URL
+                if 'uddg' in query_params and query_params['uddg']:
+                    encoded_url = query_params['uddg'][0]
+                    try:
+                        actual_url = unquote(encoded_url)
+                        logger.debug(f"Decoded DuckDuckGo redirect URL: {href[:50]}... -> {actual_url}")
+                        return actual_url
+                    except Exception as e:
+                        logger.debug(f"Failed to decode DuckDuckGo URL: {e}")
+                        
+            except Exception as e:
+                logger.debug(f"Failed to parse DuckDuckGo redirect URL: {e}")
+        
+        # If it's not a redirect URL or we can't decode it, return as-is
+        return href
     
     def _is_valid_url(self, url: str) -> bool:
         """Check if URL is valid HTTP/HTTPS."""
         try:
             parsed = urlparse(url)
-            return parsed.scheme in ('http', 'https') and parsed.netloc
+            is_valid = (parsed.scheme in ('http', 'https') and 
+                       parsed.netloc and 
+                       not parsed.netloc.endswith('.duckduckgo.com'))
+            logger.debug(f"URL validation for {url}: {is_valid}")
+            return is_valid
         except Exception:
             return False
 
@@ -204,7 +364,7 @@ class SearchEngineService:
     
     async def fetch_seed_urls(self, search_engine_seeds: List[SearchEngineSeed]) -> List[str]:
         """
-        Fetch seed URLs from multiple search engine seeds.
+        Fetch seed URLs from multiple search engine seeds using Playwright.
         
         Args:
             search_engine_seeds: List of search engine seed specifications
@@ -214,37 +374,156 @@ class SearchEngineService:
         """
         all_urls: Set[str] = set()
         
-        connector = None
-        if self.settings.proxy_server:
-            connector = aiohttp.TCPConnector()
+        tasks = []
+        for seed in search_engine_seeds:
+            task = self._fetch_from_single_engine_playwright(seed)
+            tasks.append(task)
         
-        async with aiohttp.ClientSession(
-            timeout=aiohttp.ClientTimeout(total=self.settings.request_timeout),
-            headers={'User-Agent': self.settings.user_agent},
-            connector=connector
-        ) as session:
+        # Execute all search engine requests concurrently
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        for result in results:
+            if isinstance(result, Exception):
+                logger.error(f"Search engine request failed: {result}")
+                continue
             
-            tasks = []
-            for seed in search_engine_seeds:
-                task = self._fetch_from_single_engine(session, seed)
-                tasks.append(task)
+            if isinstance(result, list):
+                all_urls.update(result)
             
-            # Execute all search engine requests concurrently
-            results = await asyncio.gather(*tasks, return_exceptions=True)
-            
-            for result in results:
-                if isinstance(result, Exception):
-                    logger.error(f"Search engine request failed: {result}")
-                    continue
-                
-                if isinstance(result, list):
-                    all_urls.update(result)
-                
-                # Rate limiting between requests
-                await asyncio.sleep(self.settings.rate_limit_delay)
+            # Rate limiting between requests
+            await asyncio.sleep(self.settings.rate_limit_delay)
         
         return list(all_urls)
     
+    async def _fetch_from_single_engine_playwright(self, seed: SearchEngineSeed) -> List[str]:
+        """
+        Fetch URLs from a single search engine using Playwright.
+        
+        Args:
+            seed: Search engine seed specification
+            
+        Returns:
+            List of URLs from the search engine
+        """
+        base_url = self.base_urls[seed.search_engine]
+        parser = self.parsers[seed.search_engine]
+        
+        # Build search URL with query parameters
+        if seed.search_engine == SearchEngineEnum.GOOGLE:
+            search_url = f"{base_url}?q={seed.query}&num={min(seed.result_count, 100)}&hl=en&safe=off"
+        elif seed.search_engine == SearchEngineEnum.BING:
+            search_url = f"{base_url}?q={seed.query}&count={min(seed.result_count, 50)}"
+        elif seed.search_engine == SearchEngineEnum.DUCKDUCKGO:
+            search_url = f"{base_url}?q={seed.query}"
+        else:
+            raise ValueError(f"Unsupported search engine: {seed.search_engine}")
+        
+        logger.info(f"Fetching from {seed.search_engine} using Playwright: {search_url}")
+        
+        async with async_playwright() as playwright:
+            browser = await playwright.chromium.launch(
+                headless=True,
+                args=[
+                    '--no-sandbox',
+                    '--disable-dev-shm-usage',
+                    '--disable-blink-features=AutomationControlled'
+                ]
+            )
+            
+            try:
+                context = await browser.new_context(
+                    user_agent='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    viewport={'width': 1366, 'height': 768}
+                )
+                
+                page = await context.new_page()
+                
+                # Navigate to the search URL
+                response = await page.goto(search_url, wait_until='domcontentloaded', timeout=30000)
+                
+                logger.debug(f"Response status: {response.status}")
+                
+                if response.status == 200:
+                    # Wait a bit for any JavaScript to render
+                    await page.wait_for_timeout(3000)
+                    
+                    # Get the HTML content
+                    html_content = await page.content()
+                    logger.debug(f"Received HTML content via Playwright, length: {len(html_content)}")
+                    
+                    urls = parser.parse_results(html_content, seed.result_count)
+                    logger.info(f"Fetched {len(urls)} URLs from {seed.search_engine} for query: {seed.query}")
+                    return urls
+                else:
+                    logger.warning(f"Search engine {seed.search_engine} returned status {response.status}")
+                    
+            except Exception as e:
+                logger.error(f"Playwright request failed for {seed.search_engine}: {e}")
+                
+            finally:
+                await browser.close()
+        
+        # Fallback to aiohttp for DuckDuckGo if Playwright failed
+        if seed.search_engine == SearchEngineEnum.DUCKDUCKGO:
+            logger.info(f"Falling back to aiohttp for {seed.search_engine}")
+            return await self._fetch_from_single_engine_aiohttp(seed)
+        
+        logger.error(f"Failed to fetch from {seed.search_engine} using Playwright for query: {seed.query}")
+        return []
+
+    async def _fetch_from_single_engine_aiohttp(self, seed: SearchEngineSeed) -> List[str]:
+        """
+        Fetch URLs from a single search engine using aiohttp.
+        
+        Args:
+            seed: Search engine seed specification
+            
+        Returns:
+            List of URLs from the search engine
+        """
+        base_url = self.base_urls[seed.search_engine]
+        parser = self.parsers[seed.search_engine]
+        
+        # Build search URL with query parameters
+        if seed.search_engine == SearchEngineEnum.DUCKDUCKGO:
+            search_url = f"{base_url}?q={seed.query}"
+        else:
+            raise ValueError(f"aiohttp fallback not implemented for: {seed.search_engine}")
+        
+        logger.info(f"Fetching from {seed.search_engine} using aiohttp: {search_url}")
+        
+        headers = {
+            'User-Agent': self.settings.user_agent,
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+        }
+        
+        timeout = aiohttp.ClientTimeout(total=self.settings.request_timeout)
+        
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            try:
+                async with session.get(search_url, headers=headers) as response:
+                    logger.debug(f"Response status: {response.status}")
+                    
+                    if response.status == 200:
+                        html_content = await response.text()
+                        logger.debug(f"Received HTML content via aiohttp, length: {len(html_content)}")
+                        
+                        urls = parser.parse_results(html_content, seed.result_count)
+                        logger.info(f"Fetched {len(urls)} URLs from {seed.search_engine} for query: {seed.query}")
+                        return urls
+                    else:
+                        logger.warning(f"Search engine {seed.search_engine} returned status {response.status}")
+                        
+            except Exception as e:
+                logger.error(f"aiohttp request failed for {seed.search_engine}: {e}")
+        
+        logger.error(f"Failed to fetch from {seed.search_engine} using aiohttp for query: {seed.query}")
+        return []
+
     async def _fetch_from_single_engine(self, session: aiohttp.ClientSession, seed: SearchEngineSeed) -> List[str]:
         """
         Fetch URLs from a single search engine.
