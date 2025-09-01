@@ -214,9 +214,14 @@ class SearchEngineService:
         """
         all_urls: Set[str] = set()
         
+        connector = None
+        if self.settings.proxy_server:
+            connector = aiohttp.TCPConnector()
+        
         async with aiohttp.ClientSession(
             timeout=aiohttp.ClientTimeout(total=self.settings.request_timeout),
-            headers={'User-Agent': self.settings.user_agent}
+            headers={'User-Agent': self.settings.user_agent},
+            connector=connector
         ) as session:
             
             tasks = []
@@ -283,7 +288,14 @@ class SearchEngineService:
         for attempt in range(self.settings.max_retries):
             try:
                 logger.debug(f"Attempt {attempt + 1} for {seed.search_engine}")
-                async with session.get(search_url, headers=headers) as response:
+                
+                # Configure proxy if specified
+                request_kwargs = {'headers': headers}
+                if self.settings.proxy_server:
+                    request_kwargs['proxy'] = self.settings.proxy_server
+                    logger.debug(f"Using proxy: {self.settings.proxy_server}")
+                
+                async with session.get(search_url, **request_kwargs) as response:
                     logger.debug(f"Response status: {response.status}")
                     
                     if response.status == 200:

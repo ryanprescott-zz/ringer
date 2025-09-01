@@ -106,6 +106,7 @@ class SearchEngineSettings(BaseSettings):
     request_timeout: int = 30
     rate_limit_delay: float = 2.0
     max_retries: int = 3
+    proxy_server: str|None = None
     
     user_agent: str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
     
