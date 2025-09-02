@@ -86,74 +86,108 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-start">
-        <div className="flex-1 space-y-4">
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        <div>
+          <label style={{ 
+            display: 'block', 
+            fontSize: '0.875rem', 
+            fontWeight: '600', 
+            color: 'var(--text-primary)', 
+            marginBottom: '0.5rem' 
+          }}>
+            Name
+          </label>
+          <input
+            type="text"
+            value={crawlSpec?.name || ''}
+            onChange={(e) => handleNameChange(e.target.value)}
+            disabled={!isNewCrawl}
+            className="input-field"
+            style={{ 
+              width: '100%',
+              padding: '0.75rem 1rem',
+              borderRadius: '0.5rem'
+            }}
+            placeholder="Enter crawl name..."
+          />
+        </div>
+
+        <div>
+          <label style={{ 
+            display: 'block', 
+            fontSize: '0.875rem', 
+            fontWeight: '600', 
+            color: 'var(--text-primary)', 
+            marginBottom: '0.5rem' 
+          }}>
+            Description
+          </label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            disabled={!isNewCrawl}
+            rows={6}
+            className="input-field"
+            style={{ 
+              width: '100%',
+              padding: '0.75rem 1rem',
+              borderRadius: '0.5rem',
+              resize: 'vertical'
+            }}
+            placeholder="Enter crawl description..."
+          />
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '1rem' }}>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Name
+            <label style={{ 
+              display: 'block', 
+              fontSize: '0.875rem', 
+              fontWeight: '600', 
+              color: 'var(--text-primary)', 
+              marginBottom: '0.5rem' 
+            }}>
+              Worker Count
             </label>
             <input
-              type="text"
-              value={crawlSpec?.name || ''}
-              onChange={(e) => handleNameChange(e.target.value)}
+              type="number"
+              value={crawlSpec?.worker_count || 1}
+              onChange={(e) => handleWorkerCountChange(parseInt(e.target.value) || 1)}
               disabled={!isNewCrawl}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-ringer-blue disabled:bg-gray-100"
-              placeholder="Enter crawl name..."
+              min="1"
+              max="16"
+              className="input-field"
+              style={{ 
+                width: '8rem',
+                padding: '0.75rem 1rem',
+                borderRadius: '0.5rem'
+              }}
             />
           </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Description
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              disabled={!isNewCrawl}
-              rows={6}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-ringer-blue disabled:bg-gray-100"
-              placeholder="Enter crawl description..."
-            />
-          </div>
-
-          <div className="flex items-end space-x-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Worker Count
-              </label>
-              <input
-                type="number"
-                value={crawlSpec?.worker_count || 1}
-                onChange={(e) => handleWorkerCountChange(parseInt(e.target.value) || 1)}
-                disabled={!isNewCrawl}
-                min="1"
-                max="16"
-                className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-ringer-blue disabled:bg-gray-100"
-              />
-            </div>
-            
-            {isNewCrawl && (
-              <button
-                onClick={handleSubmitCrawl}
-                disabled={loading}
-                className="px-4 py-2 bg-ringer-blue text-white rounded hover:bg-ringer-dark-blue disabled:opacity-50"
-              >
-                {loading ? 'Creating...' : 'Create Crawl'}
-              </button>
-            )}
-            
-            {selectedCrawl && (
-              <button
-                onClick={handleExportParams}
-                className="px-4 py-2 bg-ringer-blue text-white rounded hover:bg-ringer-dark-blue"
-              >
-                Export Params
-              </button>
-            )}
-          </div>
+          
+          {isNewCrawl && (
+            <button
+              onClick={handleSubmitCrawl}
+              disabled={loading}
+              className="btn-primary"
+              style={{ marginLeft: 'auto' }}
+            >
+              {loading ? 'Creating...' : 'Create Crawl'}
+            </button>
+          )}
         </div>
       </div>
+      
+      {selectedCrawl && (
+        <button
+          onClick={handleExportParams}
+          className="btn-primary"
+          style={{ marginLeft: '2rem' }}
+        >
+          Export Params
+        </button>
+      )}
     </div>
   );
 };

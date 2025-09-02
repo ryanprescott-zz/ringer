@@ -1,19 +1,20 @@
-import React, { useState } from 'react';
+import React from 'react';
+
 import { CrawlSpec } from '../types';
-import { SearchEngineModal } from './SearchEngineModal';
 
 interface SourcesTabProps {
   crawlSpec: CrawlSpec | null;
   isNewCrawl: boolean;
   onCrawlSpecChange: (spec: CrawlSpec) => void;
+  onOpenSearchEngine: () => void;
 }
 
 export const SourcesTab: React.FC<SourcesTabProps> = ({
   crawlSpec,
   isNewCrawl,
   onCrawlSpecChange,
+  onOpenSearchEngine,
 }) => {
-  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
 
   const handleAddUrl = () => {
     if (crawlSpec) {
@@ -45,36 +46,38 @@ export const SourcesTab: React.FC<SourcesTabProps> = ({
     }
   };
 
-  const handleAddSearchUrls = (urls: string[]) => {
-    if (crawlSpec) {
-      const uniqueUrls = urls.filter(url => !crawlSpec.seeds.includes(url));
-      onCrawlSpecChange({
-        ...crawlSpec,
-        seeds: [...crawlSpec.seeds, ...uniqueUrls],
-      });
-    }
-  };
 
   const seeds = crawlSpec?.seeds || [];
 
   return (
-    <div className="space-y-6">
+    <div>
       <div>
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-medium">Source URLs</h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <h3 style={{ 
+            fontSize: '1.125rem', 
+            fontWeight: '600', 
+            color: 'var(--text-primary)',
+            margin: 0
+          }}>
+            Source URLs
+          </h3>
           {isNewCrawl && (
             <button
-              onClick={setIsSearchModalOpen.bind(null, true)}
-              className="px-4 py-2 bg-ringer-blue text-white rounded hover:bg-ringer-dark-blue"
+              onClick={onOpenSearchEngine}
+              className="btn-primary"
             >
               Search Engine
             </button>
           )}
         </div>
 
-        <div className="border border-gray-300">
+        <div className="table-container" style={{ border: '1px solid var(--border-primary)' }}>
           {seeds.length === 0 && !isNewCrawl && (
-            <div className="p-4 text-gray-500 text-center">
+            <div style={{ 
+              padding: '2rem', 
+              textAlign: 'center',
+              color: 'var(--text-secondary)'
+            }}>
               No source URLs configured
             </div>
           )}
@@ -82,20 +85,37 @@ export const SourcesTab: React.FC<SourcesTabProps> = ({
           {seeds.map((url, index) => (
             <div
               key={index}
-              className="flex items-center p-2 border-b border-gray-300 last:border-b-0"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                padding: '0.75rem',
+                borderBottom: index < seeds.length - 1 ? '1px solid var(--border-secondary)' : 'none'
+              }}
             >
               <input
                 type="url"
                 value={url}
                 onChange={(e) => handleUrlChange(index, e.target.value)}
                 disabled={!isNewCrawl}
-                className="flex-1 px-2 py-1 border-0 focus:outline-none disabled:bg-gray-100"
+                className="input-field"
+                style={{ 
+                  flex: 1,
+                  marginRight: '0.5rem',
+                  border: 'none',
+                  background: 'transparent',
+                  padding: '0.5rem'
+                }}
                 placeholder="Enter URL..."
               />
               {isNewCrawl && (
                 <button
                   onClick={() => handleRemoveUrl(index)}
-                  className="ml-2 w-6 h-6 bg-red-600 text-white rounded-full flex items-center justify-center hover:bg-red-700 text-xs"
+                  className="btn-danger btn-circle"
+                  style={{ 
+                    width: '1.5rem',
+                    height: '1.5rem',
+                    fontSize: '0.875rem'
+                  }}
                   title="Remove URL"
                 >
                   ⊖
@@ -105,10 +125,21 @@ export const SourcesTab: React.FC<SourcesTabProps> = ({
           ))}
           
           {isNewCrawl && (
-            <div className="p-2 border-t border-gray-300 flex justify-end">
+            <div style={{ 
+              padding: '0.75rem',
+              borderTop: seeds.length > 0 ? '1px solid var(--border-secondary)' : 'none',
+              display: 'flex',
+              justifyContent: 'flex-end'
+            }}>
               <button
                 onClick={handleAddUrl}
-                className="w-6 h-6 bg-ringer-blue text-white rounded-sm flex items-center justify-center hover:bg-ringer-dark-blue text-sm font-bold"
+                className="btn-circle btn-primary"
+                style={{ 
+                  width: '1.5rem',
+                  height: '1.5rem',
+                  fontSize: '0.875rem',
+                  fontWeight: 'bold'
+                }}
                 title="Add URL"
               >
                 +
@@ -117,12 +148,6 @@ export const SourcesTab: React.FC<SourcesTabProps> = ({
           )}
         </div>
       </div>
-
-      <SearchEngineModal
-        isOpen={isSearchModalOpen}
-        onClose={() => setIsSearchModalOpen(false)}
-        onAddUrls={handleAddSearchUrls}
-      />
     </div>
   );
 };

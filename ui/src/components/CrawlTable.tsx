@@ -84,52 +84,54 @@ export const CrawlTable: React.FC<CrawlTableProps> = ({
   };
 
   const getSortIcon = (key: string) => {
-    if (sortConfig.key !== key) return '↕️';
-    return sortConfig.direction === 'asc' ? '↑' : '↓';
+    const isActive = sortConfig.key === key;
+    const isAsc = sortConfig.direction === 'asc';
+    
+    return (
+      <span className={`sort-arrows ${isActive ? 'active' : ''}`}>
+        <span className={`sort-arrow ${isActive && isAsc ? 'active' : ''}`}>▲</span>
+        <span className={`sort-arrow ${isActive && !isAsc ? 'active' : ''}`}>▼</span>
+      </span>
+    );
   };
 
   return (
     <>
-      <div className="bg-white border border-gray-300 overflow-hidden">
-        <table className="min-w-full">
-          <thead className="bg-table-header">
+      <div className="table-container">
+        <table className="table">
+          <thead className="table-header">
             <tr>
               <th
-                className="px-4 py-2 text-left text-sm font-medium text-black cursor-pointer hover:bg-gray-400"
                 onClick={() => handleSort('name')}
               >
                 Name {getSortIcon('name')}
               </th>
               <th
-                className="px-4 py-2 text-left text-sm font-medium text-black cursor-pointer hover:bg-gray-400"
                 onClick={() => handleSort('status')}
               >
                 Status {getSortIcon('status')}
               </th>
               <th
-                className="px-4 py-2 text-left text-sm font-medium text-black cursor-pointer hover:bg-gray-400"
                 onClick={() => handleSort('results')}
               >
                 Results Summary {getSortIcon('results')}
               </th>
               <th
-                className="px-4 py-2 text-left text-sm font-medium text-black cursor-pointer hover:bg-gray-400"
                 onClick={() => handleSort('created')}
               >
                 Created {getSortIcon('created')}
               </th>
               <th
-                className="px-4 py-2 text-left text-sm font-medium text-black cursor-pointer hover:bg-gray-400"
                 onClick={() => handleSort('lastUpdate')}
               >
                 Last Status Change {getSortIcon('lastUpdate')}
               </th>
-              <th className="px-4 py-2 text-left text-sm font-medium text-black">
+              <th>
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody>
             {sortedCrawls.map((crawl) => {
               const isSelected = selectedCrawl?.crawl_status.crawl_id === crawl.crawl_status.crawl_id;
               const isLoading = actionLoading === crawl.crawl_status.crawl_id;
@@ -138,32 +140,33 @@ export const CrawlTable: React.FC<CrawlTableProps> = ({
               return (
                 <tr
                   key={crawl.crawl_status.crawl_id}
-                  className={`cursor-pointer hover:bg-gray-50 border-b border-gray-300 ${isSelected ? 'bg-table-selected' : ''}`}
+                  className={`table-row ${isSelected ? 'selected' : ''}`}
                   onClick={() => onSelectCrawl(crawl)}
                 >
-                  <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-black">
+                  <td style={{ fontWeight: 600 }}>
                     {crawl.crawl_spec.name}
                   </td>
-                  <td className="px-4 py-2 whitespace-nowrap text-sm text-black">
-                    <span className={`font-medium ${
-                      crawl.crawl_status.current_state === 'RUNNING' ? 'text-green-600' :
-                      crawl.crawl_status.current_state === 'STOPPED' ? 'text-red-600' :
-                      'text-black'
-                    }`}>
+                  <td>
+                    <span style={{
+                      fontWeight: 500,
+                      color: crawl.crawl_status.current_state === 'RUNNING' ? '#059669' :
+                             crawl.crawl_status.current_state === 'STOPPED' ? '#dc2626' :
+                             'inherit'
+                    }}>
                       {crawl.crawl_status.current_state}
                     </span>
                   </td>
-                  <td className="px-4 py-2 whitespace-nowrap text-sm text-black">
+                  <td>
                     {getResultsSummary(crawl.crawl_status)}
                   </td>
-                  <td className="px-4 py-2 whitespace-nowrap text-sm text-black">
+                  <td>
                     {formatDate(crawl.crawl_status.state_history[0]?.timestamp || '')}
                   </td>
-                  <td className="px-4 py-2 whitespace-nowrap text-sm text-black">
+                  <td>
                     {formatDate(lastState?.timestamp || '')}
                   </td>
-                  <td className="px-4 py-2 whitespace-nowrap text-sm text-black">
-                    <div className="flex space-x-2">
+                  <td>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
                       {crawl.crawl_status.current_state !== 'RUNNING' && (
                         <button
                           onClick={(e) => {
@@ -171,7 +174,7 @@ export const CrawlTable: React.FC<CrawlTableProps> = ({
                             handleStartCrawl(crawl);
                           }}
                           disabled={isLoading}
-                          className="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center hover:bg-green-700 disabled:opacity-50"
+                          className="btn-success btn-circle btn-sm"
                           title="Start crawl"
                         >
                           ▶
@@ -184,7 +187,7 @@ export const CrawlTable: React.FC<CrawlTableProps> = ({
                             handleStopCrawl(crawl);
                           }}
                           disabled={isLoading}
-                          className="w-8 h-8 bg-red-600 text-white rounded-full flex items-center justify-center hover:bg-red-700 disabled:opacity-50"
+                          className="btn-danger btn-circle btn-sm"
                           title="Stop crawl"
                         >
                           ⏸
@@ -196,7 +199,7 @@ export const CrawlTable: React.FC<CrawlTableProps> = ({
                           setDeleteDialog({ isOpen: true, crawl });
                         }}
                         disabled={isLoading}
-                        className="w-8 h-8 bg-red-600 text-white rounded-full flex items-center justify-center hover:bg-red-700 disabled:opacity-50"
+                        className="btn-danger btn-circle btn-sm"
                         title="Delete crawl"
                       >
                         ⊖

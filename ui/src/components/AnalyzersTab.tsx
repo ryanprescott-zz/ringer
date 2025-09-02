@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CrawlSpec, AnalyzerSpec, WeightedKeyword, WeightedRegex, NewTerm, OutputField } from '../types';
+import { CrawlSpec, AnalyzerSpec, WeightedKeyword, WeightedRegex, NewTerm } from '../types';
 
 interface AnalyzersTabProps {
   crawlSpec: CrawlSpec | null;
@@ -18,10 +18,6 @@ export const AnalyzersTab: React.FC<AnalyzersTabProps> = ({
     term: '',
     matchCase: false,
     weight: 1.0,
-  });
-  const [newOutputField, setNewOutputField] = useState<OutputField>({
-    name: '',
-    type: 'string',
   });
 
   const getOrCreateAnalyzer = (name: string): AnalyzerSpec => {
@@ -131,51 +127,36 @@ export const AnalyzersTab: React.FC<AnalyzersTabProps> = ({
     updateAnalyzer({ ...analyzer, composite_weight: weight });
   };
 
-  const handleAddOutputField = () => {
-    if (!newOutputField.name.trim()) return;
-
-    const analyzer = getOrCreateAnalyzer('DhLlmScoreAnalyzer');
-    const newFieldMap = { ...(analyzer.field_map || {}) };
-    newFieldMap[newOutputField.name] = newOutputField.type;
-
-    updateAnalyzer({
-      ...analyzer,
-      field_map: newFieldMap,
-    });
-
-    setNewOutputField({ name: '', type: 'string' });
-  };
-
-  const handleRemoveOutputField = (fieldName: string) => {
-    const analyzer = getOrCreateAnalyzer('DhLlmScoreAnalyzer');
-    const newFieldMap = { ...(analyzer.field_map || {}) };
-    delete newFieldMap[fieldName];
-
-    updateAnalyzer({
-      ...analyzer,
-      field_map: newFieldMap,
-    });
-  };
 
   const currentAnalyzer = getOrCreateAnalyzer(
     selectedAnalyzer === 'Term Matching' ? 'KeywordScoreAnalyzer' : 'DhLlmScoreAnalyzer'
   );
 
   return (
-    <div className="grid grid-cols-4 gap-6">
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 3fr', gap: '2rem' }}>
       {/* Analyzer Selection */}
-      <div className="col-span-1">
-        <h3 className="text-lg font-medium mb-4">Analyzer</h3>
-        <div className="space-y-2">
+      <div>
+        <h3 style={{ 
+          fontSize: '1.125rem', 
+          fontWeight: '600', 
+          color: 'var(--text-primary)',
+          marginBottom: '1rem',
+          margin: 0
+        }}>
+          Analyzer
+        </h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           {['Term Matching', 'DH LLM Prompt'].map((analyzer) => (
             <button
               key={analyzer}
               onClick={() => setSelectedAnalyzer(analyzer)}
-              className={`w-full text-left px-3 py-2 rounded ${
-                selectedAnalyzer === analyzer
-                  ? 'bg-ringer-blue text-white'
-                  : 'bg-gray-100 hover:bg-gray-200'
-              }`}
+              className={selectedAnalyzer === analyzer ? 'btn-primary' : 'btn-secondary'}
+              style={{
+                width: '100%',
+                textAlign: 'left',
+                padding: '0.75rem 1rem',
+                borderRadius: '0.375rem'
+              }}
             >
               {analyzer}
             </button>
@@ -184,13 +165,24 @@ export const AnalyzersTab: React.FC<AnalyzersTabProps> = ({
       </div>
 
       {/* Analyzer Configuration */}
-      <div className="col-span-3">
+      <div>
         {selectedAnalyzer === 'Term Matching' && (
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <h4 className="text-lg font-medium">Terms</h4>
-              <div className="flex items-center space-x-3">
-                <label className="text-lg font-medium text-gray-700">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+              <h4 style={{ 
+                fontSize: '1.125rem', 
+                fontWeight: '600', 
+                color: 'var(--text-primary)',
+                margin: 0
+              }}>
+                Terms
+              </h4>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <label style={{ 
+                  fontSize: '1.125rem', 
+                  fontWeight: '600', 
+                  color: 'var(--text-primary)'
+                }}>
                   Composite Weight
                 </label>
                 <input
@@ -202,39 +194,41 @@ export const AnalyzersTab: React.FC<AnalyzersTabProps> = ({
                   )}
                   disabled={!isNewCrawl}
                   step="0.1"
-                  className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-ringer-blue disabled:bg-gray-100"
+                  className="input-field"
+                  style={{ width: '8rem' }}
                 />
               </div>
             </div>
             
             {/* Terms Table */}
-            <div className="border border-gray-300 mb-4">
-              <table className="w-full">
-                <thead className="bg-table-header">
+            <div className="table-container" style={{ marginBottom: '1rem' }}>
+              <table className="table">
+                <thead className="table-header">
                   <tr>
-                    <th className="px-4 py-2 text-left text-sm font-medium text-black border-r border-gray-300">Type</th>
-                    <th className="px-4 py-2 text-left text-sm font-medium text-black border-r border-gray-300">Term</th>
-                    <th className="px-4 py-2 text-left text-sm font-medium text-black border-r border-gray-300">Match Case</th>
-                    <th className="px-4 py-2 text-left text-sm font-medium text-black border-r border-gray-300">Weight</th>
+                    <th className="table-header" style={{ borderRight: '1px solid var(--border-primary)' }}>Type</th>
+                    <th className="table-header" style={{ borderRight: '1px solid var(--border-primary)' }}>Term</th>
+                    <th className="table-header" style={{ borderRight: '1px solid var(--border-primary)' }}>Match Case</th>
+                    <th className="table-header" style={{ borderRight: '1px solid var(--border-primary)' }}>Weight</th>
                     {isNewCrawl && (
-                      <th className="px-4 py-2 text-left text-sm font-medium text-black">Actions</th>
+                      <th className="table-header">Actions</th>
                     )}
                   </tr>
                 </thead>
                 <tbody>
                   {(currentAnalyzer.keywords || []).map((keyword, index) => (
-                    <tr key={`keyword-${index}`} className="border-t border-gray-300">
-                      <td className="px-4 py-2 text-sm border-r border-gray-300">Keyword</td>
-                      <td className="px-4 py-2 text-sm border-r border-gray-300">{keyword.keyword}</td>
-                      <td className="px-4 py-2 text-sm text-center border-r border-gray-300">
-                        <input type="checkbox" disabled className="rounded" />
+                    <tr key={`keyword-${index}`}>
+                      <td style={{ borderRight: '1px solid var(--border-secondary)', padding: '0.75rem 1rem', fontSize: '0.875rem' }}>Keyword</td>
+                      <td style={{ borderRight: '1px solid var(--border-secondary)', padding: '0.75rem 1rem', fontSize: '0.875rem' }}>{keyword.keyword}</td>
+                      <td style={{ borderRight: '1px solid var(--border-secondary)', padding: '0.75rem 1rem', fontSize: '0.875rem', textAlign: 'center' }}>
+                        <input type="checkbox" disabled style={{ borderRadius: '0.25rem' }} />
                       </td>
-                      <td className="px-4 py-2 text-sm border-r border-gray-300">{keyword.weight}</td>
+                      <td style={{ borderRight: '1px solid var(--border-secondary)', padding: '0.75rem 1rem', fontSize: '0.875rem' }}>{keyword.weight}</td>
                       {isNewCrawl && (
-                        <td className="px-4 py-2 text-center">
+                        <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
                           <button
                             onClick={() => handleRemoveTerm('keyword', index)}
-                            className="w-6 h-6 bg-red-600 text-white rounded-full flex items-center justify-center hover:bg-red-700 text-xs"
+                            className="btn-circle btn-danger"
+                            style={{ width: '1.5rem', height: '1.5rem', fontSize: '0.75rem' }}
                           >
                             ⊖
                           </button>
@@ -243,23 +237,24 @@ export const AnalyzersTab: React.FC<AnalyzersTabProps> = ({
                     </tr>
                   ))}
                   {(currentAnalyzer.regexes || []).map((regex, index) => (
-                    <tr key={`regex-${index}`} className="border-t border-gray-300">
-                      <td className="px-4 py-2 text-sm border-r border-gray-300">Regex</td>
-                      <td className="px-4 py-2 text-sm border-r border-gray-300">{regex.regex}</td>
-                      <td className="px-4 py-2 text-sm text-center border-r border-gray-300">
+                    <tr key={`regex-${index}`}>
+                      <td style={{ borderRight: '1px solid var(--border-secondary)', padding: '0.75rem 1rem', fontSize: '0.875rem' }}>Regex</td>
+                      <td style={{ borderRight: '1px solid var(--border-secondary)', padding: '0.75rem 1rem', fontSize: '0.875rem' }}>{regex.regex}</td>
+                      <td style={{ borderRight: '1px solid var(--border-secondary)', padding: '0.75rem 1rem', fontSize: '0.875rem', textAlign: 'center' }}>
                         <input
                           type="checkbox"
                           checked={regex.flags !== 2}
                           disabled
-                          className="rounded"
+                          style={{ borderRadius: '0.25rem' }}
                         />
                       </td>
-                      <td className="px-4 py-2 text-sm border-r border-gray-300">{regex.weight}</td>
+                      <td style={{ borderRight: '1px solid var(--border-secondary)', padding: '0.75rem 1rem', fontSize: '0.875rem' }}>{regex.weight}</td>
                       {isNewCrawl && (
-                        <td className="px-4 py-2 text-center">
+                        <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
                           <button
                             onClick={() => handleRemoveTerm('regex', index)}
-                            className="w-6 h-6 bg-red-600 text-white rounded-full flex items-center justify-center hover:bg-red-700 text-xs"
+                            className="btn-circle btn-danger"
+                            style={{ width: '1.5rem', height: '1.5rem', fontSize: '0.75rem' }}
                           >
                             ⊖
                           </button>
@@ -273,51 +268,54 @@ export const AnalyzersTab: React.FC<AnalyzersTabProps> = ({
 
             {/* Add Term Controls */}
             {isNewCrawl && (
-              <div className="border border-gray-300 bg-gray-50">
-                <table className="w-full">
+              <div className="table-container" style={{ background: 'var(--bg-secondary)' }}>
+                <table className="table">
                   <tbody>
-                    <tr className="border-t border-gray-300">
-                      <td className="px-4 py-2 border-r border-gray-300">
+                    <tr>
+                      <td style={{ borderRight: '1px solid var(--border-primary)', padding: '0.75rem 1rem' }}>
                         <select
                           value={newTerm.type}
                           onChange={(e) => setNewTerm({ ...newTerm, type: e.target.value as 'Keyword' | 'Regex' })}
-                          className="w-full px-2 py-1 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-ringer-blue"
+                          className="input-field"
+                          style={{ width: '100%', padding: '0.5rem' }}
                         >
                           <option value="Keyword">Keyword</option>
                           <option value="Regex">Regex</option>
                         </select>
                       </td>
-                      <td className="px-4 py-2 border-r border-gray-300">
+                      <td style={{ borderRight: '1px solid var(--border-primary)', padding: '0.75rem 1rem' }}>
                         <input
                           type="text"
                           value={newTerm.term}
                           onChange={(e) => setNewTerm({ ...newTerm, term: e.target.value })}
                           placeholder="Enter term..."
-                          className="w-full px-2 py-1 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-ringer-blue"
+                          className="input-field"
+                          style={{ width: '100%', padding: '0.5rem' }}
                         />
                       </td>
-                      <td className="px-4 py-2 text-center border-r border-gray-300">
+                      <td style={{ borderRight: '1px solid var(--border-primary)', padding: '0.75rem 1rem', textAlign: 'center' }}>
                         <input
                           type="checkbox"
                           checked={newTerm.matchCase}
                           onChange={(e) => setNewTerm({ ...newTerm, matchCase: e.target.checked })}
-                          className="rounded"
+                          style={{ borderRadius: '0.25rem' }}
                         />
                       </td>
-                      <td className="px-4 py-2 border-r border-gray-300">
+                      <td style={{ borderRight: '1px solid var(--border-primary)', padding: '0.75rem 1rem' }}>
                         <input
                           type="number"
                           value={newTerm.weight}
                           onChange={(e) => setNewTerm({ ...newTerm, weight: parseFloat(e.target.value) || 0 })}
                           step="0.1"
-                          className="w-full px-2 py-1 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-ringer-blue"
+                          className="input-field"
+                          style={{ width: '100%', padding: '0.5rem' }}
                         />
                       </td>
-                      <td className="px-4 py-2 text-center">
+                      <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
                         <button
                           onClick={handleAddTerm}
                           disabled={!newTerm.term.trim()}
-                          className="px-3 py-1 bg-ringer-blue text-white hover:bg-ringer-dark-blue disabled:opacity-50"
+                          className="btn-primary"
                         >
                           Add
                         </button>
@@ -331,12 +329,23 @@ export const AnalyzersTab: React.FC<AnalyzersTabProps> = ({
         )}
 
         {selectedAnalyzer === 'DH LLM Prompt' && (
-          <div className="space-y-6">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             {/* Composite Weight */}
-            <div className="flex items-center justify-between">
-              <h4 className="text-lg font-medium">Prompt</h4>
-              <div className="flex items-center space-x-3">
-                <label className="text-lg font-medium text-gray-700">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h4 style={{ 
+                fontSize: '1.125rem', 
+                fontWeight: '600', 
+                color: 'var(--text-primary)',
+                margin: 0
+              }}>
+                Prompt
+              </h4>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <label style={{ 
+                  fontSize: '1.125rem', 
+                  fontWeight: '600', 
+                  color: 'var(--text-primary)'
+                }}>
                   Composite Weight
                 </label>
                 <input
@@ -348,7 +357,8 @@ export const AnalyzersTab: React.FC<AnalyzersTabProps> = ({
                   )}
                   disabled={!isNewCrawl}
                   step="0.1"
-                  className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-ringer-blue disabled:bg-gray-100"
+                  className="input-field"
+                  style={{ width: '8rem' }}
                 />
               </div>
             </div>
@@ -360,88 +370,17 @@ export const AnalyzersTab: React.FC<AnalyzersTabProps> = ({
                 onChange={(e) => handlePromptChange(e.target.value)}
                 disabled={!isNewCrawl}
                 rows={6}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-ringer-blue disabled:bg-gray-100"
+                className="input-field"
+                style={{ 
+                  width: '100%',
+                  padding: '0.75rem 1rem',
+                  borderRadius: '0.5rem',
+                  resize: 'vertical'
+                }}
                 placeholder="Enter LLM prompt..."
               />
             </div>
 
-            {/* Output Format */}
-            <div>
-              <h4 className="text-md font-medium mb-3">Output Format</h4>
-              <div className="border border-gray-300">
-                <table className="w-full">
-                  <thead className="bg-table-header">
-                    <tr>
-                      <th className="px-4 py-2 text-left text-sm font-medium text-black border-r border-gray-300">Name</th>
-                      <th className="px-4 py-2 text-left text-sm font-medium text-black border-r border-gray-300">Type</th>
-                      {isNewCrawl && (
-                        <th className="px-4 py-2 text-left text-sm font-medium text-black">Actions</th>
-                      )}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Object.entries(currentAnalyzer.field_map || {}).map(([name, type]) => (
-                      <tr key={name} className="border-t border-gray-300">
-                        <td className="px-4 py-2 text-sm border-r border-gray-300">{name}</td>
-                        <td className="px-4 py-2 text-sm border-r border-gray-300">{type}</td>
-                        {isNewCrawl && (
-                          <td className="px-4 py-2 text-center">
-                            <button
-                              onClick={() => handleRemoveOutputField(name)}
-                              className="w-6 h-6 bg-red-600 text-white rounded-full flex items-center justify-center hover:bg-red-700 text-xs"
-                            >
-                              ⊖
-                            </button>
-                          </td>
-                        )}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Add Output Field Controls */}
-              {isNewCrawl && (
-                <div className="border-t border-gray-300 bg-gray-50">
-                  <table className="w-full">
-                    <tbody>
-                      <tr>
-                        <td className="px-4 py-2 border-r border-gray-300">
-                          <input
-                            type="text"
-                            value={newOutputField.name}
-                            onChange={(e) => setNewOutputField({ ...newOutputField, name: e.target.value })}
-                            placeholder="Field name..."
-                            className="w-full px-2 py-1 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-ringer-blue"
-                          />
-                        </td>
-                        <td className="px-4 py-2 border-r border-gray-300">
-                          <select
-                            value={newOutputField.type}
-                            onChange={(e) => setNewOutputField({ ...newOutputField, type: e.target.value })}
-                            className="w-full px-2 py-1 border border-gray-300 focus:outline-none focus:ring-1 focus:ring-ringer-blue"
-                          >
-                            <option value="string">string</option>
-                            <option value="float">float</option>
-                            <option value="int">int</option>
-                            <option value="bool">bool</option>
-                          </select>
-                        </td>
-                        <td className="px-4 py-2 text-center">
-                          <button
-                            onClick={handleAddOutputField}
-                            disabled={!newOutputField.name.trim()}
-                            className="w-6 h-6 bg-ringer-blue text-white rounded-sm flex items-center justify-center hover:bg-ringer-dark-blue disabled:opacity-50 text-sm font-bold"
-                          >
-                            +
-                          </button>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
           </div>
         )}
       </div>

@@ -11,14 +11,12 @@ interface DropdownButtonProps {
   children: React.ReactNode;
   onMainClick: () => void;
   items: DropdownItem[];
-  className?: string;
 }
 
 export const DropdownButton: React.FC<DropdownButtonProps> = ({
   children,
   onMainClick,
   items,
-  className = '',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -44,12 +42,13 @@ export const DropdownButton: React.FC<DropdownButtonProps> = ({
   };
 
   return (
-    <div className="relative inline-block" ref={dropdownRef}>
-      <div className="flex">
+    <div style={{ position: 'relative', display: 'inline-block' }} ref={dropdownRef}>
+      <div style={{ display: 'flex' }}>
         {/* Main button */}
         <button
           onClick={onMainClick}
-          className={`px-4 py-2 bg-ringer-blue text-white rounded-l hover:bg-ringer-dark-blue ${className}`}
+          className="btn-primary"
+          style={{ borderRadius: '0.5rem 0 0 0.5rem' }}
         >
           {children}
         </button>
@@ -57,38 +56,55 @@ export const DropdownButton: React.FC<DropdownButtonProps> = ({
         {/* Dropdown toggle */}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="px-2 py-2 bg-ringer-blue text-white rounded-r hover:bg-ringer-dark-blue border-l border-ringer-dark-blue"
+          className="btn-primary"
+          style={{
+            borderRadius: '0 0.5rem 0.5rem 0',
+            borderLeft: '1px solid rgba(255, 255, 255, 0.2)',
+            paddingLeft: '0.75rem',
+            paddingRight: '0.75rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
         >
           <svg 
-            className="w-4 h-4" 
-            fill="none" 
-            stroke="currentColor" 
+            className={`dropdown-icon ${isOpen ? 'open' : ''}`}
             viewBox="0 0 24 24"
           >
-            <path 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-              strokeWidth={2} 
-              d={isOpen ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"} 
-            />
+            <path d="M19 9l-7 7-7-7" />
           </svg>
         </button>
       </div>
 
       {/* Dropdown menu */}
       {isOpen && (
-        <div className="absolute left-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-10">
-          <div className="py-1">
+        <div style={{
+          position: 'absolute',
+          left: 0,
+          top: 'calc(100% + 0.25rem)',
+          minWidth: '12rem',
+          background: 'var(--bg-tertiary)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid var(--border-primary)',
+          borderRadius: '0.75rem',
+          boxShadow: 'var(--shadow-primary)',
+          zIndex: 10
+        }}>
+          <div style={{ padding: '0.5rem' }}>
             {items.map((item) => (
               <button
                 key={item.id}
                 onClick={() => handleItemClick(item)}
                 disabled={item.disabled}
-                className={`w-full text-left px-4 py-2 text-sm ${
-                  item.disabled
-                    ? 'text-gray-400 cursor-not-allowed'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
+                className="btn-secondary"
+                style={{
+                  width: '100%',
+                  textAlign: 'left',
+                  fontSize: '0.875rem',
+                  opacity: item.disabled ? 0.5 : 1,
+                  cursor: item.disabled ? 'not-allowed' : 'pointer',
+                  marginBottom: '0.25rem'
+                }}
               >
                 {item.label}
               </button>

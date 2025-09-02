@@ -34,32 +34,40 @@ export const CloneExistingModal: React.FC<CloneExistingModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-      onClick={handleClose}
-    >
-      <div 
-        className="bg-white rounded-lg p-6 max-w-md w-full mx-4"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-lg font-semibold">Clone Existing</h3>
+    <div className="modal-overlay" onClick={handleClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3 className="modal-title">Clone Existing</h3>
           <button
             onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600"
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--text-tertiary)',
+              fontSize: '1.25rem',
+              cursor: 'pointer',
+              padding: '0.25rem'
+            }}
           >
             ✕
           </button>
         </div>
 
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+        <div className="modal-body">
+          <label style={{ 
+            display: 'block', 
+            fontSize: '0.875rem', 
+            fontWeight: 500, 
+            color: 'var(--text-primary)', 
+            marginBottom: '0.5rem' 
+          }}>
             Select Crawl to Clone
           </label>
           <select
             value={selectedCrawlId}
             onChange={(e) => setSelectedCrawlId(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-ringer-blue"
+            className="input-field"
+            style={{ width: '100%' }}
           >
             <option value="">Choose a crawl...</option>
             {crawls.map((crawl) => (
@@ -73,17 +81,15 @@ export const CloneExistingModal: React.FC<CloneExistingModalProps> = ({
           </select>
         </div>
 
-        <div className="flex justify-end space-x-3">
-          <button
-            onClick={handleClose}
-            className="px-4 py-2 text-gray-700 border border-gray-300 rounded hover:bg-gray-50"
-          >
+        <div className="modal-footer">
+          <button onClick={handleClose} className="btn-secondary">
             Cancel
           </button>
-          <button
-            onClick={handleClone}
+          <button 
+            onClick={handleClone} 
             disabled={!selectedCrawlId}
-            className="px-4 py-2 bg-ringer-blue text-white rounded hover:bg-ringer-dark-blue disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn-primary"
+            style={{ opacity: selectedCrawlId ? 1 : 0.5 }}
           >
             Clone
           </button>

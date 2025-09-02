@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { SearchEngineSeed } from '../types';
 import { crawlApi } from '../services/api';
 import { useToast } from '../hooks/useToast';
 
@@ -72,101 +71,170 @@ export const SearchEngineModal: React.FC<SearchEngineModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[80vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-lg font-semibold">Search Engine Seed Collection</h3>
+    <div className="modal-overlay" onClick={handleClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '48rem', width: '95%' }}>
+        <div className="modal-header">
+          <h3 className="modal-title">Search Engine</h3>
           <button
             onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600"
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--text-tertiary)',
+              fontSize: '1.25rem',
+              cursor: 'pointer',
+              padding: '0.25rem'
+            }}
           >
             ✕
           </button>
         </div>
 
-        <div className="grid grid-cols-4 gap-4 mb-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Search Engine
-            </label>
-            <select
-              value={searchEngine}
-              onChange={(e) => setSearchEngine(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-ringer-blue"
-            >
-              <option value="Google">Google</option>
-              <option value="Bing">Bing</option>
-              <option value="DuckDuckGo">DuckDuckGo</option>
-            </select>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Count
-            </label>
-            <input
-              type="number"
-              value={count}
-              onChange={(e) => setCount(parseInt(e.target.value) || 10)}
-              min="1"
-              max="100"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-ringer-blue"
-            />
-          </div>
-          
-          <div className="col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Query
-            </label>
-            <div className="flex">
+        <div className="modal-body" style={{ padding: '1.5rem' }}>
+          {/* Search Form */}
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'flex-end', 
+            gap: '1rem', 
+            marginBottom: '1.5rem',
+            flexWrap: 'wrap'
+          }}>
+            <div>
+              <label style={{
+                display: 'block',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                color: 'var(--text-primary)',
+                marginBottom: '0.5rem'
+              }}>
+                Search Engine
+              </label>
+              <select
+                value={searchEngine}
+                onChange={(e) => setSearchEngine(e.target.value)}
+                className="input-field"
+                style={{ minWidth: '120px' }}
+              >
+                <option value="Google">Google</option>
+                <option value="Bing">Bing</option>
+                <option value="DuckDuckGo">DuckDuckGo</option>
+              </select>
+            </div>
+            
+            <div>
+              <label style={{
+                display: 'block',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                color: 'var(--text-primary)',
+                marginBottom: '0.5rem'
+              }}>
+                Count
+              </label>
+              <input
+                type="number"
+                value={count}
+                onChange={(e) => setCount(parseInt(e.target.value) || 10)}
+                min="1"
+                max="100"
+                className="input-field"
+                style={{ width: '80px' }}
+              />
+            </div>
+            
+            <div style={{ flex: 1, minWidth: '200px' }}>
+              <label style={{
+                display: 'block',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                color: 'var(--text-primary)',
+                marginBottom: '0.5rem'
+              }}>
+                Query
+              </label>
               <input
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Enter search query..."
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-ringer-blue"
+                className="input-field"
+                style={{ width: '100%' }}
                 onKeyPress={(e) => e.key === 'Enter' && handleRunQuery()}
               />
-              <button
-                onClick={handleRunQuery}
-                disabled={loading || !query.trim()}
-                className="px-4 py-2 bg-ringer-blue text-white rounded-r-md hover:bg-ringer-dark-blue disabled:opacity-50"
-              >
-                {loading ? 'Running...' : 'Run Query'}
-              </button>
             </div>
+            
+            <button
+              onClick={handleRunQuery}
+              disabled={loading || !query.trim()}
+              className="btn-primary"
+            >
+              {loading ? 'Running...' : 'Run Query'}
+            </button>
           </div>
+
+          {results.length > 0 && (
+            <div>
+              <h4 style={{
+                fontSize: '1rem',
+                fontWeight: '600',
+                color: 'var(--text-primary)',
+                marginBottom: '0.75rem',
+                margin: '0 0 0.75rem 0'
+              }}>
+                Results
+              </h4>
+              <div className="table-container" style={{ 
+                maxHeight: '300px', 
+                overflow: 'auto',
+                marginBottom: '1.5rem'
+              }}>
+                {results.map((url, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '0.75rem',
+                      borderBottom: index < results.length - 1 ? '1px solid var(--border-secondary)' : 'none'
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedUrls.has(url)}
+                      onChange={() => handleUrlToggle(url)}
+                      style={{ 
+                        marginRight: '0.75rem',
+                        transform: 'scale(1.2)'
+                      }}
+                    />
+                    <span style={{ 
+                      flex: 1, 
+                      fontSize: '0.875rem',
+                      color: 'var(--text-primary)',
+                      wordBreak: 'break-all'
+                    }}>
+                      {url}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {results.length > 0 && (
-          <div>
-            <h4 className="text-md font-medium mb-3">Results</h4>
-            <div className="border border-gray-300 rounded-md max-h-60 overflow-y-auto">
-              {results.map((url, index) => (
-                <div
-                  key={index}
-                  className="flex items-center p-3 border-b border-gray-200 last:border-b-0"
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedUrls.has(url)}
-                    onChange={() => handleUrlToggle(url)}
-                    className="mr-3"
-                  />
-                  <span className="flex-1 text-sm">{url}</span>
-                </div>
-              ))}
-            </div>
-            
-            <div className="flex justify-end mt-4">
-              <button
-                onClick={handleAddSelected}
-                disabled={selectedUrls.size === 0}
-                className="px-4 py-2 bg-ringer-blue text-white rounded hover:bg-ringer-dark-blue disabled:opacity-50"
-              >
-                Add Selected ({selectedUrls.size})
-              </button>
-            </div>
+          <div className="modal-footer">
+            <button onClick={handleClose} className="btn-secondary">
+              Cancel
+            </button>
+            <button
+              onClick={handleAddSelected}
+              disabled={selectedUrls.size === 0}
+              className="btn-primary"
+              style={{ opacity: selectedUrls.size > 0 ? 1 : 0.5 }}
+            >
+              Add Selected ({selectedUrls.size})
+            </button>
           </div>
         )}
       </div>
