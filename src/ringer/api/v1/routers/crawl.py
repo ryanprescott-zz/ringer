@@ -306,3 +306,45 @@ def download_crawl_spec(crawl_id: str, app_request: Request) -> JSONResponse:
         raise HTTPException(status_code=404, detail="The requested crawl does not exist")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+@router.get("/{collection_id}/{data_id}", response_model=CrawlInfoResponse)
+def get_crawl_info_by_results_id(collection_id: str, data_id: str, app_request: Request) -> CrawlInfoResponse:
+    """
+    Get complete information (spec + status) for a crawl by CrawlResultsId.
+    
+    Args:
+        collection_id: Collection identifier for the crawl results
+        data_id: Data identifier for the crawl results  
+        app_request: FastAPI request object to access application state
+        
+    Returns:
+        CrawlInfoResponse: Response containing crawl information
+        
+    Raises:
+        HTTPException: If crawl info retrieval fails
+    """
+    try:
+        ringer = app_request.app.state.ringer
+        from ringer.core.models import CrawlResultsId
+        
+        # Construct CrawlResultsId from path parameters
+        results_id = CrawlResultsId(collection_id=collection_id, data_id=data_id)
+        
+        # Call new get_crawler_info method on Ringer
+        crawl_info_dict = ringer.get_crawler_info(results_id)
+        
+        # Create the API models from the dictionary
+        from ringer.api.v1.models import CrawlInfo, CrawlStatus
+        from ringer.core.models import CrawlSpec
+        
+        crawl_spec = CrawlSpec(**crawl_info_dict["crawl_spec"])
+        crawl_status = CrawlStatus(**crawl_info_dict["crawl_status"])
+        crawl_info = CrawlInfo(crawl_spec=crawl_spec, crawl_status=crawl_status)
+        
+        return CrawlInfoResponse(info=crawl_info)
+        
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")

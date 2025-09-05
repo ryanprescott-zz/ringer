@@ -34,18 +34,19 @@ def sample_crawl_info():
     return {
         "crawl_spec": {
             "name": "test_crawl",
-            "description": "A test crawl",
             "seeds": ["https://example.com"],
-            "max_pages": 100,
-            "analyzer_specs": []
+            "analyzer_specs": [],
+            "worker_count": 1,
+            "domain_blacklist": None
         },
         "crawl_status": {
             "crawl_id": "test_crawl_123",
+            "crawl_name": "test_crawl", 
             "current_state": "created",
-            "queued_count": 1,
             "crawled_count": 0,
             "processed_count": 0,
             "error_count": 0,
+            "frontier_size": 1,
             "state_history": []
         }
     }
@@ -150,12 +151,87 @@ class TestDownloadCrawlSpec:
             
             # Should only contain spec fields, not status fields
             assert "name" in response_json
-            assert "description" in response_json
             assert "seeds" in response_json
-            assert "max_pages" in response_json
             assert "analyzer_specs" in response_json
+            assert "worker_count" in response_json
             
             # Should not contain status fields
             assert "crawl_id" not in response_json
             assert "current_state" not in response_json
-            assert "queued_count" not in response_json
+            assert "crawled_count" not in response_json
+
+
+class TestGetCrawlInfoByResultsId:
+    """Tests for the get crawl info by results ID endpoint."""
+
+    def test_get_crawl_info_by_results_id_success(self, client, mock_ringer, sample_crawl_info):
+        """Test successful crawl info retrieval by results ID."""
+        # Setup - need to fix environment and mock setup
+        collection_id = "test_collection_123"
+        data_id = "test_data_456"
+        mock_ringer.get_crawler_info.return_value = sample_crawl_info
+        
+        # Mock app state properly
+        client.app.state = Mock()
+        client.app.state.ringer = mock_ringer
+        
+        # Execute
+        response = client.get(f"/api/v1/crawls/{collection_id}/{data_id}")
+        
+        # Verify
+        assert response.status_code == 200
+        response_json = response.json()
+        
+        # Verify response structure
+        assert "info" in response_json
+        info = response_json["info"]
+        assert "crawl_spec" in info
+        assert "crawl_status" in info
+        
+        # Verify ringer was called correctly with CrawlResultsId
+        mock_ringer.get_crawler_info.assert_called_once()
+        call_args = mock_ringer.get_crawler_info.call_args[0][0]
+        assert call_args.collection_id == collection_id
+        assert call_args.data_id == data_id
+
+    def test_get_crawl_info_by_results_id_not_found(self, client, mock_ringer):
+        """Test crawl info retrieval when crawl doesn't exist."""
+        # Setup
+        collection_id = "nonexistent_collection"
+        data_id = "nonexistent_data"
+        mock_ringer.get_crawler_info.side_effect = ValueError("No crawl found with collection_id='nonexistent_collection' and data_id='nonexistent_data'")
+        
+        # Mock app state properly
+        client.app.state = Mock()
+        client.app.state.ringer = mock_ringer
+        
+        # Execute
+        response = client.get(f"/api/v1/crawls/{collection_id}/{data_id}")
+        
+        # Verify
+        assert response.status_code == 404
+        assert "No crawl found" in response.json()["detail"]
+        
+        # Verify ringer was called correctly
+        mock_ringer.get_crawler_info.assert_called_once()
+
+    def test_get_crawl_info_by_results_id_internal_error(self, client, mock_ringer):
+        """Test crawl info retrieval when internal error occurs."""
+        # Setup
+        collection_id = "test_collection_123"
+        data_id = "test_data_456"
+        mock_ringer.get_crawler_info.side_effect = Exception("Database connection failed")
+        
+        # Mock app state properly
+        client.app.state = Mock()
+        client.app.state.ringer = mock_ringer
+        
+        # Execute
+        response = client.get(f"/api/v1/crawls/{collection_id}/{data_id}")
+        
+        # Verify
+        assert response.status_code == 500
+        assert "Internal server error" in response.json()["detail"]
+        
+        # Verify ringer was called correctly
+        mock_ringer.get_crawler_info.assert_called_once()

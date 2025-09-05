@@ -103,8 +103,9 @@ class DhCrawlResultsManager(CrawlResultsManager):
                 }
             )
             
-            # Construct the URL
-            url = f"{self.settings.service_url}/workbook/{results_id.collection_id}/bin/{results_id.data_id}"
+            # Construct the URL (ensure no double slashes)
+            base_url = self.settings.service_url.rstrip('/')
+            url = f"{base_url}/workbook/{results_id.collection_id}/bin/{results_id.data_id}"
             
             try:
                 # Make the HTTP PATCH request

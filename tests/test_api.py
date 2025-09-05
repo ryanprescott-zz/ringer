@@ -78,7 +78,7 @@ class TestCreateCrawlEndpoint:
         mock_ringer.crawls = {test_crawl_id: sample_crawl_state}
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         response = client.post(
             "/api/v1/crawls",
@@ -100,7 +100,7 @@ class TestCreateCrawlEndpoint:
         mock_ringer.create.side_effect = ValueError("Crawl with ID test_crawl already exists")
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         response = client.post(
             "/api/v1/crawls",
@@ -118,7 +118,7 @@ class TestCreateCrawlEndpoint:
         }
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         response = client.post(
             "/api/v1/crawls",
@@ -132,7 +132,7 @@ class TestCreateCrawlEndpoint:
         mock_ringer.create.side_effect = Exception("Database connection failed")
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         response = client.post(
             "/api/v1/crawls",
@@ -156,7 +156,7 @@ class TestStartCrawlEndpoint:
         mock_ringer.crawls = {test_crawl_id: sample_crawl_state}
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         response = client.post(
             f"/api/v1/crawls/{test_crawl_id}/start"
@@ -174,7 +174,7 @@ class TestStartCrawlEndpoint:
         mock_ringer.start.side_effect = ValueError("Crawl nonexistent_id not found")
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         response = client.post(
             "/api/v1/crawls/nonexistent_id/start"
@@ -188,7 +188,7 @@ class TestStartCrawlEndpoint:
         mock_ringer.start.side_effect = RuntimeError("Crawl test_crawl is already running")
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         response = client.post(
             "/api/v1/crawls/test_crawl/start"
@@ -202,7 +202,7 @@ class TestStartCrawlEndpoint:
         mock_ringer.start.side_effect = Exception("Thread pool exhausted")
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         response = client.post(
             "/api/v1/crawls/test_crawl/start"
@@ -225,7 +225,7 @@ class TestStopCrawlEndpoint:
         mock_ringer.crawls = {test_crawl_id: sample_crawl_state}
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         response = client.post(
             f"/api/v1/crawls/{test_crawl_id}/stop"
@@ -243,7 +243,7 @@ class TestStopCrawlEndpoint:
         mock_ringer.stop.side_effect = ValueError("Crawl nonexistent_id not found")
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         response = client.post(
             "/api/v1/crawls/nonexistent_id/stop"
@@ -257,7 +257,7 @@ class TestStopCrawlEndpoint:
         mock_ringer.stop.side_effect = RuntimeError("Crawl test_crawl is not running")
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         response = client.post(
             "/api/v1/crawls/test_crawl/stop"
@@ -271,7 +271,7 @@ class TestStopCrawlEndpoint:
         mock_ringer.stop.side_effect = Exception("Failed to stop workers")
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         response = client.post(
             "/api/v1/crawls/test_crawl/stop"
@@ -292,7 +292,7 @@ class TestDeleteCrawlEndpoint:
         mock_datetime.utcnow.return_value.strftime.return_value = test_deletion_time
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         response = client.delete(
             f"/api/v1/crawls/{test_crawl_id}"
@@ -309,7 +309,7 @@ class TestDeleteCrawlEndpoint:
         mock_ringer.delete.side_effect = ValueError("Crawl nonexistent_id not found")
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         response = client.delete(
             "/api/v1/crawls/nonexistent_id"
@@ -323,7 +323,7 @@ class TestDeleteCrawlEndpoint:
         mock_ringer.delete.side_effect = RuntimeError("Cannot delete running crawl test_crawl")
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         response = client.delete(
             "/api/v1/crawls/test_crawl"
@@ -337,7 +337,7 @@ class TestDeleteCrawlEndpoint:
         mock_ringer.delete.side_effect = Exception("Failed to cleanup resources")
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         response = client.delete(
             "/api/v1/crawls/test_crawl"
@@ -399,7 +399,7 @@ class TestCrawlStatusEndpoint:
         mock_ringer.get_all_crawl_statuses.return_value = test_status_dicts
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         response = client.get("/api/v1/crawls/status")
         
@@ -427,7 +427,7 @@ class TestCrawlStatusEndpoint:
         mock_ringer.get_all_crawl_statuses.return_value = []
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         response = client.get("/api/v1/crawls/status")
         
@@ -444,7 +444,7 @@ class TestCrawlStatusEndpoint:
         mock_ringer.get_all_crawl_statuses.side_effect = Exception("Database connection failed")
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         response = client.get("/api/v1/crawls/status")
         
@@ -534,7 +534,7 @@ class TestCrawlStatusEndpoint:
         mock_ringer.get_all_crawl_info.return_value = test_info_dicts
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         response = client.get("/api/v1/crawls")
         
@@ -564,7 +564,7 @@ class TestCrawlStatusEndpoint:
         mock_ringer.get_all_crawl_info.return_value = []
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         response = client.get("/api/v1/crawls")
         
@@ -581,7 +581,7 @@ class TestCrawlStatusEndpoint:
         mock_ringer.get_all_crawl_info.side_effect = Exception("Database connection failed")
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         response = client.get("/api/v1/crawls")
         
@@ -638,7 +638,7 @@ class TestCrawlStatusEndpoint:
         mock_ringer.crawls = {test_crawl_id: sample_crawl_state}
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         response = client.get(f"/api/v1/crawls/{test_crawl_id}")
         
@@ -671,7 +671,7 @@ class TestCrawlStatusEndpoint:
         mock_ringer.get_crawl_info.side_effect = ValueError("Crawl nonexistent_id not found")
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         response = client.get("/api/v1/crawls/nonexistent_id")
         
@@ -683,7 +683,7 @@ class TestCrawlStatusEndpoint:
         mock_ringer.get_crawl_info.side_effect = Exception("Database connection failed")
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         response = client.get("/api/v1/crawls/test_crawl")
         
@@ -723,7 +723,7 @@ class TestCrawlStatusEndpoint:
         mock_ringer.crawls = {test_crawl_id: sample_crawl_state}
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         response = client.get(f"/api/v1/crawls/{test_crawl_id}/status")
         
@@ -748,7 +748,7 @@ class TestCrawlStatusEndpoint:
         mock_ringer.get_crawl_status.side_effect = ValueError("Crawl nonexistent_id not found")
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         response = client.get("/api/v1/crawls/nonexistent_id/status")
         
@@ -760,7 +760,7 @@ class TestCrawlStatusEndpoint:
         mock_ringer.get_crawl_status.side_effect = Exception("Database connection failed")
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         response = client.get("/api/v1/crawls/test_crawl/status")
         
@@ -867,7 +867,7 @@ class TestSeedsEndpoint:
         mock_ringer.collect_seed_urls_from_search_engines.return_value = test_seed_urls
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         search_engine_seeds = [
             {
@@ -892,7 +892,7 @@ class TestSeedsEndpoint:
         mock_ringer.collect_seed_urls_from_search_engines.side_effect = Exception("Search engine failed")
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         search_engine_seeds = [
             {
@@ -938,7 +938,7 @@ class TestResultsEndpoint:
         mock_ringer.crawls = {test_crawl_id: sample_crawl_state}
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         request_data = {
             "record_count": 10,
@@ -978,7 +978,7 @@ class TestResultsEndpoint:
         mock_ringer.get_crawl_record_summaries.side_effect = ValueError("Crawl nonexistent_id not found")
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         request_data = {
             "record_count": 10,
@@ -998,7 +998,7 @@ class TestResultsEndpoint:
         mock_ringer.get_crawl_record_summaries.side_effect = ValueError("Invalid score_type: invalid_type")
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         request_data = {
             "record_count": 10,
@@ -1016,7 +1016,7 @@ class TestResultsEndpoint:
     def test_get_crawl_record_summaries_invalid_request(self, client, mock_ringer):
         """Test getting record summaries with invalid request data returns 422."""
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         # Missing required fields
         request_data = {
@@ -1036,7 +1036,7 @@ class TestResultsEndpoint:
         mock_ringer.get_crawl_record_summaries.side_effect = Exception("Database connection failed")
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         request_data = {
             "record_count": 10,
@@ -1070,7 +1070,7 @@ class TestResultsEndpoint:
         mock_ringer.crawls = {test_crawl_id: sample_crawl_state}
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         request_data = {
             "record_count": 5,
@@ -1126,7 +1126,7 @@ class TestResultsEndpoint:
         mock_ringer.crawls = {test_crawl_id: sample_crawl_state}
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         request_data = {
             "record_ids": ["record_1", "record_2"]
@@ -1170,7 +1170,7 @@ class TestResultsEndpoint:
         mock_ringer.get_crawl_records.side_effect = ValueError("Crawl nonexistent_id not found")
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         request_data = {
             "record_ids": ["record_1", "record_2"]
@@ -1193,7 +1193,7 @@ class TestResultsEndpoint:
         mock_ringer.crawls = {test_crawl_id: sample_crawl_state}
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         request_data = {
             "record_ids": ["nonexistent_record_1", "nonexistent_record_2"]
@@ -1230,7 +1230,7 @@ class TestResultsEndpoint:
         mock_ringer.crawls = {test_crawl_id: sample_crawl_state}
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         request_data = {
             "record_ids": ["record_1", "nonexistent_record_1", "nonexistent_record_2"]
@@ -1257,7 +1257,7 @@ class TestResultsEndpoint:
     def test_get_crawl_records_invalid_request(self, client, mock_ringer):
         """Test getting records with invalid request data returns 422."""
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         # Missing required fields
         request_data = {
@@ -1279,7 +1279,7 @@ class TestResultsEndpoint:
         mock_ringer.crawls = {test_crawl_id: sample_crawl_state}
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         request_data = {
             "record_ids": []
@@ -1303,7 +1303,7 @@ class TestResultsEndpoint:
         mock_ringer.get_crawl_records.side_effect = Exception("Database connection failed")
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         request_data = {
             "record_ids": ["record_1", "record_2"]
@@ -1339,7 +1339,7 @@ class TestResultsEndpoint:
         mock_ringer.crawls = {test_crawl_id: sample_crawl_state}
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         request_data = {
             "record_ids": ["single_record_id"]
@@ -1393,7 +1393,7 @@ class TestResultsEndpoint:
         mock_ringer.crawls = {test_crawl_id: sample_crawl_state}
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         # Request 50 record IDs
         record_ids = [f"record_{i}" for i in range(50)]
@@ -1570,7 +1570,7 @@ class TestEndToEndWorkflow:
         mock_ringer.crawls = {test_crawl_id: sample_crawl_state}
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         # 1. create crawl
         create_response = client.post(
@@ -1622,7 +1622,7 @@ class TestEndToEndWorkflow:
         mock_ringer.start.side_effect = ValueError(f"Crawl {nonexistent_crawl_id} not found")
         
         # Set the ringer in app state
-        app.state.ringer = mock_ringer
+        client.app.state.ringer = mock_ringer
         
         # Try to start non-existent crawl
         response = client.post(

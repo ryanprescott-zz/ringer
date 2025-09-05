@@ -514,7 +514,54 @@ class Ringer:
             }
             
             return info_dict
-    
+
+    def get_crawler_info(self, results_id: CrawlResultsId) -> dict:
+        """
+        Get complete information (spec + status) for a crawl by CrawlResultsId.
+        
+        Args:
+            results_id: CrawlResultsId to look up the crawl
+            
+        Returns:
+            Dictionary with crawl spec and status information
+            
+        Raises:
+            ValueError: If no crawl found with the given CrawlResultsId
+        """
+        with self.crawls_lock:
+            # Find the crawl with the matching results_id
+            for crawl_id, crawl_state in self.crawls.items():
+                if (crawl_state.results_id.collection_id == results_id.collection_id and 
+                    crawl_state.results_id.data_id == results_id.data_id):
+                    # Found matching crawl, build the info dict directly to avoid nested lock
+                    # Get thread-safe snapshot of counts
+                    crawled_count, processed_count, error_count, frontier_size = crawl_state.get_status_counts()
+                    
+                    # Get state history from storage
+                    state_history = crawl_state.get_state_history()
+                    
+                    # Create status dictionary
+                    status_dict = {
+                        "crawl_id": crawl_id,
+                        "crawl_name": crawl_state.crawl_spec.name,
+                        "current_state": crawl_state.current_state.value,
+                        "state_history": [state.model_dump() for state in state_history],
+                        "crawled_count": crawled_count,
+                        "processed_count": processed_count,
+                        "error_count": error_count,
+                        "frontier_size": frontier_size
+                    }
+                    
+                    # Create info dictionary with spec and status
+                    info_dict = {
+                        "crawl_spec": crawl_state.crawl_spec.model_dump(),
+                        "crawl_status": status_dict
+                    }
+                    
+                    return info_dict
+            
+            # No matching crawl found
+            raise ValueError(f"No crawl found with collection_id='{results_id.collection_id}' and data_id='{results_id.data_id}'")
 
     def stop(self, crawl_id: str) -> tuple:
         """
